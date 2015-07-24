@@ -71,6 +71,12 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
       <!-- column-name game_name -->
       <column type="gchararray"/>
+      <!-- column-name game_backend -->
+      <column type="gchararray"/>
+      <!-- column-name game_master -->
+      <column type="gchararray"/>
+      <!-- column-name game_protocol -->
+      <column type="gchararray"/>
       <!-- column-name game_icon -->
       <column type="GdkPixbuf"/>
     </columns>
@@ -256,10 +262,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="model">Game_Store</property>
+                    <property name="id_column">0</property>
                     <child>
                       <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
                       <attributes>
-                        <attribute name="pixbuf">2</attribute>
+                        <attribute name="pixbuf">5</attribute>
                       </attributes>
                     </child>
                     <child>

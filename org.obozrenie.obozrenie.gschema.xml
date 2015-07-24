@@ -1,10 +1,18 @@
 <schemalist>
   <schema id="org.obozrenie.obozrenie.main" path="/org/obozrenie/obozrenie/main/" gettext-domain="obozrenie">
+    <key name="selected-game" type="s">
+      <default>''</default>
+      <summary>Selected game</summary>
+      <description>
+        Game selected for server search.
+      </description>
+    </key>
+
     <key name="nickname" type="s">
       <default l10n="messages">'Anonymous'</default>
       <summary>Nickname</summary>
       <description>
-        Nickname used in multiplayer mode
+        Nickname used in multiplayer mode.
       </description>
     </key>
 

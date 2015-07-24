@@ -42,7 +42,9 @@ except ImportError:
 import backends.rigsofrods
 
 APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie.ini")
+GAME_CONFIG = os.path.join(os.path.dirname(__file__), "games.ini")
 UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie-gtk.ui")
+SCHEMA_BASE_ID = 'org.obozrenie.obozrenie'
 
 
 class Callbacks:
@@ -85,8 +87,7 @@ class Callbacks:
 
         bool_ping = ping_button.get_active()
 
-        Gtk.TreeViewColumn.set_visible(
-            ping_column, bool_ping)
+        Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
         Actions.update_server_list(listmodel, bool_ping)
 
@@ -118,16 +119,19 @@ class Settings:
     Contains methods for saving and loading user settings and setting lists.
     """
 
-    def __init__(self, builder):
+    def __init__(self, app):
         """Loads base variables into the class."""
-        self.schema_base_id = 'org.obozrenie.obozrenie'
+        self.schema_base_id = SCHEMA_BASE_ID
 
         self.keyfile_config = GLib.KeyFile.new()
         self.keyfile_config.load_from_file(APP_CONFIG, GLib.KeyFileFlags.NONE)
 
-        self.builder = builder
+        self.game_config = GLib.KeyFile.new()
+        self.game_config.load_from_file(GAME_CONFIG, GLib.KeyFileFlags.NONE)
 
-    def get_groups(self):
+        self.builder = app.builder
+
+    def get_setting_groups(self):
         """Compile a list of available settings groups."""
         mapping_cat = []
         for i in range(self.keyfile_config.get_groups()[1]):
@@ -139,16 +143,52 @@ class Settings:
                                                           GLib.KeyFile.get_groups(self.keyfile_config)[0][i], "group"))
         return mapping_cat
 
+    def get_games_tuple(self):
+        """
+        Loads game list into a tuple
+        """
+        self.game_array = []
+
+        for i in range(self.game_config.get_groups()[1]):
+            self.game_array.append([])
+
+            game_id = self.game_config.get_groups()[0][i]
+            name = self.game_config.get_value(game_id, "name")
+            backend = self.game_config.get_value(game_id, "backend")
+            master = self.game_config.get_value(game_id, "master")
+            protocol = self.game_config.get_value(game_id, "protocol")
+
+            self.game_array[i].append(game_id)
+            self.game_array[i].append(name)
+            self.game_array[i].append(backend)
+            self.game_array[i].append(master)
+            self.game_array[i].append(protocol)
+
+    def get_games_list_store(self):
+        """
+        Loads game list into a list store
+        """
+        self.get_games_tuple()
+
+        self.game_store = self.builder.get_object("Game_Store")
+        array = self.game_array
+
+        for i in range(len(array)):
+            array[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(
+                os.path.dirname(__file__) + '/icons/games/' +
+                array[i][0] + '.png', 24, 24))
+
+            treeiter = self.game_store.append(array[i])
+
     def load(self):
         """Loads configuration."""
 
-        for i in range(GLib.KeyFile.get_groups(self.keyfile_config)[1]):
+        for i in range(self.keyfile_config.get_groups()[1]):
             # Define variables
             key = self.keyfile_config.get_groups()[0][i]
-            group = self.keyfile_config.get_value(
-                self.keyfile_config.get_groups()[0][i], "group")
-            widget = Gtk.Builder.get_object(self.builder, self.keyfile_config.get_value(
-                self.keyfile_config.get_groups()[0][i], "widget"))
+            group = self.keyfile_config.get_value(key, "group")
+            widget = Gtk.Builder.get_object(self.builder,
+                self.keyfile_config.get_value(key, "widget"))
 
             schema_id = self.schema_base_id + "." + group
 
@@ -158,7 +198,7 @@ class Settings:
                 value = gsettings.get_int(key)
             elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
                 value = gsettings.get_boolean(key)
-            elif isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
+            elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
                 value = gsettings.get_string(key)
 
             # Apply setting to widget
@@ -172,7 +212,7 @@ class Settings:
 
                 Gtk.ToggleButton.set_active(widget, value)
                 gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
-            elif isinstance(widget, Gtk.ComboBoxText):
+            elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
                 Gtk.ComboBox.set_active_id(widget, str(value))
                 gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
             elif isinstance(widget, Gtk.Entry):
@@ -259,18 +299,21 @@ class App(Gtk.Application):
         self.connect("startup", self.on_startup)
         self.connect("activate", self.on_activate)
 
+        # Create builder
+        self.builder = Gtk.Builder()
+        Gtk.Builder.add_from_file(self.builder, UI_PATH)
+
+        self.settings = Settings(self)
+
     def on_startup(self, app):
         """
         Startup function.
         Loads the GtkBuilder resources, settings and start the main loop.
         """
-        # Create builder
-        self.builder = Gtk.Builder()
-        Gtk.Builder.add_from_file(self.builder, UI_PATH)
 
         # Load settings
-        settings = Settings(self.builder)
-        settings.load()
+        self.settings.get_games_list_store()
+        self.settings.load()
 
         # Connect signals
         callbacks = Callbacks(self, self.builder)
@@ -292,7 +335,6 @@ class App(Gtk.Application):
         menumodel.append("Quit", "app.quit")
         self.set_app_menu(menumodel)
         self.add_window(window)
-        # self.set_app_menu()
 
     def on_activate(self, app):
         window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
