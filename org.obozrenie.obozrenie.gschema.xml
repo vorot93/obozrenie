@@ -1,0 +1,32 @@
+<schemalist>
+  <schema id="org.obozrenie.obozrenie.main" path="/org/obozrenie/obozrenie/main/" gettext-domain="obozrenie">
+    <key name="nickname" type="s">
+      <default l10n="messages">'Anonymous'</default>
+      <summary>Nickname</summary>
+      <description>
+        Nickname used in multiplayer mode
+      </description>
+    </key>
+
+    <key name="pinging-enable" type="b">
+      <default>false</default>
+      <summary>Enable pinging</summary>
+      <description>
+        Enables server pinging.
+      </description>
+    </key>
+
+    <key name="server-host" type="s">
+      <default>'127.0.0.1'</default>
+      <summary>Server host name</summary>
+      <description></description>
+    </key>
+
+    <key name="server-pass" type="s">
+      <default>''</default>
+      <summary>Server password</summary>
+      <description></description>
+    </key>
+
+  </schema>
+</schemalist>

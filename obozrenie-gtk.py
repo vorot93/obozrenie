@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This is a PyGObject-based GUI for Rigs of Rods configurator."""
+"""Simple and easy to use Game Server Browser."""
 
 import argparse
 import ast
@@ -49,11 +49,9 @@ class Callbacks:
 
     """Responses to events from GUI"""
 
-    def __init__(self, backend, user_settings_file, builder, game_path):
-        self.backend = backend
-        self.user_settings_file = user_settings_file
+    def __init__(self, app, builder):
+        self.app = app
         self.builder = builder
-        self.game_path = game_path
 
     def cb_set_widget_sensitivity(self):
         """Sets sensitivity for dependent widgets."""
@@ -65,19 +63,18 @@ class Callbacks:
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
-        Gtk.main_quit()
-        start_game(self.game_path)
+        self.app.quit()
+        start_game()
 
     @staticmethod
-    def cb_about_item_clicked(self, window):
+    def cb_about(action, data, dialog):
         """Opens the About dialog."""
-        Gtk.Dialog.run(window)
-        Gtk.Dialog.hide(window)
+        Gtk.Dialog.run(dialog)
+        Gtk.Dialog.hide(dialog)
 
-    @staticmethod
-    def cb_quit(*args):
+    def cb_quit(self, *args):
         """Exits the program."""
-        Gtk.main_quit()
+        self.app.quit()
 
     def cb_update_button_clicked(self, listmodel, *data):
         """Refills the server list model"""
@@ -91,7 +88,7 @@ class Callbacks:
         Gtk.TreeViewColumn.set_visible(
             ping_column, bool_ping)
 
-        App.update_server_list(listmodel, bool_ping)
+        Actions.update_server_list(listmodel, bool_ping)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
@@ -121,25 +118,14 @@ class Settings:
     Contains methods for saving and loading user settings and setting lists.
     """
 
-    def __init__(self, backend, user_settings_file, builder):
+    def __init__(self, builder):
         """Loads base variables into the class."""
-        self.schema_base_id = 'org.rigsofrods.rigsofrods'
+        self.schema_base_id = 'org.obozrenie.obozrenie'
 
         self.keyfile_config = GLib.KeyFile.new()
         self.keyfile_config.load_from_file(APP_CONFIG, GLib.KeyFileFlags.NONE)
 
-        self.backend = backend
-        self.user_settings_file = user_settings_file
         self.builder = builder
-
-        if self.backend == "gkeyfile":
-            self.keyfile = GLib.KeyFile.new()
-
-            try:
-                self.keyfile.load_from_file(
-                    self.user_settings_file, GLib.KeyFileFlags.NONE)
-            except GLib.Error:
-                pass
 
     def get_groups(self):
         """Compile a list of available settings groups."""
@@ -154,7 +140,7 @@ class Settings:
         return mapping_cat
 
     def load(self):
-        """Settings loading function. Supports GKeyFile and GSettings backends."""
+        """Loads configuration."""
 
         for i in range(GLib.KeyFile.get_groups(self.keyfile_config)[1]):
             # Define variables
@@ -166,21 +152,16 @@ class Settings:
 
             schema_id = self.schema_base_id + "." + group
 
-            if self.backend == "gsettings":
-                # GSettings magic
-                gsettings = Gio.Settings.new(schema_id)
-                if isinstance(widget, Gtk.Adjustment):
-                    value = gsettings.get_int(key)
-                elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-                    value = gsettings.get_boolean(key)
-                elif isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
-                    value = gsettings.get_string(key)
-            elif self.backend == "gkeyfile":
-                try:
-                    value = self.keyfile.get_string(group, key)
-                except GLib.Error:
-                    continue
+            # Receive setting
+            gsettings = Gio.Settings.new(schema_id)
+            if isinstance(widget, Gtk.Adjustment):
+                value = gsettings.get_int(key)
+            elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+                value = gsettings.get_boolean(key)
+            elif isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
+                value = gsettings.get_string(key)
 
+            # Apply setting to widget
             if isinstance(widget, Gtk.Adjustment):
                 Gtk.Adjustment.set_value(widget, int(value))
             elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
@@ -190,71 +171,17 @@ class Settings:
                     value = False
 
                 Gtk.ToggleButton.set_active(widget, value)
+                gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
             elif isinstance(widget, Gtk.ComboBoxText):
                 Gtk.ComboBox.set_active_id(widget, str(value))
+                gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
             elif isinstance(widget, Gtk.Entry):
                 Gtk.Entry.set_text(widget, str(value))
-
-    def save(self):
-        """Save selected configuration. Supports GKeyFile and GSettings backends."""
-        print("\nYour selected configuration:\n--------------")
-
-        for i in range(self.keyfile_config.get_groups()[1]):
-
-            # Define variables
-            key = self.keyfile_config.get_groups()[0][i]
-            group = self.keyfile_config.get_value(
-                self.keyfile_config.get_groups()[0][i], "group")
-            widget = Gtk.Builder.get_object(self.builder, self.keyfile_config.get_value(
-                self.keyfile_config.get_groups()[0][i], "widget"))
-
-            if isinstance(widget, Gtk.Adjustment):
-                value = int(Gtk.Adjustment.get_value(widget))
-            elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-                value = bool(Gtk.ToggleButton.get_active(widget))
-            elif isinstance(widget, Gtk.ComboBoxText):
-                value = str(Gtk.ComboBox.get_active_id(widget))
-            elif isinstance(widget, Gtk.Entry):
-                value = str(Gtk.Entry.get_text(widget))
-
-            if self.backend == "gsettings":
-                schema_id = self.schema_base_id + "." + group
-                gsettings = Gio.Settings.new(schema_id)
-                if isinstance(value, bool):
-                    gsettings.set_boolean(key, value)
-                elif isinstance(value, int):
-                    gsettings.set_int(key, value)
-                elif isinstance(value, str):
-                    gsettings.set_string(key, value)
-            elif self.backend == "gkeyfile":
-                self.keyfile.set_string(group, key, str(value))
-
-            print(key, "=", value)
-
-        if self.backend == "gkeyfile":
-            self.keyfile.save_to_file(self.user_settings_file)
+                gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
 
 
-def start_game(path):
-    """Start game"""
-    from subprocess import call
-
-    try:
-        call(path)
-        return 0
-    except OSError:
-        print("Error launching the game.")
-
-
-class App:
-
-    """App class."""
-
-    def __init__(self):
-        self.builder = Gtk.Builder()
-        Gtk.Builder.add_from_file(self.builder, UI_PATH)
-
-    @staticmethod
+class Actions:
+    """Contains actions that can be called from the app."""
     def update_server_list(listmodel, bool_ping):
         """Updates server lists"""
         listmodel.clear()
@@ -268,7 +195,8 @@ class App:
             for i in range(len(listing)):
                 # Game icon
                 listing[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/games/' + listing[i][backends.rigsofrods.MASTER_GAME_COLUMN[-1] - 1] +
+                    os.path.dirname(__file__) + '/icons/games/' +
+                    listing[i][backends.rigsofrods.MASTER_GAME_COLUMN[-1] - 1] +
                     '.png', 24, 24))
 
                 # Lock icon
@@ -297,7 +225,8 @@ class App:
 
                 # Total / max players
                 listing[i].append(str(listing[i][backends.rigsofrods.MASTER_PLAYERCOUNT_COLUMN[-1] - 1]) +
-                                  '/' + str(listing[i][backends.rigsofrods.MASTER_PLAYERLIMIT_COLUMN[-1] - 1]))
+                                  '/' +
+                                  str(listing[i][backends.rigsofrods.MASTER_PLAYERLIMIT_COLUMN[-1] - 1]))
 
                 treeiter = listmodel.append(listing[i])
 
@@ -305,47 +234,70 @@ class App:
         pinging_thread.daemon = True
         pinging_thread.start()
 
-    def main(self):
-        """Main function.
+    def get_server_info():
+        pass
+
+    def start_game(path):
+        """Start game"""
+        from subprocess import call
+
+        try:
+            call(path)
+            return 0
+        except OSError:
+            print("Error launching the game.")
+
+
+class App(Gtk.Application):
+
+    """App class."""
+
+    def __init__(self):
+        Gtk.Application.__init__(self,
+                                 application_id="org.obozrenie.obozrenie",
+                                 flags=Gio.ApplicationFlags.FLAGS_NONE)
+        self.connect("startup", self.on_startup)
+        self.connect("activate", self.on_activate)
+
+    def on_startup(self, app):
+        """
+        Startup function.
         Loads the GtkBuilder resources, settings and start the main loop.
         """
-        cmd_parser = argparse.ArgumentParser()
+        # Create builder
+        self.builder = Gtk.Builder()
+        Gtk.Builder.add_from_file(self.builder, UI_PATH)
 
-        cmd_parser.add_argument("--backend",
-                                type=str,
-                                choices=["gkeyfile", "gsettings"],
-                                default="gkeyfile",
-                                help="Defines the storage backend to be used.")
+        # Load settings
+        settings = Settings(self.builder)
+        settings.load()
 
-        cmd_parser.add_argument("--settings-file",
-                                type=str,
-                                default="~/.config/obozrenie/settings.ini",
-                                help="Profile path.")
-
-        cmd_parser.add_argument("--config-file",
-                                type=str, default="obozrenie.ini", help="Config file name.")
-
-        cmd_parser.add_argument("--game-path",
-                                type=str,
-                                default=os.path.dirname(__file__), help="Game path.")
-
-        self.backend = cmd_parser.parse_args().backend
-        self.game_path = cmd_parser.parse_args().game_path
-        self.user_settings_file = cmd_parser.parse_args().settings_file
-
-        callbacks = Callbacks(
-            self.backend, self.user_settings_file, self.builder, self.game_path)
+        # Connect signals
+        callbacks = Callbacks(self, self.builder)
         Gtk.Builder.connect_signals(self.builder, callbacks)
 
-        Gtk.Window.show_all(
-            Gtk.Builder.get_object(self.builder, "Main_Window"))
+        # Menu actions
+        about_dialog = Gtk.Builder.get_object(self.builder, "About_Dialog")
+        about_action = Gio.SimpleAction.new("about", None)
+        about_action.connect("activate", callbacks.cb_about, about_dialog)
+        self.add_action(about_action)
 
-        settings = Settings(
-            self.backend, self.user_settings_file, self.builder)
-        settings.load()
-        callbacks.cb_set_widget_sensitivity()
+        quit_action = Gio.SimpleAction.new("quit", None)
+        quit_action.connect("activate", callbacks.cb_quit, self)
+        self.add_action(quit_action)
+
+        window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
+        menumodel = Gio.Menu()
+        menumodel.append("About", "app.about")
+        menumodel.append("Quit", "app.quit")
+        self.set_app_menu(menumodel)
+        self.add_window(window)
+        # self.set_app_menu()
+
+    def on_activate(self, app):
+        window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
+        window.show_all()
 
 if __name__ == "__main__":
     app = App()
-    app.main()
-    Gtk.main()
+    app.run(None)
