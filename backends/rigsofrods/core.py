@@ -14,15 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
+from gi.repository import GLib
+
+import os
+
 import ast
 from html.parser import *
 import requests
 
 import ping
 
-GAME = 'rigsofrods'
-PROTOCOL = 'RoRnet_2.37'
-MASTER_URL = 'http://api.rigsofrods.com/serverlist/?version=' + PROTOCOL
+BACKEND_CONFIG = os.path.split(__file__)[0] + "/settings.ini"
 
 FORMAT = (["<table border='1'><tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr>", ""],
           ["rorserver://", ""],
@@ -45,7 +47,7 @@ MASTER_TABLE_WIDTH =        [5,    6,    7,    8   ]
 
 
 class ServerListParser(HTMLParser):
-    """The HTML Parser for Master server list retrieved from MASTER_URL"""
+    """The HTML Parser for Master server list retrieved from master_uri"""
     list1 = []
     list2 = []
     parser_mode = 0
@@ -68,7 +70,7 @@ class ServerListParser(HTMLParser):
 
 def prepend_game_name(array):
     for i in range(len(array)):
-        array[i].insert(0, GAME)
+        array[i].insert(0, "rigsofrods")
 
     return
 
@@ -143,10 +145,17 @@ def append_rtt_info(array, host_column, bool_ping):
 
 
 
-def stat_master(url, bool_rtt):
+def stat_master(bool_rtt):
     """Stats the master server"""
+
+    backend_keyfile = GLib.KeyFile.new()
+    backend_keyfile.load_from_file(BACKEND_CONFIG, GLib.KeyFileFlags.NONE)
+
+    protocol = backend_keyfile.get_value("protocol", "version")
+    master_uri = backend_keyfile.get_value("master", "uri") + '?version=' + protocol
+
     ServerListParser.list1.clear()
-    stream = requests.get(url).text
+    stream = requests.get(master_uri).text
 
     for i in range(len(FORMAT)):
         stream = stream.replace(FORMAT[i][0], FORMAT[i][1])

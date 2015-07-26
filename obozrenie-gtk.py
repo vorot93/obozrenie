@@ -39,7 +39,7 @@ except ImportError:
     print("PyGeoIP not found. Disabling geolocation.")
     GEOIP_ENABLED = False
 
-import backends.rigsofrods
+import backends
 
 APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie.ini")
 GAME_CONFIG = os.path.join(os.path.dirname(__file__), "games.ini")
@@ -78,18 +78,23 @@ class Callbacks:
         """Exits the program."""
         self.app.quit()
 
+    def cb_game_combobox_changed(self, listmodel, *data):
+        listmodel.clear()
+        # settings.switch_backend()
+
     def cb_update_button_clicked(self, listmodel, *data):
         """Refills the server list model"""
-        ping_button = Gtk.Builder.get_object(
-            self.builder, "PingingEnable_CheckButton")
-        ping_column = Gtk.Builder.get_object(
-            self.builder, "Ping_ServerList_TreeViewColumn")
+        update_button = self.builder.get_object("Update_Button")
+        ping_button = self.builder.get_object("PingingEnable_CheckButton")
+        ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
         bool_ping = ping_button.get_active()
 
         Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
-        Actions.update_server_list(listmodel, bool_ping)
+        update_button.set_sensitive(False)
+
+        Actions.update_server_list(listmodel, bool_ping, update_button)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
@@ -97,7 +102,7 @@ class Callbacks:
 
         model, treeiter = widget.get_selected()
         try:
-            text = model[treeiter][backends.rigsofrods.MASTER_HOST_COLUMN[-1] - 1]
+            text = model[treeiter][backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1]
         except TypeError:
             return
 
@@ -155,14 +160,13 @@ class Settings:
             game_id = self.game_config.get_groups()[0][i]
             name = self.game_config.get_value(game_id, "name")
             backend = self.game_config.get_value(game_id, "backend")
-            master = self.game_config.get_value(game_id, "master")
-            protocol = self.game_config.get_value(game_id, "protocol")
 
             self.game_array[i].append(game_id)
             self.game_array[i].append(name)
             self.game_array[i].append(backend)
-            self.game_array[i].append(master)
-            self.game_array[i].append(protocol)
+
+    def switch_game_id(self):
+        pass
 
     def get_games_list_store(self):
         """
@@ -174,9 +178,14 @@ class Settings:
         array = self.game_array
 
         for i in range(len(array)):
-            array[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                os.path.dirname(__file__) + '/icons/games/' +
-                array[i][0] + '.png', 24, 24))
+            icon_base = os.path.dirname(__file__) + '/icons/games/'
+            icon = array[i][0] + '.png'
+            icon_missing = "image-missing.png"
+
+            try:
+                array[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon, 24, 24))
+            except GLib.Error:
+                array[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon_missing, 24, 24))
 
             treeiter = self.game_store.append(array[i])
 
@@ -222,25 +231,24 @@ class Settings:
 
 class Actions:
     """Contains actions that can be called from the app."""
-    def update_server_list(listmodel, bool_ping):
+    def update_server_list(listmodel, bool_ping, update_button):
         """Updates server lists"""
         listmodel.clear()
 
-        def pinging_target(listmodel, bool_ping):
+        def pinging_target(listmodel, bool_ping, update_button):
             """Separate thread inside pinging callback"""
-            listing = backends.rigsofrods.stat_master(
-                backends.rigsofrods.MASTER_URL, bool_ping)
+            listing = backends.rigsofrods.core.stat_master(bool_ping)
 
             # Goodies for GUI
             for i in range(len(listing)):
                 # Game icon
                 listing[i].append(GdkPixbuf.Pixbuf.new_from_file_at_size(
                     os.path.dirname(__file__) + '/icons/games/' +
-                    listing[i][backends.rigsofrods.MASTER_GAME_COLUMN[-1] - 1] +
+                    listing[i][backends.rigsofrods.core.MASTER_GAME_COLUMN[-1] - 1] +
                     '.png', 24, 24))
 
                 # Lock icon
-                if listing[i][backends.rigsofrods.MASTER_PASS_COLUMN[-1] - 1] == True:
+                if listing[i][backends.rigsofrods.core.MASTER_PASS_COLUMN[-1] - 1] == True:
                     listing[i].append("network-wireless-encrypted-symbolic")
                 else:
                     listing[i].append(None)
@@ -248,7 +256,7 @@ class Actions:
                 # Country flags
                 if GEOIP_ENABLED == True:
                     host = listing[i][
-                        backends.rigsofrods.MASTER_HOST_COLUMN[-1] - 1].split(':')[0]
+                        backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1].split(':')[0]
                     try:
                         country_code = pygeoip.GeoIP(
                             GEOIP_DATA).country_code_by_addr(host)
@@ -264,13 +272,16 @@ class Actions:
                     '.svg', 24, 18))
 
                 # Total / max players
-                listing[i].append(str(listing[i][backends.rigsofrods.MASTER_PLAYERCOUNT_COLUMN[-1] - 1]) +
+                listing[i].append(str(listing[i][backends.rigsofrods.core.MASTER_PLAYERCOUNT_COLUMN[-1] - 1]) +
                                   '/' +
-                                  str(listing[i][backends.rigsofrods.MASTER_PLAYERLIMIT_COLUMN[-1] - 1]))
+                                  str(listing[i][backends.rigsofrods.core.MASTER_PLAYERLIMIT_COLUMN[-1] - 1]))
 
                 treeiter = listmodel.append(listing[i])
 
-        pinging_thread = threading.Thread(target=pinging_target, args=(listmodel, bool_ping))
+
+            update_button.set_sensitive(True)
+
+        pinging_thread = threading.Thread(target=pinging_target, args=(listmodel, bool_ping, update_button))
         pinging_thread.daemon = True
         pinging_thread.start()
 
@@ -322,11 +333,12 @@ class App(Gtk.Application):
         # Menu actions
         about_dialog = Gtk.Builder.get_object(self.builder, "About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
-        about_action.connect("activate", callbacks.cb_about, about_dialog)
-        self.add_action(about_action)
-
         quit_action = Gio.SimpleAction.new("quit", None)
+
+        about_action.connect("activate", callbacks.cb_about, about_dialog)
         quit_action.connect("activate", callbacks.cb_quit, self)
+
+        self.add_action(about_action)
         self.add_action(quit_action)
 
         window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
