@@ -44,7 +44,7 @@ import backends
 APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie.ini")
 GAME_CONFIG = os.path.join(os.path.dirname(__file__), "games.ini")
 UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie-gtk.ui")
-SCHEMA_BASE_ID = 'org.obozrenie.obozrenie'
+SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
 
 
 class Callbacks:
@@ -336,7 +336,7 @@ class App(Gtk.Application):
 
     def __init__(self):
         Gtk.Application.__init__(self,
-                                 application_id="org.obozrenie.obozrenie",
+                                 application_id="com.github.skybon.obozrenie",
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.connect("startup", self.on_startup)
         self.connect("activate", self.on_activate)
