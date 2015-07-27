@@ -32,18 +32,18 @@ FORMAT = (["<table border='1'><tr><td><b>Players</b></td><td><b>Type</b></td><td
           ["<td valign='middle'>password</td>", "<td valign='middle'>True</td>"],
           ["<td valign='middle'></td>", "<td valign='middle'>False</td>"])
 
-# Layout for table no: ----- 0 --- 1 --- 2 --- 3 ---
-MASTER_GAME_COLUMN =        [None, None, None, 1   ]
-MASTER_PLAYER_COLUMN =      [1,    None, None, None]
-MASTER_PLAYERCOUNT_COLUMN = [None, 1,    1,    2   ]
-MASTER_PLAYERLIMIT_COLUMN = [None, 2,    2,    3   ]
-MASTER_PASS_COLUMN =        [2,    3,    3,    4   ]
-MASTER_HOST_COLUMN =        [3,    4,    4,    5   ]
-MASTER_NAME_COLUMN =        [4,    5,    5,    6   ]
-MASTER_TERRAIN_COLUMN =     [5,    6,    6,    7   ]
-MASTER_PING_COLUMN =        [None, None, 7,    8   ]
+# Layout for table no: ----- 0 --- 1 --- 2 --- 3 --- Planned
+MASTER_GAME_COLUMN =        [None, None, None, 1   ] # None
+MASTER_PLAYER_COLUMN =      [1,    None, None, None] # None
+MASTER_PLAYERCOUNT_COLUMN = [None, 1,    1,    2   ] # 4
+MASTER_PLAYERLIMIT_COLUMN = [None, 2,    2,    3   ] # 5
+MASTER_PASS_COLUMN =        [2,    3,    3,    4   ] # 3
+MASTER_HOST_COLUMN =        [3,    4,    4,    5   ] # 1
+MASTER_NAME_COLUMN =        [4,    5,    5,    6   ] # 2
+MASTER_TERRAIN_COLUMN =     [5,    6,    6,    7   ] # 6
+MASTER_PING_COLUMN =        [None, None, 7,    8   ] # 7
 # Columns of table no: ----- 0 --- 1 --- 2 --- 3 ---
-MASTER_TABLE_WIDTH =        [5,    6,    7,    8   ]
+MASTER_TABLE_WIDTH =        [5,    6,    7,    8   ] # 7
 
 
 class ServerListParser(HTMLParser):

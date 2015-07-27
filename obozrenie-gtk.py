@@ -55,6 +55,9 @@ class Callbacks:
         self.app = app
         self.builder = builder
 
+        self.serverlist_update_button = self.builder.get_object("Update_Button")
+        self.serverlist_model = self.builder.get_object("ServerList_Store")
+
     def cb_set_widget_sensitivity(self):
         """Sets sensitivity for dependent widgets."""
         pass
@@ -82,14 +85,12 @@ class Callbacks:
         listmodel.clear()
         # settings.switch_backend()
 
-    def cb_update_button_clicked(self, listmodel, *data):
+    def cb_update_button_clicked(self, combobox, *data):
         """Refills the server list model"""
         ping_button = self.builder.get_object("PingingEnable_CheckButton")
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
-        self.serverlist_update_button = self.builder.get_object("Update_Button")
-        self.serverlist_model = self.builder.get_object("ServerList_Store")
-
+        game = combobox.get_active_id()
         bool_ping = ping_button.get_active()
 
         Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
@@ -98,26 +99,24 @@ class Callbacks:
 
         self.serverlist_model.clear()
 
-        core.update_server_list(bool_ping, self.fill_server_view)
+        core.update_server_list(game, bool_ping, self.fill_server_view)
 
     def fill_server_view(self, table):
         # Goodies for GUI
-        for i in range(len(table[0][1])):
-            entry = table[0][1][i].copy()
+        for i in range(len(table)):
+            entry = table[i].copy()
 
             # Game icon
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
                     os.path.dirname(__file__) + '/icons/games/' +
-                    entry[backends.rigsofrods.core.MASTER_GAME_COLUMN[-1] - 1] +
-                    '.png', 24, 24))
+                    entry[0] + '.png', 24, 24))
             except GLib.Error:
-                print("Error appending flag icon for host: " + entry[
+                print("Error appending icon for host: " + entry[
                     backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
                     os.path.dirname(__file__) + '/icons/games/' +
-                    entry[backends.rigsofrods.core.MASTER_GAME_COLUMN[-1] - 1] +
-                    '.png', 24, 24))
+                    entry[0] + '.png', 24, 24))
 
             # Lock icon
             if entry[backends.rigsofrods.core.MASTER_PASS_COLUMN[-1] - 1] == True:
@@ -143,19 +142,16 @@ class Callbacks:
                 country_code = 'unknown'
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/flags/' + country_code.lower() +
-                    '.svg', 24, 18))
+                    os.path.dirname(__file__) + '/icons/flags/' +
+                    country_code.lower() + '.svg', 24, 18))
             except GLib.Error:
-                print("Error appending flag icon of " + country_code + " for host: " + entry[
-                    backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1])
+                print("Error appending flag icon of " + country_code + " for host: " + entry[1])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
                     os.path.dirname(__file__) + '/icons/flags/' + 'unknown' +
                     '.svg', 24, 18))
 
             # Total / max players
-            entry.append(str(entry[backends.rigsofrods.core.MASTER_PLAYERCOUNT_COLUMN[-1] - 1]) +
-                              '/' +
-                              str(entry[backends.rigsofrods.core.MASTER_PLAYERLIMIT_COLUMN[-1] - 1]))
+            entry.append(str(entry[1]) + '/' + str(entry[2]))
 
             treeiter = self.serverlist_model.append(entry)
 
@@ -225,7 +221,7 @@ class Settings:
         self.game_store = self.builder.get_object("Game_Store")
 
         for i in range(len(table)):
-            entry = table[i].copy()
+            entry = table[i][0].copy()
             icon_base = os.path.dirname(__file__) + '/icons/games/'
             icon = entry[0] + '.png'
             icon_missing = "image-missing.png"
@@ -281,40 +277,74 @@ class Core:
     """Contains core logic of the app."""
     def __init__(self):
         pass
+
     def create_games_table(self, game_config):
         """
         Loads game list into a table
         """
-        # self.game_config = game_config
         self.game_table = []
-        print("Forming game table for:")
         for i in range(game_config.get_groups()[1]):
-            print(game_config.get_groups()[0][i] + "... ")
-
             self.game_table.append([])
 
             game_id = game_config.get_groups()[0][i]
             name = game_config.get_value(game_id, "name")
             backend = game_config.get_value(game_id, "backend")
 
-            self.game_table[i].append(game_id)
-            self.game_table[i].append(name)
-            self.game_table[i].append(backend)
-            print("OK!")
+            self.game_table[i].append([])
+
+            self.game_table[i][0].append(game_id)
+            self.game_table[i][0].append(name)
+            self.game_table[i][0].append(backend)
 
         return self.game_table
 
+    def search_table(self, table, level, value):
+        if level == 0:
+            for i in range(len(table)):
+                if table[i] == value:
+                    return i
+        elif level == 1:
+            for i in range(len(table)):
+                for j in range(len(table[i])):
+                    if table[i][j] == value:
+                        return i, j
+        elif level == 2:
+            for i in range(len(table)):
+                for j in range(len(table[i])):
+                    for k in range(len(table[i][j])):
+                        if table[i][j][k] == value:
+                            return i, j, k
+        elif level is (3 or -1):
+            for i in range(len(table)):
+                for j in range(len(table[i])):
+                    for k in range(len(table[i][j])):
+                        for l in range(len(table[i][j][k])):
+                            if table[i][j][k][l] == value:
+                                return i, j, k, l
+        else:
+            print("Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
 
-    def update_server_list(self, bool_ping, callback):
+    def update_server_list(self, game, bool_ping, callback):
         """Updates server lists"""
-        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(bool_ping, callback))
+        game_index = self.search_table(self.game_table, 2, game)[0]
+        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game_index, bool_ping, callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
-    def stat_master_target(self, bool_ping, callback):
+    def stat_master_target(self, game_index, bool_ping, callback):
         """Separate update thread"""
-        self.game_table[0][1] = backends.rigsofrods.core.stat_master(bool_ping)
-        GLib.idle_add(callback, self.game_table)
+        backend = self.game_table[game_index][0][2]
+        try:
+            server_table = self.game_table[game_index][1]
+        except IndexError:
+            self.game_table[game_index].append([])
+            server_table = self.game_table[game_index][1]
+        if backend == "rigsofrods":
+            self.game_table[game_index][1] = backends.rigsofrods.core.stat_master(bool_ping)
+        elif backend == "qstat":
+            print("\nQStat backend has not been implemented yet. Stay tuned!\n")
+
+        GLib.idle_add(callback, self.game_table[game_index][1])
 
     def get_server_info():
         pass

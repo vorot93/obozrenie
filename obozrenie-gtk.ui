@@ -374,7 +374,7 @@ Do not change it.</property>
                     <property name="receives_default">True</property>
                     <property name="image">refresh-icon</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_update_button_clicked" object="ServerList_Store" swapped="no"/>
+                    <signal name="clicked" handler="cb_update_button_clicked" object="Game_ComboBox" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
