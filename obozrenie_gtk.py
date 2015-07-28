@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Simple and easy to use Game Server Browser."""
+"""Simple and easy to use game server browser."""
 
 import argparse
 import ast
@@ -24,6 +24,8 @@ import os
 import threading
 
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
+
+from obozrenie_core import Core
 
 try:
     import pygeoip
@@ -41,9 +43,8 @@ except ImportError:
 
 import backends
 
-APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie.ini")
-GAME_CONFIG = os.path.join(os.path.dirname(__file__), "games.ini")
-UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie-gtk.ui")
+APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie_widgets.ini")
+UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie_gtk.ui")
 SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
 
 
@@ -81,12 +82,19 @@ class Callbacks:
         """Exits the program."""
         self.app.quit()
 
-    def cb_game_combobox_changed(self, listmodel, *data):
-        listmodel.clear()
-        # settings.switch_backend()
+    def cb_game_combobox_changed(self, combobox, *data):
+        """Actions on game combobox selection change."""
+        game = combobox.get_active_id()
+        game_index = core.search_table(core.game_table, 2, game)[0]
+
+        self.serverlist_model.clear()
+        if core.game_table[game_index][1] == []:
+            self.cb_update_button_clicked(combobox, *data)
+        else:
+            self.fill_server_view(core.game_table[game_index][1])
 
     def cb_update_button_clicked(self, combobox, *data):
-        """Refills the server list model"""
+        """Actions on server list update button click"""
         ping_button = self.builder.get_object("PingingEnable_CheckButton")
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
@@ -102,6 +110,7 @@ class Callbacks:
         core.update_server_list(game, bool_ping, self.fill_server_view)
 
     def fill_server_view(self, table):
+        """Fill the server view"""
         # Goodies for GUI
         for i in range(len(table)):
             entry = table[i].copy()
@@ -192,9 +201,6 @@ class Settings:
         self.keyfile_config = GLib.KeyFile.new()
         self.keyfile_config.load_from_file(APP_CONFIG, GLib.KeyFileFlags.NONE)
 
-        self.game_config = GLib.KeyFile.new()
-        self.game_config.load_from_file(GAME_CONFIG, GLib.KeyFileFlags.NONE)
-
         self.builder = app.builder
 
     def get_setting_groups(self):
@@ -216,7 +222,7 @@ class Settings:
         """
         Loads game list into a list store
         """
-        table = core.create_games_table(self.game_config)
+        table = core.create_game_table()
 
         self.game_store = self.builder.get_object("Game_Store")
 
@@ -271,93 +277,6 @@ class Settings:
             elif isinstance(widget, Gtk.Entry):
                 Gtk.Entry.set_text(widget, str(value))
                 gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
-
-
-class Core:
-    """Contains core logic of the app."""
-    def __init__(self):
-        pass
-
-    def create_games_table(self, game_config):
-        """
-        Loads game list into a table
-        """
-        self.game_table = []
-        for i in range(game_config.get_groups()[1]):
-            self.game_table.append([])
-
-            game_id = game_config.get_groups()[0][i]
-            name = game_config.get_value(game_id, "name")
-            backend = game_config.get_value(game_id, "backend")
-
-            self.game_table[i].append([])
-
-            self.game_table[i][0].append(game_id)
-            self.game_table[i][0].append(name)
-            self.game_table[i][0].append(backend)
-
-        return self.game_table
-
-    def search_table(self, table, level, value):
-        if level == 0:
-            for i in range(len(table)):
-                if table[i] == value:
-                    return i
-        elif level == 1:
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    if table[i][j] == value:
-                        return i, j
-        elif level == 2:
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    for k in range(len(table[i][j])):
-                        if table[i][j][k] == value:
-                            return i, j, k
-        elif level is (3 or -1):
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    for k in range(len(table[i][j])):
-                        for l in range(len(table[i][j][k])):
-                            if table[i][j][k][l] == value:
-                                return i, j, k, l
-        else:
-            print("Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
-
-    def update_server_list(self, game, bool_ping, callback):
-        """Updates server lists"""
-        game_index = self.search_table(self.game_table, 2, game)[0]
-        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game_index, bool_ping, callback))
-        stat_master_thread.daemon = True
-        stat_master_thread.start()
-
-    def stat_master_target(self, game_index, bool_ping, callback):
-        """Separate update thread"""
-        backend = self.game_table[game_index][0][2]
-        try:
-            server_table = self.game_table[game_index][1]
-        except IndexError:
-            self.game_table[game_index].append([])
-            server_table = self.game_table[game_index][1]
-        if backend == "rigsofrods":
-            self.game_table[game_index][1] = backends.rigsofrods.core.stat_master(bool_ping)
-        elif backend == "qstat":
-            print("\nQStat backend has not been implemented yet. Stay tuned!\n")
-
-        GLib.idle_add(callback, self.game_table[game_index][1])
-
-    def get_server_info():
-        pass
-
-    def start_game(path):
-        """Start game"""
-        from subprocess import call
-
-        try:
-            call(path)
-            return 0
-        except OSError:
-            print("Error launching the game.")
 
 
 class App(Gtk.Application):

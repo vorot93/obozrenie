@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 
+<!-- Generated with glade 3.18.3
 
 Copyright (C) Artem Vorotnikov 2015
 
@@ -259,7 +259,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="can_focus">False</property>
                     <property name="model">Game_Store</property>
                     <property name="id_column">0</property>
-                    <signal name="changed" handler="cb_game_combobox_changed" object="ServerList_Store" swapped="no"/>
+                    <signal name="changed" handler="cb_game_combobox_changed" object="Game_ComboBox" swapped="no"/>
                     <child>
                       <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
                       <attributes>
