@@ -122,21 +122,20 @@ class Callbacks:
                     entry[0] + '.png', 24, 24))
             except GLib.Error:
                 print("Error appending icon for host: " + entry[
-                    backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1])
+                    core.game_table_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
                     os.path.dirname(__file__) + '/icons/games/' +
                     entry[0] + '.png', 24, 24))
 
             # Lock icon
-            if entry[backends.rigsofrods.core.MASTER_PASS_COLUMN[-1] - 1] == True:
+            if entry[core.game_table_format.index("password")] == True:
                 entry.append("network-wireless-encrypted-symbolic")
             else:
                 entry.append(None)
 
             # Country flags
             if GEOIP_ENABLED is True:
-                host = entry[
-                    backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1].split(':')[0]
+                host = entry[core.game_table_format.index("host")].split(':')[0]
                 try:
                     country_code = pygeoip.GeoIP(
                         GEOIP_DATA).country_code_by_addr(host)
@@ -172,7 +171,7 @@ class Callbacks:
 
         model, treeiter = widget.get_selected()
         try:
-            text = model[treeiter][backends.rigsofrods.core.MASTER_HOST_COLUMN[-1] - 1]
+            text = model[treeiter][core.game_table_format.index("host")]
         except TypeError:
             return
 
