@@ -1,5 +1,5 @@
 <schemalist>
-  <schema id="com.github.skybon.obozrenie.main" path="/com/github/skybon/obozrenie/main/" gettext-domain="obozrenie">
+  <schema id="com.github.skybon.obozrenie.main" path="/apps/obozrenie/main/" gettext-domain="obozrenie">
     <key name="selected-game" type="s">
       <default>''</default>
       <summary>Selected game</summary>
