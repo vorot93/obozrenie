@@ -6,7 +6,7 @@ import threading
 
 
 class Pinger(object):
-    status = []  # Populated while we are running
+    status = dict()  # Populated while we are running
     hosts = []  # List of all hosts/ips in our input queue
 
     # How many ping process at the time.
@@ -54,12 +54,11 @@ class Pinger(object):
                 return None
 
             result = self.ping(ip)
-            self.status[0].append(ip)
-            self.status[0].append(result)
+
+            self.status[ip] = result
 
     def start(self):
         threads = []
-        self.status.append([])
 
         for i in range(self.thread_count):
             # Create self.thread_count number of threads that together will

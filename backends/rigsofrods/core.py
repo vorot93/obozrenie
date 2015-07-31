@@ -88,23 +88,6 @@ def add_game_name(array):
     return
 
 
-def list_to_table(array, width):
-    """Converts the list into a table"""
-    array2 = []
-    array2.append([])
-    i = 0
-
-    for j in range(len(array)):
-        array2[-1].append(array[j])
-
-        if i < (width-1):
-            i += 1
-        elif j+1 < len(array):
-            array2.append([])
-            i = 0
-    return array2
-
-
 def add_rtt_info(array, bool_ping):
     """Appends server response time to the table. If bool_ping is set to false, print 9999 instead."""
     hosts_array = []
@@ -122,16 +105,12 @@ def add_rtt_info(array, bool_ping):
 
     if bool_ping is True:
         pinger.status.clear()
-        rtt_temp_array = pinger.start()
+        rtt_array = pinger.start()
 
-        rtt_array = list_to_table(rtt_temp_array[0], 2)
-
-        # Match ping in host list. Beware: this is a crude search algorithm with O(2) complexity.
+        # Match ping in host list.
         for i in range(len(array)):
-            for j in range(len(rtt_array)):
-                if rtt_array[j][0] == array[i]["host"].split(':')[0]:
-                    array[i]["ping"] = rtt_array[j][1]
-                    break
+            ip = array[i]["host"].split(':')[0]
+            array[i]["ping"] = rtt_array[ip]
 
     else:
         for i in range(len(hosts_array)):
