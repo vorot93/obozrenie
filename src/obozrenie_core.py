@@ -37,29 +37,31 @@ class Core:
         self.game_config = GLib.KeyFile.new()
         self.game_config.load_from_file(self.GAME_CONFIG_FILE, GLib.KeyFileFlags.NONE)
 
+        self.game_table = self.create_game_table()
+
     def create_game_table(self):
         """
         Loads game list into a table
         """
-        self.game_table = []
+        game_table = []
         for i in range(len(self.game_config.get_groups()[0])):
-            self.game_table.append({})
+            game_table.append({})
 
             game_id = self.game_config.get_groups()[0][i]
             name = self.game_config.get_value(game_id, "name")
             backend = self.game_config.get_value(game_id, "backend")
 
-            self.game_table[i]["id"] = game_id
+            game_table[i]["id"] = game_id
 
             # Create setting groups
-            self.game_table[i]["info"] = {}
-            self.game_table[i]["settings"] = {}
-            self.game_table[i]["servers"] = []
+            game_table[i]["info"] = {}
+            game_table[i]["settings"] = {}
+            game_table[i]["servers"] = []
 
-            self.game_table[i]["info"]["name"] = name
-            self.game_table[i]["info"]["backend"] = backend
+            game_table[i]["info"]["name"] = name
+            game_table[i]["info"]["backend"] = backend
 
-        return self.game_table
+        return game_table
 
     def clear_server_list(self, game):
         """Clears server list"""
@@ -85,11 +87,12 @@ class Core:
 
         # Workaround for GTK+: GTK+ is not thread safe, call in the main thread
         if callback is not None:
-            GLib.idle_add(callback, self.game_table)
+            GLib.idle_add(callback, self.game_table[game_index])
 
     def get_server_info():
         pass
 
+    @staticmethod
     def start_game(path):
         """Start game"""
         from subprocess import call

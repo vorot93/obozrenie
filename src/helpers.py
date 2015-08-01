@@ -18,7 +18,7 @@
 
 """Helper functions for processing data."""
 
-def search_table(self, table, level, value):
+def search_table(table, level, value):
         if level == 0:
             for i in range(len(table)):
                 if table[i] == value:
@@ -49,14 +49,14 @@ def search_table(self, table, level, value):
             print("Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
 
 
-def search_dict_table(self, table, key, value):
+def search_dict_table(table, key, value):
         for i in range(len(table)):
             if table[i][key] == value:
                 return i
         return None
 
 
-def dict_to_list(self, dict_table, key_list):
+def dict_to_list(dict_table, key_list):
         list_table = []
 
         for i in range(len(dict_table)):

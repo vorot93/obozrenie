@@ -44,8 +44,8 @@ except ImportError:
 
 import backends
 
-APP_CONFIG = os.path.join(os.path.dirname(__file__), "/assets", "obozrenie_widgets.ini")
-UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie_gtk.ui")
+APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie_widgets.ini")
+UI_PATH = os.path.join(os.path.dirname(__file__), "assets", "obozrenie_gtk.ui")
 SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
 
 
@@ -53,15 +53,23 @@ class Callbacks:
 
     """Responses to events from GUI"""
 
-    def __init__(self, app, builder):
+    def __init__(self, app, builder, core_library):
         self.app = app
         self.builder = builder
+        self.core = core_library
+        self.core.game_table
 
         self.serverlist_update_button = self.builder.get_object("Update_Button")
-        self.serverlist_model = self.builder.get_object("ServerList_Store")
+        self.serverlist_info_button = self.builder.get_object("Info_Button")
+        self.serverlist_connect_button = self.builder.get_object("Connect_Button")
 
-    def cb_set_widget_sensitivity(self):
-        """Sets sensitivity for dependent widgets."""
+        self.serverlist_model = self.builder.get_object("ServerList_Store")
+        self.serverlist_revealer = self.builder.get_object("ServerList_Revealer")
+        self.welcome_label = self.builder.get_object("ServerList_Welcome_Label")
+        self.refresh_spinner = self.builder.get_object("ServerList_Refresh_Spinner")
+
+    def cb_set_widgets_active(self, status):
+        """Sets sensitivity and visibility for conditional widgets."""
         pass
 
     def cb_info_button_clicked(self, *args):
@@ -71,7 +79,7 @@ class Callbacks:
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
         self.app.quit()
-        start_game()
+        self.core.start_game()
 
     @staticmethod
     def cb_about(action, data, dialog):
@@ -85,14 +93,15 @@ class Callbacks:
 
     def cb_game_combobox_changed(self, combobox, *data):
         """Actions on game combobox selection change."""
-        game_index = helpers.search_dict_table(self.game_table, "id", game)
-        game_index = helpers.search_table(core.game_table, 2, game)[0]
+        game = combobox.get_active_id()
+
+        game_index = helpers.search_dict_table(self.core.game_table, "id", game)
 
         self.serverlist_model.clear()
-        if core.game_table[game_index][1] == []:
+        if self.core.game_table[game_index]["servers"] == []:
             self.cb_update_button_clicked(combobox, *data)
         else:
-            self.fill_server_view(core.game_table[game_index][1])
+            self.fill_server_view(self.core.game_table[game_index])
 
     def cb_update_button_clicked(self, combobox, *data):
         """Actions on server list update button click"""
@@ -102,53 +111,81 @@ class Callbacks:
         game = combobox.get_active_id()
         bool_ping = ping_button.get_active()
 
-        Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
-
+        self.serverlist_revealer.set_reveal_child(False)
+        self.welcome_label.set_visible(False)
+        self.refresh_spinner.start()
         self.serverlist_update_button.set_sensitive(False)
+
+        Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
         self.serverlist_model.clear()
 
-        core.update_server_list(game, bool_ping, self.fill_server_view)
+        self.core.update_server_list(game, bool_ping, self.fill_server_view)
+
+    def get_games_list_store(self):
+        """
+        Loads game list into a list store
+        """
+        table = self.core.game_table.copy()
+
+        self.game_store = self.builder.get_object("Game_Store")
+
+        for i in range(len(table)):
+            entry = []
+            entry.append(table[i]["id"])
+            entry.append(table[i]["info"]["name"])
+            entry.append(table[i]["info"]["backend"])
+
+            icon_base = os.path.dirname(__file__) + '/assets/icons/games/'
+            icon = entry[0] + '.png'
+            icon_missing = "image-missing.png"
+
+            try:
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon, 24, 24))
+            except GLib.Error:
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon_missing, 24, 24))
+
+            treeiter = self.game_store.append(entry)
 
     def fill_server_view(self, game_table_slice):
         """Fill the server view"""
-        view_format = ("game",
--                      "player_count",
--                      "player_limit",
--                      "password",
--                      "host",
--                      "name",
--                      "terrain",
--                      "ping")
+        self.view_format = ("game",
+                       "player_count",
+                       "player_limit",
+                       "password",
+                       "host",
+                       "name",
+                       "terrain",
+                       "ping")
 
         server_table = helpers.dict_to_list(game_table_slice["servers"],
-                                            view_format)
+                                            self.view_format)
 
         # Goodies for GUI
-        for i in range(len(table)):
-            entry = table[i].copy()
+        for i in range(len(server_table)):
+            entry = server_table[i].copy()
 
             # Game icon
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/games/' +
+                    os.path.dirname(__file__) + '/assets/icons/games/' +
                     entry[0] + '.png', 24, 24))
             except GLib.Error:
                 print("Error appending icon for host: " + entry[
-                    core.game_table_format.index("host")])
+                    self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/games/' +
+                    os.path.dirname(__file__) + '/assets/icons/games/' +
                     entry[0] + '.png', 24, 24))
 
             # Lock icon
-            if entry[core.game_table_format.index("password")] == True:
+            if entry[self.view_format.index("password")] == True:
                 entry.append("network-wireless-encrypted-symbolic")
             else:
                 entry.append(None)
 
             # Country flags
             if GEOIP_ENABLED is True:
-                host = entry[core.game_table_format.index("host")].split(':')[0]
+                host = entry[self.view_format.index("host")].split(':')[0]
                 try:
                     country_code = pygeoip.GeoIP(
                         GEOIP_DATA).country_code_by_addr(host)
@@ -163,12 +200,12 @@ class Callbacks:
                 country_code = 'unknown'
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/flags/' +
+                    os.path.dirname(__file__) + '/assets/icons/flags/' +
                     country_code.lower() + '.svg', 24, 18))
             except GLib.Error:
-                print("Error appending flag icon of " + country_code + " for host: " + entry[1])
+                print("Error appending flag icon of " + country_code + " for host: " + entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/icons/flags/' + 'unknown' +
+                    os.path.dirname(__file__) + '/assets/icons/flags/' + 'unknown' +
                     '.svg', 24, 18))
 
             # Total / max players
@@ -176,6 +213,9 @@ class Callbacks:
 
             treeiter = self.serverlist_model.append(entry)
 
+        self.serverlist_revealer.set_reveal_child(True)
+        self.welcome_label.set_visible(False)
+        self.refresh_spinner.stop()
         self.serverlist_update_button.set_sensitive(True)
 
     def cb_server_list_selection_changed(self, widget, *data):
@@ -184,7 +224,7 @@ class Callbacks:
 
         model, treeiter = widget.get_selected()
         try:
-            text = model[treeiter][core.game_table_format.index("host")]
+            text = model[treeiter][self.view_format.index("host")]
         except TypeError:
             return
 
@@ -198,6 +238,15 @@ class Callbacks:
         """Launches the game"""
         self.cb_server_list_selection_changed(widget)
         self.cb_connect_button_clicked()
+
+    def cb_server_host_entry_changed(self, widget, *data):
+        """Resets button sensitivity on Gtk.Entry change"""
+        if widget.get_text is '':
+            self.serverlist_info_button.set_sensitive(False)
+            self.serverlist_connect_button.set_sensitive(False)
+        else:
+            self.serverlist_info_button.set_sensitive(True)
+            self.serverlist_connect_button.set_sensitive(True)
 
 
 class Settings:
@@ -229,27 +278,6 @@ class Settings:
 
     def switch_game_id(self):
         pass
-
-    def get_games_list_store(self):
-        """
-        Loads game list into a list store
-        """
-        table = core.create_game_table()
-
-        self.game_store = self.builder.get_object("Game_Store")
-
-        for i in range(len(table)):
-            entry = table[i][0].copy()
-            icon_base = os.path.dirname(__file__) + '/icons/games/'
-            icon = entry[0] + '.png'
-            icon_missing = "image-missing.png"
-
-            try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon, 24, 24))
-            except GLib.Error:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon_missing, 24, 24))
-
-            treeiter = self.game_store.append(entry)
 
     def load(self):
         """Loads configuration."""
@@ -295,7 +323,7 @@ class App(Gtk.Application):
 
     """App class."""
 
-    def __init__(self):
+    def __init__(self, Core):
         Gtk.Application.__init__(self,
                                  application_id="com.github.skybon.obozrenie",
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
@@ -305,7 +333,9 @@ class App(Gtk.Application):
         # Create builder
         self.builder = Gtk.Builder()
         Gtk.Builder.add_from_file(self.builder, UI_PATH)
-
+        
+        self.core = Core()
+        self.callbacks = Callbacks(self, self.builder, self.core)
         self.settings = Settings(self)
 
     def on_startup(self, app):
@@ -315,20 +345,19 @@ class App(Gtk.Application):
         """
 
         # Load settings
-        self.settings.get_games_list_store()
+        self.callbacks.get_games_list_store()
         self.settings.load()
 
         # Connect signals
-        callbacks = Callbacks(self, self.builder)
-        Gtk.Builder.connect_signals(self.builder, callbacks)
+        Gtk.Builder.connect_signals(self.builder, self.callbacks)
 
         # Menu actions
         about_dialog = Gtk.Builder.get_object(self.builder, "About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
         quit_action = Gio.SimpleAction.new("quit", None)
 
-        about_action.connect("activate", callbacks.cb_about, about_dialog)
-        quit_action.connect("activate", callbacks.cb_quit, self)
+        about_action.connect("activate", self.callbacks.cb_about, about_dialog)
+        quit_action.connect("activate", self.callbacks.cb_quit, self)
 
         self.add_action(about_action)
         self.add_action(quit_action)
@@ -345,6 +374,5 @@ class App(Gtk.Application):
         window.show_all()
 
 if __name__ == "__main__":
-    core = Core()
-    app = App()
+    app = App(Core)
     app.run(None)
