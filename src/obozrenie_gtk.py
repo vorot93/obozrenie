@@ -26,6 +26,7 @@ import threading
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
 from obozrenie_core import Core
+import helpers
 
 try:
     import pygeoip
@@ -43,7 +44,7 @@ except ImportError:
 
 import backends
 
-APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie_widgets.ini")
+APP_CONFIG = os.path.join(os.path.dirname(__file__), "/assets", "obozrenie_widgets.ini")
 UI_PATH = os.path.join(os.path.dirname(__file__), "obozrenie_gtk.ui")
 SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
 
@@ -84,8 +85,8 @@ class Callbacks:
 
     def cb_game_combobox_changed(self, combobox, *data):
         """Actions on game combobox selection change."""
-        game = combobox.get_active_id()
-        game_index = core.search_table(core.game_table, 2, game)[0]
+        game_index = helpers.search_dict_table(self.game_table, "id", game)
+        game_index = helpers.search_table(core.game_table, 2, game)[0]
 
         self.serverlist_model.clear()
         if core.game_table[game_index][1] == []:
@@ -109,8 +110,20 @@ class Callbacks:
 
         core.update_server_list(game, bool_ping, self.fill_server_view)
 
-    def fill_server_view(self, table):
+    def fill_server_view(self, game_table_slice):
         """Fill the server view"""
+        view_format = ("game",
+-                      "player_count",
+-                      "player_limit",
+-                      "password",
+-                      "host",
+-                      "name",
+-                      "terrain",
+-                      "ping")
+
+        server_table = helpers.dict_to_list(game_table_slice["servers"],
+                                            view_format)
+
         # Goodies for GUI
         for i in range(len(table)):
             entry = table[i].copy()

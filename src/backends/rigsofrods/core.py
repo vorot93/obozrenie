@@ -119,7 +119,7 @@ def add_rtt_info(array, bool_ping):
     return
 
 
-def stat_master(bool_rtt, game_table_format):
+def stat_master(bool_rtt):
     """Stats the master server"""
 
     backend_keyfile = GLib.KeyFile.new()
