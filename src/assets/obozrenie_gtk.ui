@@ -213,7 +213,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   <object class="GtkEntry" id="Nickname_Entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="tooltip_text" translatable="yes">Your network name. Maximum 20 Characters.</property>
+                    <property name="tooltip_text" translatable="yes">Your network name.</property>
                     <property name="text" translatable="yes">Anonymous</property>
                   </object>
                   <packing>
@@ -353,8 +353,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               <object class="GtkEntry" id="ServerHost_Entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="tooltip_text" translatable="yes">This field is automatically filled if you click on an hyperlink in the list.
-Do not change it.</property>
+                <property name="tooltip_text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
                 <property name="hexpand">True</property>
                 <signal name="changed" handler="cb_server_host_entry_changed" swapped="no"/>
                 <signal name="show" handler="cb_server_host_entry_changed" swapped="no"/>
@@ -402,6 +401,7 @@ Do not change it.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Refresh server list.</property>
                     <property name="image">refresh-icon</property>
                     <property name="always_show_image">True</property>
                     <signal name="clicked" handler="cb_update_button_clicked" object="Game_ComboBox" swapped="no"/>
@@ -414,9 +414,9 @@ Do not change it.</property>
                 <child>
                   <object class="GtkButton" id="Connect_Button">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Connect to the selected server.</property>
                     <property name="image">connect-icon</property>
                     <property name="always_show_image">True</property>
                     <signal name="clicked" handler="cb_connect_button_clicked" object="ServerList_Store" swapped="no"/>
@@ -429,9 +429,9 @@ Do not change it.</property>
                 <child>
                   <object class="GtkButton" id="Info_Button">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Show information about selected server.</property>
                     <property name="image">info-icon</property>
                     <property name="always_show_image">True</property>
                     <signal name="clicked" handler="cb_info_button_clicked" object="ServerList_Selection" swapped="no"/>
@@ -454,16 +454,18 @@ Do not change it.</property>
           </packing>
         </child>
         <child>
-          <object class="GtkOverlay" id="ServerList_Overlay">
+          <object class="GtkNotebook" id="ServerList_Notebook">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="vexpand">True</property>
+            <property name="can_focus">True</property>
+            <property name="show_tabs">False</property>
+            <property name="show_border">False</property>
             <child>
               <object class="GtkRevealer" id="ServerList_Revealer">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="can_focus">False</property>
                 <property name="vexpand">True</property>
                 <property name="transition_type">none</property>
+                <property name="reveal_child">True</property>
                 <child>
                   <object class="GtkScrolledWindow" id="ServerList_ScrolledWindow">
                     <property name="visible">True</property>
@@ -586,13 +588,17 @@ Do not change it.</property>
                 </child>
               </object>
             </child>
-            <child type="overlay">
-              <object class="GtkSpinner" id="ServerList_Refresh_Spinner">
+            <child type="tab">
+              <object class="GtkLabel" id="Revealer_Page_Label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Revealer</property>
               </object>
+              <packing>
+                <property name="tab_fill">False</property>
+              </packing>
             </child>
-            <child type="overlay">
+            <child>
               <object class="GtkLabel" id="ServerList_Welcome_Label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -601,12 +607,49 @@ Do not change it.</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="label" translatable="yes">Welcome to Obozrenie!
-Select a game and press refresh button below</property>
+Select a game or press refresh button below</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="size" value="24000"/>
                 </attributes>
               </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="Welcome_Page_Label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Welcome</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinner" id="ServerList_Refresh_Spinner">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="active">True</property>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="Loading_Page_Label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Loading</property>
+              </object>
+              <packing>
+                <property name="position">2</property>
+                <property name="tab_fill">False</property>
+              </packing>
             </child>
           </object>
           <packing>

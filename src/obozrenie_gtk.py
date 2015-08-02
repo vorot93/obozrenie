@@ -59,14 +59,23 @@ class Callbacks:
         self.core = core_library
         self.core.game_table
 
+        self.game_combobox = self.builder.get_object("Game_ComboBox")
+
         self.serverlist_update_button = self.builder.get_object("Update_Button")
         self.serverlist_info_button = self.builder.get_object("Info_Button")
         self.serverlist_connect_button = self.builder.get_object("Connect_Button")
 
         self.serverlist_model = self.builder.get_object("ServerList_Store")
+
+        self.serverlist_notebook = self.builder.get_object("ServerList_Notebook")
+
         self.serverlist_revealer = self.builder.get_object("ServerList_Revealer")
         self.welcome_label = self.builder.get_object("ServerList_Welcome_Label")
         self.refresh_spinner = self.builder.get_object("ServerList_Refresh_Spinner")
+
+        self.serverlist_notebook_servers_page = self.serverlist_notebook.page_num(self.serverlist_revealer)
+        self.serverlist_notebook_welcome_page = self.serverlist_notebook.page_num(self.welcome_label)
+        self.serverlist_notebook_loading_page = self.serverlist_notebook.page_num(self.refresh_spinner)
 
     def cb_set_widgets_active(self, status):
         """Sets sensitivity and visibility for conditional widgets."""
@@ -111,10 +120,10 @@ class Callbacks:
         game = combobox.get_active_id()
         bool_ping = ping_button.get_active()
 
-        self.serverlist_revealer.set_reveal_child(False)
-        self.welcome_label.set_visible(False)
-        self.refresh_spinner.start()
+        self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
+
         self.serverlist_update_button.set_sensitive(False)
+        self.game_combobox.set_sensitive(False)
 
         Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
@@ -213,10 +222,10 @@ class Callbacks:
 
             treeiter = self.serverlist_model.append(entry)
 
-        self.serverlist_revealer.set_reveal_child(True)
-        self.welcome_label.set_visible(False)
-        self.refresh_spinner.stop()
+        self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
+
         self.serverlist_update_button.set_sensitive(True)
+        self.game_combobox.set_sensitive(True)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
@@ -237,11 +246,11 @@ class Callbacks:
     def cb_server_list_view_row_activated(self, widget, path, column, *data):
         """Launches the game"""
         self.cb_server_list_selection_changed(widget)
-        self.cb_connect_button_clicked()
+        self.cb_info_button_clicked(widget)
 
     def cb_server_host_entry_changed(self, widget, *data):
         """Resets button sensitivity on Gtk.Entry change"""
-        if widget.get_text is '':
+        if widget.get_text() == '':
             self.serverlist_info_button.set_sensitive(False)
             self.serverlist_connect_button.set_sensitive(False)
         else:
@@ -287,7 +296,7 @@ class Settings:
             key = self.keyfile_config.get_groups()[0][i]
             group = self.keyfile_config.get_value(key, "group")
             widget = Gtk.Builder.get_object(self.builder,
-                self.keyfile_config.get_value(key, "widget"))
+                                            self.keyfile_config.get_value(key, "widget"))
 
             schema_id = self.schema_base_id + "." + group
 
@@ -302,21 +311,22 @@ class Settings:
 
             # Apply setting to widget
             if isinstance(widget, Gtk.Adjustment):
-                Gtk.Adjustment.set_value(widget, int(value))
+                widget.set_value(int(value))
             elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
                 try:
                     value = ast.literal_eval(value)
                 except ValueError:
                     value = False
 
-                Gtk.ToggleButton.set_active(widget, value)
+                widget.set_active(value)
                 gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
             elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-                Gtk.ComboBox.set_active_id(widget, str(value))
+                widget.set_active_id(str(value))
                 gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
             elif isinstance(widget, Gtk.Entry):
-                Gtk.Entry.set_text(widget, str(value))
+                widget.set_text(str(value))
                 gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
+                widget.emit("changed")
 
 
 class App(Gtk.Application):
@@ -333,7 +343,7 @@ class App(Gtk.Application):
         # Create builder
         self.builder = Gtk.Builder()
         Gtk.Builder.add_from_file(self.builder, UI_PATH)
-        
+
         self.core = Core()
         self.callbacks = Callbacks(self, self.builder, self.core)
         self.settings = Settings(self)
@@ -344,12 +354,12 @@ class App(Gtk.Application):
         Loads the GtkBuilder resources, settings and start the main loop.
         """
 
+        # Connect signals
+        Gtk.Builder.connect_signals(self.builder, self.callbacks)
+
         # Load settings
         self.callbacks.get_games_list_store()
         self.settings.load()
-
-        # Connect signals
-        Gtk.Builder.connect_signals(self.builder, self.callbacks)
 
         # Menu actions
         about_dialog = Gtk.Builder.get_object(self.builder, "About_Dialog")
