@@ -22,6 +22,7 @@ import argparse
 import ast
 import os
 import threading
+import pdb
 
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
@@ -66,16 +67,20 @@ class Callbacks:
         self.serverlist_connect_button = self.builder.get_object("Connect_Button")
 
         self.serverlist_model = self.builder.get_object("ServerList_Store")
+        self.serverlist_view = self.builder.get_object("ServerList_View")
+        self.serverlist_view_selection = self.builder.get_object("ServerList_View").get_selection()
 
         self.serverlist_notebook = self.builder.get_object("ServerList_Notebook")
 
-        self.serverlist_revealer = self.builder.get_object("ServerList_Revealer")
+        self.serverlist_scrolledwindow = self.builder.get_object("ServerList_ScrolledWindow")
         self.welcome_label = self.builder.get_object("ServerList_Welcome_Label")
         self.refresh_spinner = self.builder.get_object("ServerList_Refresh_Spinner")
 
-        self.serverlist_notebook_servers_page = self.serverlist_notebook.page_num(self.serverlist_revealer)
+        self.serverlist_notebook_servers_page = self.serverlist_notebook.page_num(self.serverlist_scrolledwindow)
         self.serverlist_notebook_welcome_page = self.serverlist_notebook.page_num(self.welcome_label)
         self.serverlist_notebook_loading_page = self.serverlist_notebook.page_num(self.refresh_spinner)
+        
+        self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
 
     def cb_set_widgets_active(self, status):
         """Sets sensitivity and visibility for conditional widgets."""
@@ -127,7 +132,11 @@ class Callbacks:
 
         Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
+        # UGLY HACK!
+        # Workaround for chaotic TreeViewSelection on ListModel erase
+        a = self.serverhost_entry.get_text()
         self.serverlist_model.clear()
+        self.serverhost_entry.set_text(a)
 
         self.core.update_server_list(game, bool_ping, self.fill_server_view)
 
@@ -159,13 +168,13 @@ class Callbacks:
     def fill_server_view(self, game_table_slice):
         """Fill the server view"""
         self.view_format = ("game",
-                       "player_count",
-                       "player_limit",
-                       "password",
-                       "host",
-                       "name",
-                       "terrain",
-                       "ping")
+                            "player_count",
+                            "player_limit",
+                            "password",
+                            "host",
+                            "name",
+                            "terrain",
+                            "ping")
 
         server_table = helpers.dict_to_list(game_table_slice["servers"],
                                             self.view_format)
@@ -229,7 +238,7 @@ class Callbacks:
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
-        entry_field = Gtk.Builder.get_object(self.builder, "ServerHost_Entry")
+        entry_field = self.serverhost_entry
 
         model, treeiter = widget.get_selected()
         try:
@@ -295,8 +304,7 @@ class Settings:
             # Define variables
             key = self.keyfile_config.get_groups()[0][i]
             group = self.keyfile_config.get_value(key, "group")
-            widget = Gtk.Builder.get_object(self.builder,
-                                            self.keyfile_config.get_value(key, "widget"))
+            widget = self.builder.get_object(self.keyfile_config.get_value(key, "widget"))
 
             schema_id = self.schema_base_id + "." + group
 
@@ -326,7 +334,8 @@ class Settings:
             elif isinstance(widget, Gtk.Entry):
                 widget.set_text(str(value))
                 gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
-                widget.emit("changed")
+                if value == "":
+                    widget.emit("changed")
 
 
 class App(Gtk.Application):
@@ -342,7 +351,7 @@ class App(Gtk.Application):
 
         # Create builder
         self.builder = Gtk.Builder()
-        Gtk.Builder.add_from_file(self.builder, UI_PATH)
+        self.builder.add_from_file(UI_PATH)
 
         self.core = Core()
         self.callbacks = Callbacks(self, self.builder, self.core)
@@ -355,14 +364,14 @@ class App(Gtk.Application):
         """
 
         # Connect signals
-        Gtk.Builder.connect_signals(self.builder, self.callbacks)
+        self.builder.connect_signals(self.callbacks)
 
         # Load settings
         self.callbacks.get_games_list_store()
         self.settings.load()
 
         # Menu actions
-        about_dialog = Gtk.Builder.get_object(self.builder, "About_Dialog")
+        about_dialog = self.builder.get_object("About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
         quit_action = Gio.SimpleAction.new("quit", None)
 
@@ -372,7 +381,7 @@ class App(Gtk.Application):
         self.add_action(about_action)
         self.add_action(quit_action)
 
-        window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
+        window = self.builder.get_object("Main_Window")
         menumodel = Gio.Menu()
         menumodel.append("About", "app.about")
         menumodel.append("Quit", "app.quit")
@@ -380,7 +389,7 @@ class App(Gtk.Application):
         self.add_window(window)
 
     def on_activate(self, app):
-        window = (Gtk.Builder.get_object(self.builder, "Main_Window"))
+        window = self.builder.get_object("Main_Window")
         window.show_all()
 
 if __name__ == "__main__":
