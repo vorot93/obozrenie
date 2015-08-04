@@ -21,8 +21,10 @@
 import argparse
 import ast
 import os
+import shutil
 import threading
-import pdb
+
+import pytoml
 
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
@@ -49,6 +51,7 @@ APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie_widgets.ini")
 UI_PATH = os.path.join(os.path.dirname(__file__), "assets", "obozrenie_gtk.ui")
 SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
 
+PROFILE_PATH = "~/.config/obozrenie"
 
 class Callbacks:
 
@@ -79,7 +82,7 @@ class Callbacks:
         self.serverlist_notebook_servers_page = self.serverlist_notebook.page_num(self.serverlist_scrolledwindow)
         self.serverlist_notebook_welcome_page = self.serverlist_notebook.page_num(self.welcome_label)
         self.serverlist_notebook_loading_page = self.serverlist_notebook.page_num(self.refresh_spinner)
-        
+
         self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
 
     def cb_set_widgets_active(self, status):
@@ -273,12 +276,30 @@ class Settings:
     Contains methods for saving and loading user settings and setting lists.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, profile_path):
         """Loads base variables into the class."""
         self.schema_base_id = SCHEMA_BASE_ID
+        self.settings_file = "obozrenie_settings.toml"
+        self.settings_path = os.path.join(profile_path, self.settings_file)
 
+        self.defaults_file = "obozrenie_default.toml"
+        self.defaults_path = os.path.join(os.path.dirname(__file__), self.defaults_file)
+
+        # DEPRECATED: GLib KeyFile
         self.keyfile_config = GLib.KeyFile.new()
         self.keyfile_config.load_from_file(APP_CONFIG, GLib.KeyFileFlags.NONE)
+
+        # TOML loading
+        try:
+            self.settings_object = pytoml.load(open(self.settings_path, 'r'))
+        except FileNotFoundError:
+            print('Cannot load user configuration. Using defaults.')
+            try:
+                os.mkdir(profile_path)
+            except OSError:
+                pass
+            shutil.copyfile(self.defaults_path, self.settings_path)
+            self.settings_object = pytoml.load(open(self.settings_path, 'r'))
 
         self.builder = app.builder
 
@@ -297,6 +318,46 @@ class Settings:
     def switch_game_id(self):
         pass
 
+    def get_gsetting(gsettings, key, widget):
+        """Fetches value from GSettings"""
+        if isinstance(widget, Gtk.Adjustment):
+            value = gsettings.get_int(key)
+        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+            value = gsettings.get_boolean(key)
+        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
+            value = gsettings.get_string(key)
+
+        return value
+
+    @staticmethod
+    def apply_to_widget(key, widget, value):
+        """Applies setting to widget"""
+        if isinstance(widget, Gtk.Adjustment):
+            widget.set_value(int(value))
+        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+            try:
+                value = ast.literal_eval(value)
+            except ValueError:
+                value = False
+            widget.set_active(value)
+
+        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
+            widget.set_active_id(str(value))
+
+        elif isinstance(widget, Gtk.Entry):
+            widget.set_text(str(value))
+            if value == "":
+                widget.emit("changed")
+
+    @staticmethod
+    def gsettings_auto_bind(gsettings, key, widget):
+        if isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+            gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
+        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
+            gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
+        elif isinstance(widget, Gtk.Entry):
+            gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
+
     def load(self):
         """Loads configuration."""
 
@@ -308,34 +369,11 @@ class Settings:
 
             schema_id = self.schema_base_id + "." + group
 
-            # Receive setting
             gsettings = Gio.Settings.new(schema_id)
-            if isinstance(widget, Gtk.Adjustment):
-                value = gsettings.get_int(key)
-            elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-                value = gsettings.get_boolean(key)
-            elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
-                value = gsettings.get_string(key)
 
-            # Apply setting to widget
-            if isinstance(widget, Gtk.Adjustment):
-                widget.set_value(int(value))
-            elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-                try:
-                    value = ast.literal_eval(value)
-                except ValueError:
-                    value = False
-
-                widget.set_active(value)
-                gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
-            elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-                widget.set_active_id(str(value))
-                gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
-            elif isinstance(widget, Gtk.Entry):
-                widget.set_text(str(value))
-                gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
-                if value == "":
-                    widget.emit("changed")
+            value = Settings.get_gsetting(gsettings, key, widget)
+            Settings.apply_to_widget(key, widget, value)
+            Settings.gsettings_auto_bind(gsettings, key, widget)
 
 
 class App(Gtk.Application):
@@ -355,7 +393,8 @@ class App(Gtk.Application):
 
         self.core = Core()
         self.callbacks = Callbacks(self, self.builder, self.core)
-        self.settings = Settings(self)
+
+        self.settings = Settings(self, os.path.expanduser(PROFILE_PATH))
 
     def on_startup(self, app):
         """
