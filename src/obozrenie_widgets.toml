@@ -1,0 +1,20 @@
+[[main]]
+key = "selected-game"
+widget="Game_ComboBox"
+
+[[main]]
+key = "nickname"
+widget="Nickname_Entry"
+
+[[main]]
+key = "pinging-enable"
+widget="PingingEnable_CheckButton"
+
+[[main]]
+key = "server-host"
+widget="ServerHost_Entry"
+
+[[main]]
+key = "server-pass"
+widget="ServerPass_Entry"
+

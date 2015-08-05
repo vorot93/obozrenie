@@ -21,6 +21,8 @@
 import os
 import threading
 
+import pytoml
+
 from gi.repository import GLib
 
 import backends
@@ -31,11 +33,10 @@ class Core:
     """
     Contains core logic and game table of Obozrenie server browser.
     """
-    GAME_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "games.ini")
+    GAME_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "games.toml")
 
     def __init__(self):
-        self.game_config = GLib.KeyFile.new()
-        self.game_config.load_from_file(self.GAME_CONFIG_FILE, GLib.KeyFileFlags.NONE)
+        self.gameconfig_object = pytoml.load(open(self.GAME_CONFIG_FILE, 'r'))
 
         self.game_table = self.create_game_table()
 
@@ -44,12 +45,12 @@ class Core:
         Loads game list into a table
         """
         game_table = []
-        for i in range(len(self.game_config.get_groups()[0])):
+        for i in range(len(self.gameconfig_object["games"])):
             game_table.append({})
 
-            game_id = self.game_config.get_groups()[0][i]
-            name = self.game_config.get_value(game_id, "name")
-            backend = self.game_config.get_value(game_id, "backend")
+            game_id = self.gameconfig_object["games"][i]["id"]
+            name = self.gameconfig_object["games"][i]["name"]
+            backend = self.gameconfig_object["games"][i]["backend"]
 
             game_table[i]["id"] = game_id
 

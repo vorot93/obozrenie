@@ -47,11 +47,6 @@ except ImportError:
 
 import backends
 
-APP_CONFIG = os.path.join(os.path.dirname(__file__), "obozrenie_widgets.ini")
-UI_PATH = os.path.join(os.path.dirname(__file__), "assets", "obozrenie_gtk.ui")
-SCHEMA_BASE_ID = 'com.github.skybon.obozrenie'
-
-PROFILE_PATH = "~/.config/obozrenie"
 
 class Callbacks:
 
@@ -278,42 +273,35 @@ class Settings:
 
     def __init__(self, app, profile_path):
         """Loads base variables into the class."""
-        self.schema_base_id = SCHEMA_BASE_ID
+        self.schema_base_id = "com.github.skybon.obozrenie"
         self.settings_file = "obozrenie_settings.toml"
-        self.settings_path = os.path.join(profile_path, self.settings_file)
-
         self.defaults_file = "obozrenie_default.toml"
-        self.defaults_path = os.path.join(os.path.dirname(__file__), self.defaults_file)
+        self.widgetconfig_file = "obozrenie_widgets.toml"
 
-        # DEPRECATED: GLib KeyFile
-        self.keyfile_config = GLib.KeyFile.new()
-        self.keyfile_config.load_from_file(APP_CONFIG, GLib.KeyFileFlags.NONE)
+        self.settings_path = os.path.join(profile_path, self.settings_file)
+        self.defaults_path = os.path.join(os.path.dirname(__file__), self.defaults_file)
+        self.widgetconfig_path = os.path.join(os.path.dirname(__file__), self.widgetconfig_file)
+
+        self.widgetconfig_object = pytoml.load(open(self.widgetconfig_path, 'r'))
 
         # TOML loading
         try:
-            self.settings_object = pytoml.load(open(self.settings_path, 'r'))
+            settings_open_object = open(self.settings_path, 'r')
         except FileNotFoundError:
-            print('Cannot load user configuration. Using defaults.')
+            print('Failed loading user configuration. Using defaults.')
             try:
-                os.mkdir(profile_path)
+                os.makedirs(profile_path)
             except OSError:
                 pass
             shutil.copyfile(self.defaults_path, self.settings_path)
-            self.settings_object = pytoml.load(open(self.settings_path, 'r'))
+            settings_open_object = open(self.settings_path, 'r')
+        self.settings_object = pytoml.load(settings_open_object)
 
         self.builder = app.builder
 
-    def get_setting_groups(self):
-        """Compile a list of available settings groups."""
-        mapping_cat = []
-        for i in range(self.keyfile_config.get_groups()[1]):
-            if (GLib.KeyFile.get_value(self.keyfile_config,
-                                       GLib.KeyFile.get_groups(self.keyfile_config)[0][i], "group")
-                    in mapping_cat) == False:
-
-                mapping_cat.append(GLib.KeyFile.get_value(self.keyfile_config,
-                                                          GLib.KeyFile.get_groups(self.keyfile_config)[0][i], "group"))
-        return mapping_cat
+    def get_widget_groups(self):
+        """Compile a list of available widget groups."""
+        return list(self.widgetconfig_object.keys())
 
     def switch_game_id(self):
         pass
@@ -361,19 +349,20 @@ class Settings:
     def load(self):
         """Loads configuration."""
 
-        for i in range(self.keyfile_config.get_groups()[1]):
-            # Define variables
-            key = self.keyfile_config.get_groups()[0][i]
-            group = self.keyfile_config.get_value(key, "group")
-            widget = self.builder.get_object(self.keyfile_config.get_value(key, "widget"))
+        for i in range(len(self.get_widget_groups())):
+            group = self.get_widget_groups()[i]
+            for j in range(len(self.get_widget_groups()[i])):
+                # Define variables
+                key = self.widgetconfig_object[group][j]["key"]
+                widget = self.builder.get_object(self.widgetconfig_object[group][j]["widget"])
 
-            schema_id = self.schema_base_id + "." + group
+                schema_id = self.schema_base_id + "." + group
 
-            gsettings = Gio.Settings.new(schema_id)
+                gsettings = Gio.Settings.new(schema_id)
 
-            value = Settings.get_gsetting(gsettings, key, widget)
-            Settings.apply_to_widget(key, widget, value)
-            Settings.gsettings_auto_bind(gsettings, key, widget)
+                value = Settings.get_gsetting(gsettings, key, widget)
+                Settings.apply_to_widget(key, widget, value)
+                Settings.gsettings_auto_bind(gsettings, key, widget)
 
 
 class App(Gtk.Application):
@@ -381,6 +370,13 @@ class App(Gtk.Application):
     """App class."""
 
     def __init__(self, Core):
+        self.uifile = "obozrenie_gtk.ui"
+        self.profile_path = "~/.config/obozrenie"
+
+        self.uifile_path = os.path.join(os.path.dirname(__file__),
+                                        "assets",
+                                        self.uifile)
+
         Gtk.Application.__init__(self,
                                  application_id="com.github.skybon.obozrenie",
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
@@ -389,12 +385,12 @@ class App(Gtk.Application):
 
         # Create builder
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(UI_PATH)
+        self.builder.add_from_file(self.uifile_path)
 
         self.core = Core()
         self.callbacks = Callbacks(self, self.builder, self.core)
 
-        self.settings = Settings(self, os.path.expanduser(PROFILE_PATH))
+        self.settings = Settings(self, os.path.expanduser(self.profile_path))
 
     def on_startup(self, app):
         """

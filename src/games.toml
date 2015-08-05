@@ -1,0 +1,9 @@
+[[games]]
+id = "rigsofrods"
+name = "Rigs of Rods"
+backend = "rigsofrods"
+
+[[games]]
+id = "q3a"
+name = "Quake III Arena"
+backend = "qstat"
