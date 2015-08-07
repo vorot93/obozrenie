@@ -44,23 +44,25 @@ class Core:
         """
         Loads game list into a table
         """
-        game_table = []
-        for i in range(len(self.gameconfig_object["games"])):
-            game_table.append({})
+        game_table = {}
+        for game_id in self.gameconfig_object:
+            game_table[game_id] = {}
 
-            game_id = self.gameconfig_object["games"][i]["id"]
-            name = self.gameconfig_object["games"][i]["name"]
-            backend = self.gameconfig_object["games"][i]["backend"]
+            name = self.gameconfig_object[game_id]["name"]
+            backend = self.gameconfig_object[game_id]["backend"]
 
-            game_table[i]["id"] = game_id
+            # Create dict groups
+            game_table[game_id]["info"] = {}
+            game_table[game_id]["settings"] = {}
+            game_table[game_id]["servers"] = []
 
             # Create setting groups
-            game_table[i]["info"] = {}
-            game_table[i]["settings"] = {}
-            game_table[i]["servers"] = []
+            for j in range(len(self.gameconfig_object[game_id]["settings"])):
+                option_name = self.gameconfig_object[game_id]["settings"][j]
+                game_table[game_id]["settings"][option_name] = ""
 
-            game_table[i]["info"]["name"] = name
-            game_table[i]["info"]["backend"] = backend
+            game_table[game_id]["info"]["name"] = name
+            game_table[game_id]["info"]["backend"] = backend
 
         return game_table
 
@@ -71,24 +73,23 @@ class Core:
 
     def update_server_list(self, game, bool_ping, callback):
         """Updates server lists"""
-        game_index = helpers.search_dict_table(self.game_table, "id", game)
-        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game_index, bool_ping, callback))
+        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, bool_ping, callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
-    def stat_master_target(self, game_index, bool_ping, callback):
+    def stat_master_target(self, game, bool_ping, callback):
         """Separate update thread"""
-        backend = self.game_table[game_index]["info"]["backend"]
+        backend = self.game_table[game]["info"]["backend"]
         if backend == "rigsofrods":
-            self.game_table[game_index]["servers"] = backends.rigsofrods.core.stat_master(bool_ping)
+            self.game_table[game]["servers"] = backends.rigsofrods.core.stat_master(bool_ping)
         elif backend == "qstat":
             print("----------\n"
                   "QStat backend has not been implemented yet. Stay tuned!\n"
                   "----------")
 
-        # Workaround for GTK+: GTK+ is not thread safe, call in the main thread
+        # Workaround: GTK+ is not thread safe therefore request callback in the main thread
         if callback is not None:
-            GLib.idle_add(callback, self.game_table[game_index])
+            GLib.idle_add(callback, self.game_table[game])
 
     def get_server_info():
         pass

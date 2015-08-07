@@ -1,12 +1,9 @@
-
-[games]
-
-[[games.entry]]
+[[games]]
 id = "rigsofrods"
 workdir = ""
 path = ""
 
-[[games.entry]]
+[[games]]
 id = "q3a"
 workdir = ""
 path = ""

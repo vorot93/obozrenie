@@ -1,9 +1,9 @@
-[[games]]
-id = "rigsofrods"
+[rigsofrods]
 name = "Rigs of Rods"
 backend = "rigsofrods"
+settings = ["path", "workdir"]
 
-[[games]]
-id = "q3a"
+[q3a]
 name = "Quake III Arena"
 backend = "qstat"
+settings = ["path", "workdir"]

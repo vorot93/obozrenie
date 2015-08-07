@@ -18,6 +18,9 @@
 
 """Helper functions for processing data."""
 
+import os
+import pytoml
+
 def search_table(table, level, value):
         if level == 0:
             for i in range(len(table)):
@@ -66,3 +69,27 @@ def dict_to_list(dict_table, key_list):
                 list_table[i].append(dict_table[i][key_list[j]])
 
         return list_table
+
+
+def get_settings_table(path):
+    """Loads settings table into dict"""
+    try:
+        table_open_object = open(path, 'r')
+    except FileNotFoundError:
+        return None
+    table = pytoml.load(table_open_object)
+    return table
+
+
+def save_settings_table(path, data):
+    """Saves settings to a file"""
+    try:
+        table_open_object = open(path, 'w')
+    except FileNotFoundError:
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError:
+            pass
+        table_open_object = open(path, 'x')
+    pytoml.dump(table_open_object, data)
+    # pytoml.dumps(data)

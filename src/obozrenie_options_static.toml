@@ -1,0 +1,14 @@
+[general.selected-game]
+gtk_widget_name="Game_ComboBox"
+
+[general.nickname]
+gtk_widget_name = "Nickname_Entry"
+
+[general.pinging-enable]
+gtk_widget_name = "PingingEnable_CheckButton"
+
+[general.server-host]
+gtk_widget_name="ServerHost_Entry"
+
+[general.server-pass]
+gtk_widget_name="ServerPass_Entry"

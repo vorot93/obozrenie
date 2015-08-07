@@ -71,61 +71,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="GdkPixbuf"/>
     </columns>
   </object>
-  <object class="GtkDialog" id="Pref_Dialog">
-    <property name="can_focus">False</property>
-    <property name="type_hint">dialog</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="Pref_Dialog_Box">
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="Pref_Dialog_action_area_ButtonBox">
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkPaned" id="Pref_Dialog_Paned">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
-            <child>
-              <object class="GtkTreeView" id="Game_TreeView">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="model">Game_Store</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection" id="treeview-selection2"/>
-                </child>
-              </object>
-              <packing>
-                <property name="resize">False</property>
-                <property name="shrink">True</property>
-              </packing>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
   <object class="GtkListStore" id="ServerList_Store">
     <columns>
       <!-- column-name game -->
@@ -182,6 +127,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-information-symbolic</property>
   </object>
+  <object class="GtkImage" id="preferences_desktop_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">preferences-desktop</property>
+  </object>
   <object class="GtkImage" id="refresh-icon">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -209,9 +159,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
           <object class="GtkGrid" id="Network_Top_Grid">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="valign">start</property>
+            <property name="column_spacing">10</property>
             <property name="column_homogeneous">True</property>
             <child>
-              <object class="GtkGrid" id="Nickname_Grid">
+              <object class="GtkGrid" id="Nickname_Spot">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="halign">end</property>
@@ -308,6 +260,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="can_focus">False</property>
                     <property name="model">Game_Store</property>
                     <property name="id_column">0</property>
+                    <property name="active_id">0</property>
                     <signal name="changed" handler="cb_game_combobox_changed" object="Game_ComboBox" swapped="no"/>
                     <child>
                       <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
@@ -324,6 +277,21 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="Game_Preferences_button">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Game preferences are in development. Stay tuned!</property>
+                    <property name="image">preferences_desktop_image</property>
+                    <signal name="clicked" handler="cb_game_preferences_button_clicked" object="Game_ComboBox" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
                     <property name="top_attach">0</property>
                   </packing>
                 </child>
@@ -344,6 +312,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="hexpand">True</property>
+            <property name="vexpand">False</property>
             <property name="row_spacing">10</property>
             <property name="column_spacing">10</property>
             <child>
@@ -367,46 +336,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               </object>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="ServerHost_Entry">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="tooltip_text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
-                <property name="hexpand">True</property>
-                <signal name="changed" handler="cb_server_host_entry_changed" swapped="no"/>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="ServerPass_Entry">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="tooltip_text" translatable="yes">The server password, if required.</property>
-                <property name="hexpand">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkCheckButton" id="PingingEnable_CheckButton">
-                <property name="label" translatable="yes">Enable pinging</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="tooltip_text" translatable="yes">Enables pinging the servers. Beware that it may take a while.</property>
-                <property name="xalign">0</property>
-                <property name="draw_indicator">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">2</property>
                 <property name="top_attach">1</property>
               </packing>
             </child>
@@ -465,6 +394,48 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               <packing>
                 <property name="left_attach">2</property>
                 <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ServerPass_Entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">The server password, if required.</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ServerHost_Entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <signal name="changed" handler="cb_server_host_entry_changed" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="PingingEnable_CheckButton">
+                <property name="label" translatable="yes">Enable pinging</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="tooltip_text" translatable="yes">Enables pinging the servers. Beware that it may take a while.</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">1</property>
               </packing>
             </child>
           </object>

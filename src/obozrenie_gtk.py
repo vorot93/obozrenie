@@ -30,6 +30,7 @@ from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
 from obozrenie_core import Core
 import helpers
+import templates_gtk as templates
 
 try:
     import pygeoip
@@ -59,6 +60,7 @@ class Callbacks:
         self.core.game_table
 
         self.game_combobox = self.builder.get_object("Game_ComboBox")
+        self.game_model = self.builder.get_object("Game_Store")
 
         self.serverlist_update_button = self.builder.get_object("Update_Button")
         self.serverlist_info_button = self.builder.get_object("Info_Button")
@@ -84,6 +86,15 @@ class Callbacks:
         """Sets sensitivity and visibility for conditional widgets."""
         pass
 
+    def cb_game_preferences_button_clicked(self, combobox, *data):
+        game = combobox.get_active_id()
+        body = templates.get_preferences_dialog(game, self.core.game_table, self.app.settings.dynamic_widget_table)
+        dialog = body[0]
+        listbox = body[1]
+        widget_option_mapping = body[2]
+        print(body)
+        dialog.run()
+
     def cb_info_button_clicked(self, *args):
         """Shows server information window."""
         pass
@@ -107,13 +118,11 @@ class Callbacks:
         """Actions on game combobox selection change."""
         game = combobox.get_active_id()
 
-        game_index = helpers.search_dict_table(self.core.game_table, "id", game)
-
         self.serverlist_model.clear()
-        if self.core.game_table[game_index]["servers"] == []:
+        if self.core.game_table[game]["servers"] == []:
             self.cb_update_button_clicked(combobox, *data)
         else:
-            self.fill_server_view(self.core.game_table[game_index])
+            self.fill_server_view(self.core.game_table[game])
 
     def cb_update_button_clicked(self, combobox, *data):
         """Actions on server list update button click"""
@@ -146,14 +155,14 @@ class Callbacks:
 
         self.game_store = self.builder.get_object("Game_Store")
 
-        for i in range(len(table)):
+        for game_id in table:
             entry = []
-            entry.append(table[i]["id"])
-            entry.append(table[i]["info"]["name"])
-            entry.append(table[i]["info"]["backend"])
+            entry.append(game_id)
+            entry.append(table[game_id]["info"]["name"])
+            entry.append(table[game_id]["info"]["backend"])
 
             icon_base = os.path.dirname(__file__) + '/assets/icons/games/'
-            icon = entry[0] + '.png'
+            icon = game_id + '.png'
             icon_missing = "image-missing.png"
 
             try:
@@ -264,6 +273,9 @@ class Callbacks:
             self.serverlist_info_button.set_sensitive(True)
             self.serverlist_connect_button.set_sensitive(True)
 
+    def cb_listed_widget_changed(self, *data):
+        self.app.settings.update_settings_table()
+
 
 class Settings:
 
@@ -274,52 +286,30 @@ class Settings:
     def __init__(self, app, profile_path):
         """Loads base variables into the class."""
         self.schema_base_id = "com.github.skybon.obozrenie"
-        self.settings_file = "obozrenie_settings.toml"
+
+        self.static_widget_config_file = "obozrenie_options_static.toml"
+        self.dynamic_widget_config_file = "obozrenie_options_game.toml"
         self.defaults_file = "obozrenie_default.toml"
-        self.widgetconfig_file = "obozrenie_widgets.toml"
+        self.usersettings_file = "obozrenie_settings.toml"
 
-        self.settings_path = os.path.join(profile_path, self.settings_file)
+        self.static_widget_config_path = os.path.join(os.path.dirname(__file__), self.static_widget_config_file)
+        self.dynamic_widget_config_path = os.path.join(os.path.dirname(__file__), self.dynamic_widget_config_file)
         self.defaults_path = os.path.join(os.path.dirname(__file__), self.defaults_file)
-        self.widgetconfig_path = os.path.join(os.path.dirname(__file__), self.widgetconfig_file)
+        self.usersettings_path = os.path.join(profile_path, self.usersettings_file)
 
-        self.widgetconfig_object = pytoml.load(open(self.widgetconfig_path, 'r'))
-
-        # TOML loading
-        try:
-            settings_open_object = open(self.settings_path, 'r')
-        except FileNotFoundError:
-            print('Failed loading user configuration. Using defaults.')
-            try:
-                os.makedirs(profile_path)
-            except OSError:
-                pass
-            shutil.copyfile(self.defaults_path, self.settings_path)
-            settings_open_object = open(self.settings_path, 'r')
-        self.settings_object = pytoml.load(settings_open_object)
+        self.dynamic_widget_table = helpers.get_settings_table(self.dynamic_widget_config_path)
+        self.static_widget_table = helpers.get_settings_table(self.static_widget_config_path)
 
         self.builder = app.builder
-
-    def get_widget_groups(self):
-        """Compile a list of available widget groups."""
-        return list(self.widgetconfig_object.keys())
 
     def switch_game_id(self):
         pass
 
-    def get_gsetting(gsettings, key, widget):
-        """Fetches value from GSettings"""
-        if isinstance(widget, Gtk.Adjustment):
-            value = gsettings.get_int(key)
-        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-            value = gsettings.get_boolean(key)
-        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText) or isinstance(widget, Gtk.Entry):
-            value = gsettings.get_string(key)
-
-        return value
-
     @staticmethod
-    def apply_to_widget(key, widget, value):
-        """Applies setting to widget"""
+    def apply_to_widget(widget, value):
+        """Applies setting to widget."""
+        if value == 'None':
+            value is None
         if isinstance(widget, Gtk.Adjustment):
             widget.set_value(int(value))
         elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
@@ -338,31 +328,63 @@ class Settings:
                 widget.emit("changed")
 
     @staticmethod
-    def gsettings_auto_bind(gsettings, key, widget):
-        if isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-            gsettings.bind(key, widget, "active", Gio.SettingsBindFlags.DEFAULT)
+    def get_widget_value(widget):
+        """Fetches widget setting."""
+        if isinstance(widget, Gtk.Adjustment):
+            value = widget.get_value()
+        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+            value = widget.get_active()
         elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-            gsettings.bind(key, widget, "active-id", Gio.SettingsBindFlags.DEFAULT)
+            value = widget.get_active_id()
         elif isinstance(widget, Gtk.Entry):
-            gsettings.bind(key, widget, "text", Gio.SettingsBindFlags.DEFAULT)
+            value = widget.get_text()
+
+        return value
+
+    def bind_widget_to_settings_table(self, widget):
+        if isinstance(widget, Gtk.Entry) or isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
+            widget.connect("changed", self.update_settings_table)
+
+        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
+            widget.connect("clicked", self.update_settings_table)
 
     def load(self):
         """Loads configuration."""
+        defaults_table = helpers.get_settings_table(self.defaults_path)
+        usersettings_table = helpers.get_settings_table(self.usersettings_path)
+        self.settings_table = {}
 
-        for i in range(len(self.get_widget_groups())):
-            group = self.get_widget_groups()[i]
-            for j in range(len(self.get_widget_groups()[i])):
+        for group in self.static_widget_table:
+            self.settings_table[group] = {}
+            for option in self.static_widget_table[group]:
                 # Define variables
-                key = self.widgetconfig_object[group][j]["key"]
-                widget = self.builder.get_object(self.widgetconfig_object[group][j]["widget"])
+                widget = self.builder.get_object(self.static_widget_table[group][option]["gtk_widget_name"])
 
-                schema_id = self.schema_base_id + "." + group
+                value = defaults_table[group][option]
+                try:
+                    value = usersettings_table[group][option]
+                except ValueError:
+                    pass
+                except KeyError:
+                    pass
+                except TypeError:
+                    pass
 
-                gsettings = Gio.Settings.new(schema_id)
+                self.settings_table[group][option] = value
+                Settings.apply_to_widget(widget, value)
+                self.bind_widget_to_settings_table(widget)
 
-                value = Settings.get_gsetting(gsettings, key, widget)
-                Settings.apply_to_widget(key, widget, value)
-                Settings.gsettings_auto_bind(gsettings, key, widget)
+    def save(self):
+        """Saves configuration."""
+        helpers.save_settings_table(self.usersettings_path, self.settings_table)
+
+    def update_settings_table(self, *args):
+        for group in self.static_widget_table:
+            for option in self.static_widget_table[group]:
+                # Define variables
+                widget = self.builder.get_object(self.static_widget_table[group][option]["gtk_widget_name"])
+
+                self.settings_table[group][option] = str(Settings.get_widget_value(widget))
 
 
 class App(Gtk.Application):
@@ -382,6 +404,7 @@ class App(Gtk.Application):
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.connect("startup", self.on_startup)
         self.connect("activate", self.on_activate)
+        self.connect("shutdown", self.on_shutdown)
 
         # Create builder
         self.builder = Gtk.Builder()
@@ -426,6 +449,9 @@ class App(Gtk.Application):
     def on_activate(self, app):
         window = self.builder.get_object("Main_Window")
         window.show_all()
+
+    def on_shutdown(self, app):
+        self.settings.save()
 
 if __name__ == "__main__":
     app = App(Core)
