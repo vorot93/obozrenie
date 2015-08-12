@@ -21,6 +21,7 @@
 import os
 import pytoml
 
+
 def search_table(table, level, value):
         if level == 0:
             for i in range(len(table)):
@@ -71,7 +72,7 @@ def dict_to_list(dict_table, key_list):
         return list_table
 
 
-def get_settings_table(path):
+def load_settings_table(path):
     """Loads settings table into dict"""
     try:
         table_open_object = open(path, 'r')

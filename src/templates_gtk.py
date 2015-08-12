@@ -60,31 +60,55 @@ def get_entry_with_label(label_text="", tooltip_text=""):
 
     grid.add(label)
     grid.add(entry)
+
+    grid.set_column_homogeneous(True)
     grid.set_column_spacing(5)
 
     return grid, entry
 
 
-def get_preferences_dialog(game, game_table, dynamic_settings_table):
-    dialog = Gtk.Dialog()
-    content_area = dialog.get_content_area()
-    listbox = Gtk.ListBox()
+class PreferencesDialog(Gtk.Dialog):
+    def __init__(self, parent, game, game_table, dynamic_settings_table, callback=None):
+        Gtk.Dialog.__init__(self, None, parent)
+
+        self.close_callback = None
+
+        if callback is not None:
+            self.close_callback = callback
+
+        self.game = game
+
+        preferences_grid, self.widget_option_mapping = get_preferences_grid(game, game_table, dynamic_settings_table)
+
+        self.set_title(game_table[game]["info"]["name"] + " preferences")
+        self.get_content_area().pack_start(preferences_grid, True, True, 0)
+
+        button = self.add_button("Close", Gtk.ResponseType.CLOSE)
+        button.connect("clicked", self.cb_close_button_clicked)
+
+        self.show_all()
+
+    def cb_close_button_clicked(self, widget):
+        self.close_callback(self.game, self.widget_option_mapping)
+        self.destroy()
+
+
+def get_preferences_grid(game, game_table, dynamic_settings_table):
+    grid = Gtk.Grid()
+
+    grid.set_orientation(Gtk.Orientation.VERTICAL)
+    grid.set_row_spacing(5)
 
     widget_option_mapping = {}
 
     for option in game_table[game]["settings"]:
         widget = get_option_widget(dynamic_settings_table[option])
-        row = Gtk.ListBoxRow()
 
         widget_grid = widget[0]
         widget_main = widget[1]
 
-        row.add(widget_grid)
+        grid.add(widget_grid)
 
-        listbox.add(row)
-        print("Adding widget " + str(type(widget_grid)) + " with tooltip " + widget_main.get_tooltip_text() + " to option " + option)
         widget_option_mapping[option] = widget_main
 
-    content_area.pack_start(listbox, True, True, 0)
-
-    return dialog, listbox, widget_option_mapping
+    return grid, widget_option_mapping

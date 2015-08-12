@@ -59,6 +59,8 @@ class Callbacks:
         self.core = core_library
         self.core.game_table
 
+        self.main_window = self.builder.get_object("Main_Window")
+
         self.game_combobox = self.builder.get_object("Game_ComboBox")
         self.game_model = self.builder.get_object("Game_Store")
 
@@ -87,12 +89,8 @@ class Callbacks:
         pass
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
-        game = combobox.get_active_id()
-        body = templates.get_preferences_dialog(game, self.core.game_table, self.app.settings.dynamic_widget_table)
-        dialog = body[0]
-        listbox = body[1]
-        widget_option_mapping = body[2]
-        print(body)
+        game = self.app.settings.settings_table["general"]["selected-game"]
+        dialog = templates.PreferencesDialog(self.main_window, game, self.core.game_table, self.app.settings.dynamic_widget_table, callback=self.app.settings.update_game_settings_table)
         dialog.run()
 
     def cb_info_button_clicked(self, *args):
@@ -101,14 +99,17 @@ class Callbacks:
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
+        game = self.app.settings.settings_table["general"]["selected-game"]
+        path = self.core.game_table[game]["settings"]["path"]
+
         self.app.quit()
-        self.core.start_game()
+        self.core.start_game(path)
 
     @staticmethod
     def cb_about(action, data, dialog):
         """Opens the About dialog."""
-        Gtk.Dialog.run(dialog)
-        Gtk.Dialog.hide(dialog)
+        dialog.run()
+        dialog.hide()
 
     def cb_quit(self, *args):
         """Exits the program."""
@@ -116,7 +117,7 @@ class Callbacks:
 
     def cb_game_combobox_changed(self, combobox, *data):
         """Actions on game combobox selection change."""
-        game = combobox.get_active_id()
+        game = self.app.settings.settings_table["general"]["selected-game"]
 
         self.serverlist_model.clear()
         if self.core.game_table[game]["servers"] == []:
@@ -129,8 +130,8 @@ class Callbacks:
         ping_button = self.builder.get_object("PingingEnable_CheckButton")
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
-        game = combobox.get_active_id()
-        bool_ping = ping_button.get_active()
+        game = self.app.settings.settings_table["general"]["selected-game"]
+        bool_ping = ast.literal_eval(self.app.settings.settings_table["general"]["pinging-enable"])
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
 
@@ -283,24 +284,33 @@ class Settings:
     Contains methods for saving and loading user settings and setting lists.
     """
 
-    def __init__(self, app, profile_path):
+    def __init__(self, core, builder, profile_path):
         """Loads base variables into the class."""
         self.schema_base_id = "com.github.skybon.obozrenie"
 
-        self.static_widget_config_file = "obozrenie_options_static.toml"
+        # Internal configs
+        self.general_settings_config_file = "obozrenie_options_general.toml"
         self.dynamic_widget_config_file = "obozrenie_options_game.toml"
         self.defaults_file = "obozrenie_default.toml"
-        self.usersettings_file = "obozrenie_settings.toml"
 
-        self.static_widget_config_path = os.path.join(os.path.dirname(__file__), self.static_widget_config_file)
+        self.general_settings_config_path = os.path.join(os.path.dirname(__file__), self.general_settings_config_file)
         self.dynamic_widget_config_path = os.path.join(os.path.dirname(__file__), self.dynamic_widget_config_file)
         self.defaults_path = os.path.join(os.path.dirname(__file__), self.defaults_file)
-        self.usersettings_path = os.path.join(profile_path, self.usersettings_file)
 
-        self.dynamic_widget_table = helpers.get_settings_table(self.dynamic_widget_config_path)
-        self.static_widget_table = helpers.get_settings_table(self.static_widget_config_path)
+        # User configs
+        self.user_general_settings_file = "settings.toml"
+        self.user_game_settings_file = "games.toml"
 
-        self.builder = app.builder
+        self.user_general_settings_path = os.path.join(profile_path, self.user_general_settings_file)
+        self.user_game_settings_path = os.path.join(profile_path, self.user_game_settings_file)
+
+        self.dynamic_widget_table = helpers.load_settings_table(self.dynamic_widget_config_path)
+        self.static_widget_table = helpers.load_settings_table(self.general_settings_config_path)
+
+        self.settings_table = {}
+
+        self.core = core
+        self.builder = builder
 
     def switch_game_id(self):
         pass
@@ -350,10 +360,10 @@ class Settings:
 
     def load(self):
         """Loads configuration."""
-        defaults_table = helpers.get_settings_table(self.defaults_path)
-        usersettings_table = helpers.get_settings_table(self.usersettings_path)
-        self.settings_table = {}
+        defaults_table = helpers.load_settings_table(self.defaults_path)
+        user_general_settings_table = helpers.load_settings_table(self.user_general_settings_path)
 
+        # Load into general settings table
         for group in self.static_widget_table:
             self.settings_table[group] = {}
             for option in self.static_widget_table[group]:
@@ -362,7 +372,7 @@ class Settings:
 
                 value = defaults_table[group][option]
                 try:
-                    value = usersettings_table[group][option]
+                    value = user_general_settings_table[group][option]
                 except ValueError:
                     pass
                 except KeyError:
@@ -371,12 +381,40 @@ class Settings:
                     pass
 
                 self.settings_table[group][option] = value
-                Settings.apply_to_widget(widget, value)
+                self.apply_to_widget(widget, value)
                 self.bind_widget_to_settings_table(widget)
+
+        # Load game settings table
+        user_game_settings_table = helpers.load_settings_table(self.user_game_settings_path)
+
+        # Set game settings
+        for game in self.core.game_table:
+            for option in self.core.game_table[game]["settings"]:
+                try:
+                    self.core.game_table[game]["settings"][option] = user_game_settings_table[game][option]
+                except ValueError:
+                    pass
+                except KeyError:
+                    pass
+                except TypeError:
+                    pass
 
     def save(self):
         """Saves configuration."""
-        helpers.save_settings_table(self.usersettings_path, self.settings_table)
+        # Save general settings table
+        helpers.save_settings_table(self.user_general_settings_path, self.settings_table)
+
+        # Compile game settings table
+        user_game_settings_table = {}
+        for game in self.core.game_table:
+            user_game_settings_table[game] = self.core.game_table[game]["settings"]
+
+        # Save game settings
+        helpers.save_settings_table(self.user_game_settings_path, user_game_settings_table)
+
+    def update_game_settings_table(self, game, widget_option_mapping, *args):
+        for i in widget_option_mapping:
+            self.core.game_table[game]["settings"][i] = self.get_widget_value(widget_option_mapping[i])
 
     def update_settings_table(self, *args):
         for group in self.static_widget_table:
@@ -384,7 +422,7 @@ class Settings:
                 # Define variables
                 widget = self.builder.get_object(self.static_widget_table[group][option]["gtk_widget_name"])
 
-                self.settings_table[group][option] = str(Settings.get_widget_value(widget))
+                self.settings_table[group][option] = str(self.get_widget_value(widget))
 
 
 class App(Gtk.Application):
@@ -413,7 +451,7 @@ class App(Gtk.Application):
         self.core = Core()
         self.callbacks = Callbacks(self, self.builder, self.core)
 
-        self.settings = Settings(self, os.path.expanduser(self.profile_path))
+        self.settings = Settings(self.core, self.builder, os.path.expanduser(self.profile_path))
 
     def on_startup(self, app):
         """
@@ -421,14 +459,14 @@ class App(Gtk.Application):
         Loads the GtkBuilder resources, settings and start the main loop.
         """
 
-        # Connect signals
-        self.builder.connect_signals(self.callbacks)
-
         # Load settings
         self.callbacks.get_games_list_store()
         self.settings.load()
 
-        # Menu actions
+        # Connect signals
+        self.builder.connect_signals(self.callbacks)
+
+        # Create menu actions
         about_dialog = self.builder.get_object("About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
         quit_action = Gio.SimpleAction.new("quit", None)
@@ -438,13 +476,14 @@ class App(Gtk.Application):
 
         self.add_action(about_action)
         self.add_action(quit_action)
-
-        window = self.builder.get_object("Main_Window")
         menumodel = Gio.Menu()
         menumodel.append("About", "app.about")
         menumodel.append("Quit", "app.quit")
         self.set_app_menu(menumodel)
-        self.add_window(window)
+
+        # Add main window
+        main_window = self.builder.get_object("Main_Window")
+        self.add_window(main_window)
 
     def on_activate(self, app):
         window = self.builder.get_object("Main_Window")

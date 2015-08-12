@@ -33,7 +33,7 @@ class Core:
     """
     Contains core logic and game table of Obozrenie server browser.
     """
-    GAME_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "games.toml")
+    GAME_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "obozrenie_games.toml")
 
     def __init__(self):
         self.gameconfig_object = pytoml.load(open(self.GAME_CONFIG_FILE, 'r'))

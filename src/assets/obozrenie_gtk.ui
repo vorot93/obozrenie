@@ -261,7 +261,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="model">Game_Store</property>
                     <property name="id_column">0</property>
                     <property name="active_id">0</property>
-                    <signal name="changed" handler="cb_game_combobox_changed" object="Game_ComboBox" swapped="no"/>
+                    <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
                     <child>
                       <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
                       <attributes>
@@ -283,12 +283,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <child>
                   <object class="GtkButton" id="Game_Preferences_button">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Game preferences are in development. Stay tuned!</property>
+                    <property name="tooltip_text" translatable="yes">Configure the selected game.</property>
                     <property name="image">preferences_desktop_image</property>
-                    <signal name="clicked" handler="cb_game_preferences_button_clicked" object="Game_ComboBox" swapped="no"/>
+                    <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -353,7 +352,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="tooltip_text" translatable="yes">Refresh server list.</property>
                     <property name="image">refresh-icon</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_update_button_clicked" object="Game_ComboBox" swapped="no"/>
+                    <signal name="clicked" handler="cb_update_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -368,7 +367,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="tooltip_text" translatable="yes">Connect to the selected server.</property>
                     <property name="image">connect-icon</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_connect_button_clicked" object="ServerList_Store" swapped="no"/>
+                    <signal name="clicked" handler="cb_connect_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -378,12 +377,13 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <child>
                   <object class="GtkButton" id="Info_Button">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Show information about selected server.</property>
+                    <property name="tooltip_text" translatable="yes">Server information is in development. Stay tuned!</property>
                     <property name="image">info-icon</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_info_button_clicked" object="ServerList_Selection" swapped="no"/>
+                    <signal name="clicked" handler="cb_info_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
