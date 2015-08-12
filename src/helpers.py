@@ -93,4 +93,27 @@ def save_settings_table(path, data):
             pass
         table_open_object = open(path, 'x')
     pytoml.dump(table_open_object, data)
-    # pytoml.dumps(data)
+
+
+def launch_game(game, game_settings, server, password):
+    from subprocess import call
+
+    try:
+        if game == "rigsofrods":
+            host, port = server.split(":")
+            config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
+            path = game_settings["path"]
+
+            call(["sed", "-i", "s/Network enable.*/Network enable=Yes/", config_file])
+            call(["sed", "-i", "s/Server name.*/Server name=" + host + "/", config_file])
+            call(["sed", "-i", "s/Server port.*/Server port=" + port + "/", config_file])
+            call(["sed", "-i", "s/Server password.*/Server password=" + password + "/", config_file])
+
+            print("Launching", path)
+            call_exit_code = call(path)
+
+            call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
+            return call_exit_code
+        return 0
+    except OSError:
+        return 1

@@ -94,16 +94,9 @@ class Core:
     def get_server_info():
         pass
 
-    @staticmethod
-    def start_game(path):
+    def start_game(self, game, server, password):
         """Start game"""
-        from subprocess import call
-
-        try:
-            call(path)
-            return 0
-        except OSError:
-            print("Error launching the game.")
+        helpers.launch_game(game, self.game_table[game]["settings"], server, password)
 
 if __name__ == "__main__":
     print("This is a core module of Obozrenie Game Server Browser.\n"

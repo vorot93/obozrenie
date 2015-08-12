@@ -1,5 +1,5 @@
 [path]
-name = "Path"
+name = "Game path"
 description = "Path to the game"
 gtk_type = "Entry with Label"
 

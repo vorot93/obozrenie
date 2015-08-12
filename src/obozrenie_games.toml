@@ -1,7 +1,7 @@
 [rigsofrods]
 name = "Rigs of Rods"
 backend = "rigsofrods"
-settings = ["path", "workdir"]
+settings = ["path"]
 
 [q3a]
 name = "Quake III Arena"

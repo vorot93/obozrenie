@@ -83,10 +83,12 @@ class PreferencesDialog(Gtk.Dialog):
         if callback_start is not None:
             callback_start(self.game, self.widget_option_mapping)
 
+        self.set_resizable(False)
+        self.set_border_width(10)
         self.set_title(game_table[game]["info"]["name"] + " preferences")
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
 
-        button = self.add_button("Close", Gtk.ResponseType.CLOSE)
+        button = self.add_button("Save", Gtk.ResponseType.CLOSE)
         button.connect("clicked", self.cb_close_button_clicked)
 
         self.show_all()
@@ -102,6 +104,7 @@ def get_preferences_grid(game, game_table, dynamic_settings_table):
 
     grid.set_orientation(Gtk.Orientation.VERTICAL)
     grid.set_row_spacing(5)
+    grid.set_margin_bottom(10)
 
     widget_option_mapping = {}
 

@@ -105,10 +105,10 @@ class Callbacks:
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
         game = self.app.settings.settings_table["general"]["selected-game"]
-        path = self.core.game_table[game]["settings"]["path"]
+        server = self.app.settings.settings_table["general"]["server-host"]
+        password = self.app.settings.settings_table["general"]["server-pass"]
 
-        self.app.quit()
-        self.core.start_game(path)
+        self.core.start_game(game, server, password)
 
     @staticmethod
     def cb_about(action, data, dialog):
