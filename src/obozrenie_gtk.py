@@ -84,6 +84,8 @@ class Callbacks:
 
         self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
 
+        self.serverlist_notebook.set_property("page", self.serverlist_notebook_welcome_page)
+
     def cb_set_widgets_active(self, status):
         """Sets sensitivity and visibility for conditional widgets."""
         pass
