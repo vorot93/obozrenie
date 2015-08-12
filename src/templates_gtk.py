@@ -68,17 +68,20 @@ def get_entry_with_label(label_text="", tooltip_text=""):
 
 
 class PreferencesDialog(Gtk.Dialog):
-    def __init__(self, parent, game, game_table, dynamic_settings_table, callback=None):
+    def __init__(self, parent, game, game_table, dynamic_settings_table, callback_start=None, callback_close=None):
         Gtk.Dialog.__init__(self, None, parent)
 
-        self.close_callback = None
+        self.callback_close = None
 
-        if callback is not None:
-            self.close_callback = callback
+        if callback_close is not None:
+            self.callback_close = callback_close
 
         self.game = game
 
         preferences_grid, self.widget_option_mapping = get_preferences_grid(game, game_table, dynamic_settings_table)
+
+        if callback_start is not None:
+            callback_start(self.game, self.widget_option_mapping)
 
         self.set_title(game_table[game]["info"]["name"] + " preferences")
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
@@ -89,7 +92,8 @@ class PreferencesDialog(Gtk.Dialog):
         self.show_all()
 
     def cb_close_button_clicked(self, widget):
-        self.close_callback(self.game, self.widget_option_mapping)
+        if self.callback_close is not None:
+            self.callback_close(self.game, self.widget_option_mapping)
         self.destroy()
 
 

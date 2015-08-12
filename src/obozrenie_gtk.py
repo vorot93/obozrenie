@@ -90,7 +90,12 @@ class Callbacks:
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
         game = self.app.settings.settings_table["general"]["selected-game"]
-        dialog = templates.PreferencesDialog(self.main_window, game, self.core.game_table, self.app.settings.dynamic_widget_table, callback=self.app.settings.update_game_settings_table)
+        dialog = templates.PreferencesDialog(self.main_window,
+                                             game,
+                                             self.core.game_table,
+                                             self.app.settings.dynamic_widget_table,
+                                             callback_start=self.apply_settings_to_preferences_dialog,
+                                             callback_close=self.app.settings.update_game_settings_table)
         dialog.run()
 
     def cb_info_button_clicked(self, *args):
@@ -276,6 +281,10 @@ class Callbacks:
 
     def cb_listed_widget_changed(self, *data):
         self.app.settings.update_settings_table()
+
+    def apply_settings_to_preferences_dialog(self, game, widget_option_mapping):
+        for option in widget_option_mapping:
+            self.app.settings.apply_to_widget(widget_option_mapping[option], self.core.game_table[game]["settings"][option])
 
 
 class Settings:
