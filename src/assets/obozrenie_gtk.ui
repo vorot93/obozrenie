@@ -99,24 +99,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkMenu" id="app-menu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkMenuItem" id="About_MenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <signal name="activate" handler="cb_about" object="About_Dialog" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="Quit_MenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <signal name="activate" handler="cb_quit" swapped="no"/>
-      </object>
-    </child>
-  </object>
   <object class="GtkImage" id="connect-icon">
     <property name="visible">True</property>
     <property name="can_focus">False</property>

@@ -357,12 +357,13 @@ class App(Gtk.Application):
     """App class."""
 
     def __init__(self, Core):
-        self.uifile = "obozrenie_gtk.ui"
-        self.profile_path = "~/.config/obozrenie"
+        self.assets_path = os.path.join(os.path.dirname(__file__), "assets")
 
-        self.uifile_path = os.path.join(os.path.dirname(__file__),
-                                        "assets",
-                                        self.uifile)
+        self.ui_file = os.path.join(self.assets_path,
+                                    "obozrenie_gtk.ui")
+        self.appmenu_file = os.path.join(self.assets_path,
+                                         "obozrenie_gtk_appmenu.ui")
+        self.profile_path = "~/.config/obozrenie"
 
         Gtk.Application.__init__(self,
                                  application_id="io.obozrenie",
@@ -373,7 +374,8 @@ class App(Gtk.Application):
 
         # Create builder
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self.uifile_path)
+        self.builder.add_from_file(self.ui_file)
+        self.builder.add_from_file(self.appmenu_file)
 
         self.core = Core()
         self.settings = Settings(self.core, os.path.expanduser(self.profile_path))
@@ -403,13 +405,12 @@ class App(Gtk.Application):
 
         self.add_action(about_action)
         self.add_action(quit_action)
-        menumodel = Gio.Menu()
-        menumodel.append("About", "app.about")
-        menumodel.append("Quit", "app.quit")
-        self.set_app_menu(menumodel)
+
+        self.set_app_menu(self.builder.get_object("app-menu"))
 
         # Add main window
         main_window = self.builder.get_object("Main_Window")
+        main_window.set_title("Obozrenie")
         self.add_window(main_window)
 
     def on_activate(self, app):
