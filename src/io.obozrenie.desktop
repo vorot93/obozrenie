@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Obozrenie (GTK+)
+Comment=Game Server Browser. GTK+ front-end.
+Exec=obozrenie-gtk
+Icon=obozrenie
+Type=Application
+Categories=Game;ActionGame;GNOME;GTK;
+StartupNotify=true
