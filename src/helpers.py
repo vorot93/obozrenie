@@ -72,7 +72,7 @@ def dict_to_list(dict_table, key_list):
         return list_table
 
 
-def load_settings_table(path):
+def load_table(path):
     """Loads settings table into dict"""
     try:
         table_open_object = open(path, 'r')
@@ -82,7 +82,7 @@ def load_settings_table(path):
     return table
 
 
-def save_settings_table(path, data):
+def save_table(path, data):
     """Saves settings to a file"""
     try:
         table_open_object = open(path, 'w')
