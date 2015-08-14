@@ -108,16 +108,16 @@ class Settings:
     def __init__(self, core, profile_path):
         """Loads base variables into the class."""
         # Internal configs
-        self.general_settings_config_path = os.path.join(os.path.dirname(__file__), "obozrenie_options_general.toml")
+        self.common_settings_config_path = os.path.join(os.path.dirname(__file__), "obozrenie_options_common.toml")
         self.dynamic_widget_config_path = os.path.join(os.path.dirname(__file__), "obozrenie_options_game.toml")
         self.defaults_path = os.path.join(os.path.dirname(__file__), "obozrenie_default.toml")
 
         # User configs
-        self.user_general_settings_path = os.path.join(profile_path, "settings.toml")
+        self.user_common_settings_path = os.path.join(profile_path, "settings.toml")
         self.user_game_settings_path = os.path.join(profile_path, "games.toml")
 
         self.dynamic_widget_table = helpers.load_table(self.dynamic_widget_config_path)
-        self.general_settings_table = helpers.load_table(self.general_settings_config_path)
+        self.common_settings_table = helpers.load_table(self.common_settings_config_path)
 
         self.settings_table = {}
 
@@ -126,16 +126,16 @@ class Settings:
     def load(self, callback_postgenload=None):
         """Loads configuration."""
         defaults_table = helpers.load_table(self.defaults_path)
-        user_general_settings_table = helpers.load_table(self.user_general_settings_path)
+        user_common_settings_table = helpers.load_table(self.user_common_settings_path)
 
-        # Load into general settings table
-        for group in self.general_settings_table:
+        # Load into common settings table
+        for group in self.common_settings_table:
             self.settings_table[group] = {}
-            for option in self.general_settings_table[group]:
+            for option in self.common_settings_table[group]:
                 # Define variables
                 value = defaults_table[group][option]
                 try:
-                    value = user_general_settings_table[group][option]
+                    value = user_common_settings_table[group][option]
                 except ValueError:
                     pass
                 except KeyError:
@@ -146,7 +146,7 @@ class Settings:
                 self.settings_table[group][option] = value
 
                 if callback_postgenload is not None:
-                    callback_postgenload(self.general_settings_table, group, option, value)
+                    callback_postgenload(self.common_settings_table, group, option, value)
 
         # Load game settings table
         user_game_settings_table = helpers.load_table(self.user_game_settings_path)
@@ -165,8 +165,8 @@ class Settings:
 
     def save(self):
         """Saves configuration."""
-        # Save general settings table
-        helpers.save_table(self.user_general_settings_path, self.settings_table)
+        # Save common settings table
+        helpers.save_table(self.user_common_settings_path, self.settings_table)
 
         # Compile game settings table
         user_game_settings_table = {}

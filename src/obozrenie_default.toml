@@ -8,7 +8,7 @@ id = "q3a"
 workdir = ""
 path = ""
 
-[general]
+[common]
 nickname = ""
 server-pass = ""
 server-host = "127.0.0.1"

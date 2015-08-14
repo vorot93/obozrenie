@@ -90,7 +90,7 @@ class GUIActions:
         pass
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
-        game = self.app.settings.settings_table["general"]["selected-game"]
+        game = self.app.settings.settings_table["common"]["selected-game"]
         dialog = templates.PreferencesDialog(self.main_window,
                                              game,
                                              self.core.game_table,
@@ -105,9 +105,9 @@ class GUIActions:
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
-        game = self.app.settings.settings_table["general"]["selected-game"]
-        server = self.app.settings.settings_table["general"]["server-host"]
-        password = self.app.settings.settings_table["general"]["server-pass"]
+        game = self.app.settings.settings_table["common"]["selected-game"]
+        server = self.app.settings.settings_table["common"]["server-host"]
+        password = self.app.settings.settings_table["common"]["server-pass"]
 
         self.core.start_game(game, server, password)
 
@@ -123,7 +123,7 @@ class GUIActions:
 
     def cb_game_combobox_changed(self, combobox, *data):
         """Actions on game combobox selection change."""
-        game = self.app.settings.settings_table["general"]["selected-game"]
+        game = self.app.settings.settings_table["common"]["selected-game"]
 
         self.serverlist_model.clear()
         if self.core.game_table[game]["servers"] == []:
@@ -136,8 +136,8 @@ class GUIActions:
         ping_button = self.builder.get_object("PingingEnable_CheckButton")
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
-        game = self.app.settings.settings_table["general"]["selected-game"]
-        bool_ping = ast.literal_eval(self.app.settings.settings_table["general"]["pinging-enable"])
+        game = self.app.settings.settings_table["common"]["selected-game"]
+        bool_ping = ast.literal_eval(self.app.settings.settings_table["common"]["pinging-enable"])
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
 

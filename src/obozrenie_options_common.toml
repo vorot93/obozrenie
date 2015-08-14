@@ -1,14 +1,14 @@
-[general.selected-game]
+[common.selected-game]
 gtk_widget_name="Game_ComboBox"
 
-[general.nickname]
+[common.nickname]
 gtk_widget_name = "Nickname_Entry"
 
-[general.pinging-enable]
+[common.pinging-enable]
 gtk_widget_name = "PingingEnable_CheckButton"
 
-[general.server-host]
+[common.server-host]
 gtk_widget_name="ServerHost_Entry"
 
-[general.server-pass]
+[common.server-pass]
 gtk_widget_name="ServerPass_Entry"
