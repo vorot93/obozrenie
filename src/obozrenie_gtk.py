@@ -449,7 +449,7 @@ class App(Gtk.Application):
                                         self.uifile)
 
         Gtk.Application.__init__(self,
-                                 application_id="com.github.skybon.obozrenie",
+                                 application_id="io.obozrenie",
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.connect("startup", self.on_startup)
         self.connect("activate", self.on_activate)
