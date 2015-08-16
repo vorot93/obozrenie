@@ -73,13 +73,13 @@ def dict_to_list(dict_table, key_list):
 
 
 def load_table(path):
-    """Loads settings table into dict"""
-    try:
-        table_open_object = open(path, 'r')
-    except FileNotFoundError:
-        return None
-    table = pytoml.load(table_open_object)
-    return table
+        """Loads settings table into dict"""
+        try:
+            table_open_object = open(path, 'r')
+        except FileNotFoundError:
+            return None
+        table = pytoml.load(table_open_object)
+        return table
 
 
 def save_table(path, data):

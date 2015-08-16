@@ -25,18 +25,18 @@ import pytoml
 
 from gi.repository import GLib
 
-import backends
-import helpers
+from . import helpers
+from . import backends
+from obozrenie.globals import *
 
 
 class Core:
     """
     Contains core logic and game table of Obozrenie server browser.
     """
-    GAME_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "obozrenie_games.toml")
 
     def __init__(self):
-        self.gameconfig_object = pytoml.load(open(self.GAME_CONFIG_FILE, 'r'))
+        self.gameconfig_object = pytoml.load(open(GAME_CONFIG_FILE, 'r'))
 
         self.game_table = self.create_game_table()
 
@@ -81,7 +81,7 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
         if backend == "rigsofrods":
-            self.game_table[game]["servers"] = backends.rigsofrods.core.stat_master(bool_ping)
+            self.game_table[game]["servers"] = backends.rigsofrods.stat_master(bool_ping)
         elif backend == "qstat":
             print("----------\n"
                   "QStat backend has not been implemented yet. Stay tuned!\n"
@@ -108,9 +108,9 @@ class Settings:
     def __init__(self, core, profile_path):
         """Loads base variables into the class."""
         # Internal configs
-        self.common_settings_config_path = os.path.join(os.path.dirname(__file__), "obozrenie_options_common.toml")
-        self.dynamic_widget_config_path = os.path.join(os.path.dirname(__file__), "obozrenie_options_game.toml")
-        self.defaults_path = os.path.join(os.path.dirname(__file__), "obozrenie_default.toml")
+        self.common_settings_config_path = os.path.join(SETTINGS_INTERNAL_DIR, "options_common.toml")
+        self.dynamic_widget_config_path = os.path.join(SETTINGS_INTERNAL_DIR, "options_game.toml")
+        self.defaults_path = os.path.join(SETTINGS_DEFAULTS_DIR, "defaults.toml")
 
         # User configs
         self.user_common_settings_path = os.path.join(profile_path, "settings.toml")

@@ -25,40 +25,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
   <!-- interface-name Obozrenie -->
   <!-- interface-description Game Server Browser -->
   <!-- interface-copyright Artem Vorotnikov 2015 -->
-  <object class="GtkAboutDialog" id="About_Dialog">
-    <property name="can_focus">False</property>
-    <property name="type_hint">dialog</property>
-    <property name="program_name">Obozrenie</property>
-    <property name="version">0.1</property>
-    <property name="copyright" translatable="yes">© 2015 Artem Vorotnikov</property>
-    <property name="comments" translatable="yes">Game Server Browser</property>
-    <property name="website">https://github.com/skybon/obozrenie</property>
-    <property name="authors">Artem Vorotnikov</property>
-    <property name="translator_credits" translatable="yes">translator-credits</property>
-    <property name="logo_icon_name">weather-clear-symbolic</property>
-    <property name="license_type">gpl-3-0</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="About_Dialog_Box">
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="About_Dialog_action_area">
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
   <object class="GtkListStore" id="Game_Store">
     <columns>
       <!-- column-name game_id -->

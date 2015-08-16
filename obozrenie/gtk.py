@@ -28,16 +28,16 @@ import pytoml
 
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
-from obozrenie_core import Core, Settings
-import helpers
-import templates_gtk as templates
+from . import helpers
+from obozrenie.core import Core, Settings
+import obozrenie.gtk_templates as templates
+from obozrenie.globals import *
 
 try:
     import pygeoip
-    GEOIP_DATA = '/usr/share/GeoIP/GeoIP.dat'
     try:
-        open(GEOIP_DATA)
-        print("GeoIP data file", GEOIP_DATA, "opened successfully")
+        open(GEOIP_DATA_FILE)
+        print("GeoIP data file", GEOIP_DATA_FILE, "opened successfully")
         GEOIP_ENABLED = True
     except:
         print("GeoIP data file not found. Disabling geolocation.")
@@ -45,8 +45,6 @@ try:
 except ImportError:
     print("PyGeoIP not found. Disabling geolocation.")
     GEOIP_ENABLED = False
-
-import backends
 
 
 class GUIActions:
@@ -91,13 +89,14 @@ class GUIActions:
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
         game = self.app.settings.settings_table["common"]["selected-game"]
-        dialog = templates.PreferencesDialog(self.main_window,
+        prefs_dialog = templates.PreferencesDialog(self.main_window,
                                              game,
                                              self.core.game_table,
                                              self.app.settings.dynamic_widget_table,
                                              callback_start=self.apply_settings_to_preferences_dialog,
                                              callback_close=self.update_game_settings_table)
-        dialog.run()
+        prefs_dialog.run()
+        prefs_dialog.destroy()
 
     def cb_info_button_clicked(self, *args):
         """Shows server information window."""
@@ -112,10 +111,11 @@ class GUIActions:
         self.core.start_game(game, server, password)
 
     @staticmethod
-    def cb_about(action, data, dialog):
+    def cb_about(action, dialog, parent, *args):
         """Opens the About dialog."""
-        dialog.run()
-        dialog.hide()
+        about_dialog = templates.AboutDialog(parent, PROJECT, DESCRIPTION, WEBSITE, VERSION, AUTHORS, ARTISTS, COPYRIGHT, Gtk.License.GPL_3_0, None)
+        about_dialog.run()
+        about_dialog.destroy()
 
     def cb_quit(self, *args):
         """Exits the program."""
@@ -168,14 +168,13 @@ class GUIActions:
             entry.append(table[game_id]["info"]["name"])
             entry.append(table[game_id]["info"]["backend"])
 
-            icon_base = os.path.dirname(__file__) + '/assets/icons/games/'
             icon = game_id + '.png'
             icon_missing = "image-missing.png"
 
             try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon, 24, 24))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon), 24, 24))
             except GLib.Error:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(icon_base + icon_missing, 24, 24))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             treeiter = self.game_store.append(entry)
 
@@ -199,15 +198,10 @@ class GUIActions:
 
             # Game icon
             try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/assets/icons/games/' +
-                    entry[0] + '.png', 24, 24))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[0] + '.png'), 24, 24))
             except GLib.Error:
-                print("Error appending icon for host: " + entry[
-                    self.view_format.index("host")])
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/assets/icons/games/' +
-                    entry[0] + '.png', 24, 24))
+                print("Error appending icon for host: " + entry[self.view_format.index("host")])
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[0] + '.png'), 24, 24))
 
             # Lock icon
             if entry[self.view_format.index("password")] == True:
@@ -219,11 +213,9 @@ class GUIActions:
             if GEOIP_ENABLED is True:
                 host = entry[self.view_format.index("host")].split(':')[0]
                 try:
-                    country_code = pygeoip.GeoIP(
-                        GEOIP_DATA).country_code_by_addr(host)
+                    country_code = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
                 except OSError:
-                    country_code = pygeoip.GeoIP(
-                        GEOIP_DATA).country_code_by_name(host)
+                    country_code = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
                 except:
                     country_code = 'unknown'
                 if country_code == '':
@@ -231,14 +223,10 @@ class GUIActions:
             else:
                 country_code = 'unknown'
             try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/assets/icons/flags/' +
-                    country_code.lower() + '.svg', 24, 18))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, country_code.lower() + '.svg'), 24, 18))
             except GLib.Error:
                 print("Error appending flag icon of " + country_code + " for host: " + entry[self.view_format.index("host")])
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    os.path.dirname(__file__) + '/assets/icons/flags/' + 'unknown' +
-                    '.svg', 24, 18))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
             # Total / max players
             entry.append(str(entry[1]) + '/' + str(entry[2]))
@@ -357,16 +345,8 @@ class App(Gtk.Application):
     """App class."""
 
     def __init__(self, Core):
-        self.assets_path = os.path.join(os.path.dirname(__file__), "assets")
-
-        self.ui_file = os.path.join(self.assets_path,
-                                    "obozrenie_gtk.ui")
-        self.appmenu_file = os.path.join(self.assets_path,
-                                         "obozrenie_gtk_appmenu.ui")
-        self.profile_path = "~/.config/obozrenie"
-
         Gtk.Application.__init__(self,
-                                 application_id="io.obozrenie",
+                                 application_id=APPLICATION_ID,
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.connect("startup", self.on_startup)
         self.connect("activate", self.on_activate)
@@ -374,11 +354,11 @@ class App(Gtk.Application):
 
         # Create builder
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self.ui_file)
-        self.builder.add_from_file(self.appmenu_file)
+        self.builder.add_from_file(GTK_UI_FILE)
+        self.builder.add_from_file(GTK_APPMENU_FILE)
 
         self.core = Core()
-        self.settings = Settings(self.core, os.path.expanduser(self.profile_path))
+        self.settings = Settings(self.core, os.path.expanduser(PROFILE_PATH))
 
         self.guiactions = GUIActions(self, self.builder, self.core)
 
@@ -395,23 +375,23 @@ class App(Gtk.Application):
         # Connect signals
         self.builder.connect_signals(self.guiactions)
 
+        # Add main window
+        main_window = self.builder.get_object("Main_Window")
+        main_window.set_title("Obozrenie")
+        self.add_window(main_window)
+
         # Create menu actions
         about_dialog = self.builder.get_object("About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
         quit_action = Gio.SimpleAction.new("quit", None)
 
-        about_action.connect("activate", self.guiactions.cb_about, about_dialog)
+        about_action.connect("activate", self.guiactions.cb_about, main_window)
         quit_action.connect("activate", self.guiactions.cb_quit, self)
 
         self.add_action(about_action)
         self.add_action(quit_action)
 
         self.set_app_menu(self.builder.get_object("app-menu"))
-
-        # Add main window
-        main_window = self.builder.get_object("Main_Window")
-        main_window.set_title("Obozrenie")
-        self.add_window(main_window)
 
     def on_activate(self, app):
         window = self.builder.get_object("Main_Window")

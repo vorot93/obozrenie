@@ -22,9 +22,10 @@ import ast
 import html.parser
 import requests
 
-import ping
+import obozrenie.ping as ping
+from obozrenie.globals import *
 
-BACKEND_CONFIG = os.path.split(__file__)[0] + "/settings.ini"
+BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
 
 
 class ServerListParser(html.parser.HTMLParser):
