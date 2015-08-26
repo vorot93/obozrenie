@@ -5,8 +5,8 @@ import sys
 import threading
 
 
-class Pinger(object):
-    status = dict()  # Populated while we are running
+class Pinger():
+    status = {}  # Populated while we are running
     hosts = []  # List of all hosts/ips in our input queue
 
     # How many ping process at the time.

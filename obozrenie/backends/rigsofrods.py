@@ -86,11 +86,9 @@ def add_game_name(array):
     for i in range(len(array)):
         array[i]["game"] = "rigsofrods"
 
-    return
 
-
-def add_rtt_info(array, bool_ping):
-    """Appends server response time to the table. If bool_ping is set to false, print 9999 instead."""
+def add_rtt_info(array):
+    """Appends server response time to the table."""
     hosts_array = []
     rtt_temp_array = []
     rtt_temp_array.append([])
@@ -102,25 +100,18 @@ def add_rtt_info(array, bool_ping):
 
     pinger = ping.Pinger()
     pinger.thread_count = 16
-    pinger.hosts = hosts_array
+    pinger.hosts = list(set(hosts_array))
 
-    if bool_ping is True:
-        pinger.status.clear()
-        rtt_array = pinger.start()
+    pinger.status.clear()
+    rtt_array = pinger.start()
 
-        # Match ping in host list.
-        for i in range(len(array)):
-            ip = array[i]["host"].split(':')[0]
-            array[i]["ping"] = rtt_array[ip]
-
-    else:
-        for i in range(len(hosts_array)):
-            array[i]["ping"] = 9999
-
-    return
+    # Match ping in host list.
+    for i in range(len(array)):
+        ip = array[i]["host"].split(':')[0]
+        array[i]["ping"] = rtt_array[ip]
 
 
-def stat_master(bool_rtt):
+def stat_master():
     """Stats the master server"""
 
     backend_keyfile = GLib.KeyFile.new()
@@ -138,7 +129,7 @@ def stat_master(bool_rtt):
     parser.feed(stream)
     server_table = parser.list1.copy()
 
-    add_rtt_info(server_table, bool_rtt)
+    add_rtt_info(server_table)
     add_game_name(server_table)
 
     return server_table

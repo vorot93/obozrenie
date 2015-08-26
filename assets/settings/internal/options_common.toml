@@ -4,9 +4,6 @@ gtk_widget_name="Game_ComboBox"
 [common.nickname]
 gtk_widget_name = "Nickname_Entry"
 
-[common.pinging-enable]
-gtk_widget_name = "PingingEnable_CheckButton"
-
 [common.server-host]
 gtk_widget_name="ServerHost_Entry"
 

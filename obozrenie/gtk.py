@@ -137,14 +137,11 @@ class GUIActions:
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
 
         game = self.app.settings.settings_table["common"]["selected-game"]
-        bool_ping = ast.literal_eval(self.app.settings.settings_table["common"]["pinging-enable"])
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
 
         self.serverlist_update_button.set_sensitive(False)
         self.game_combobox.set_sensitive(False)
-
-        Gtk.TreeViewColumn.set_visible(ping_column, bool_ping)
 
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
@@ -152,7 +149,7 @@ class GUIActions:
         self.serverlist_model.clear()
         self.serverhost_entry.set_text(a)
 
-        self.core.update_server_list(game, bool_ping, self.fill_server_view)
+        self.core.update_server_list(game, self.fill_server_view)
 
     def get_games_list_store(self):
         """

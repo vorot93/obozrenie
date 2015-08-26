@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect
 import os
 from xdg import BaseDirectory
 
@@ -28,6 +27,7 @@ APPLICATION_ID = "io.obozrenie"
 PROJECT = "Obozrenie"
 DESCRIPTION = "Game Server Browser"
 WEBSITE = "http://obozrenie.vorotnikov.me"
+GIT_WEBSITE = "https://github.com/obozrenie/obozrenie"
 VERSION = "0.1"
 COPYRIGHT = "© 2015 Artem Vorotnikov"
 AUTHORS = ["Artem Vorotnikov"]
@@ -60,3 +60,5 @@ GEOIP_DATA_FILE = os.path.join(SYSTEM_DATA_DIR, 'GeoIP', 'GeoIP.dat')
 
 GTK_UI_FILE = os.path.join(ASSETS_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(ASSETS_DIR, "obozrenie_gtk_appmenu.ui")
+
+ERROR_MSG = "\nThis is an error. Please file a bug report at " + GIT_WEBSITE

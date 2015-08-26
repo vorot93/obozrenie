@@ -27,7 +27,7 @@ from gi.repository import GLib
 
 from . import helpers
 from . import backends
-from obozrenie.globals import *
+from .globals import *
 
 
 class Core:
@@ -71,25 +71,23 @@ class Core:
         game_index = helpers.search_dict_table(self.game_table, "id", game)
         self.game_table[game_index]["servers"].clear()
 
-    def update_server_list(self, game, bool_ping, stat_callback):
+    def update_server_list(self, game, stat_callback=None):
         """Updates server lists"""
-        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, bool_ping, stat_callback))
+        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
-    def stat_master_target(self, game, bool_ping, callback):
+    def stat_master_target(self, game, callback):
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
-        if backend == "rigsofrods":
-            self.game_table[game]["servers"] = backends.rigsofrods.stat_master(bool_ping)
-        elif backend == "qstat":
-            print("----------\n"
-                  "QStat backend has not been implemented yet. Stay tuned!\n"
-                  "----------")
-
-        # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
-        if callback is not None:
-            GLib.idle_add(callback, self.game_table[game])
+        try:
+            self.game_table[game]["servers"] = backends.backend_table[backend].stat_master()
+        except KeyError:
+            print("Specified backend for", self.game_table[game]["info"]["name"], "does not exist.", ERROR_MSG)
+        finally:
+            # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
+            if callback is not None:
+                GLib.idle_add(callback, self.game_table[game])
 
     def get_server_info():
         pass

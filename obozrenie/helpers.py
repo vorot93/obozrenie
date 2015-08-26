@@ -104,10 +104,20 @@ def launch_game(game, game_settings, server, password):
             config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
             path = game_settings["path"]
 
-            call(["sed", "-i", "s/Network enable.*/Network enable=Yes/", config_file])
-            call(["sed", "-i", "s/Server name.*/Server name=" + host + "/", config_file])
-            call(["sed", "-i", "s/Server port.*/Server port=" + port + "/", config_file])
-            call(["sed", "-i", "s/Server password.*/Server password=" + password + "/", config_file])
+            if os.path.exists(config_file):
+                call(["sed", "-i", "s/Network enable.*/Network enable=Yes/", config_file])
+                call(["sed", "-i", "s/Server name.*/Server name=" + host + "/", config_file])
+                call(["sed", "-i", "s/Server port.*/Server port=" + port + "/", config_file])
+                call(["sed", "-i", "s/Server password.*/Server password=" + password + "/", config_file])
+            else:
+                if os.path.exists(os.path.dirname(config_file)) is not True:
+                    os.makedirs(os.path.dirname(config_file))
+                with open(config_file, "x") as f:
+                    f.write("Network enable=Yes" + "\n")
+                    f.write("Server name=" + host + "\n")
+                    f.write("Server port=" + port + "\n")
+                    f.write("Server password=" + password + "\n")
+                    f.close()
 
             print("Launching", path)
             call_exit_code = call(path)
