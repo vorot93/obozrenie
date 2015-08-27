@@ -197,8 +197,9 @@ class GUIActions:
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[0] + '.png'), 24, 24))
             except GLib.Error:
+                icon_missing = "image-missing.png"
                 print("Error appending icon for host: " + entry[self.view_format.index("host")])
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[0] + '.png'), 24, 24))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             # Lock icon
             if entry[self.view_format.index("password")] == True:
