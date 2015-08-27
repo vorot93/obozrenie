@@ -63,13 +63,19 @@ def search_dict_table(table, key, value):
 def dict_to_list(dict_table, key_list):
         list_table = []
 
-        for i in range(len(dict_table)):
-            list_table.append([])
+        if dict_table is not None:
+            for i in range(len(dict_table)):
+                list_table.append([])
 
-            for j in range(len(key_list)):
-                list_table[i].append(dict_table[i][key_list[j]])
+                for j in range(len(key_list)):
+                    list_table[i].append(dict_table[i][key_list[j]])
 
         return list_table
+
+
+def flatten_list(nested_list):
+    flattened_list = [item for sublist in nested_list for item in sublist]
+    return flattened_list
 
 
 def load_table(path):

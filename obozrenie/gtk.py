@@ -177,7 +177,7 @@ class GUIActions:
 
     def fill_server_view(self, game_table_slice):
         """Fill the server view"""
-        self.view_format = ("game",
+        self.view_format = ("game_type",
                             "player_count",
                             "player_limit",
                             "password",

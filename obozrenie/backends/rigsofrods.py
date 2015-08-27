@@ -14,14 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import GLib
-
 import os
 
 import ast
 import html.parser
 import requests
 
+import obozrenie.helpers as helpers
 import obozrenie.ping as ping
 from obozrenie.globals import *
 
@@ -84,7 +83,7 @@ class ServerListParser(html.parser.HTMLParser):
 
 def add_game_name(array):
     for i in range(len(array)):
-        array[i]["game"] = "rigsofrods"
+        array[i]["game_type"] = "rigsofrods"
 
 
 def add_rtt_info(array):
@@ -99,8 +98,8 @@ def add_rtt_info(array):
         hosts_array.append(array[i]["host"].split(':')[0])
 
     pinger = ping.Pinger()
-    pinger.thread_count = 16
     pinger.hosts = list(set(hosts_array))
+    pinger.action = "ping"
 
     pinger.status.clear()
     rtt_array = pinger.start()
@@ -111,14 +110,13 @@ def add_rtt_info(array):
         array[i]["ping"] = rtt_array[ip]
 
 
-def stat_master():
+def stat_master(game, game_table_slice):
     """Stats the master server"""
 
-    backend_keyfile = GLib.KeyFile.new()
-    backend_keyfile.load_from_file(BACKEND_CONFIG, GLib.KeyFileFlags.NONE)
+    backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
-    protocol = backend_keyfile.get_value("protocol", "version")
-    master_uri = backend_keyfile.get_value("master", "uri") + '?version=' + protocol
+    protocol = backend_config_object["protocol"]["version"]
+    master_uri = backend_config_object["master"]["uri"] + '?version=' + protocol
 
     stream = requests.get(master_uri).text
     parser = ServerListParser()

@@ -1,5 +1,5 @@
 [protocol]
-version = RoRnet_2.37
+version = "RoRnet_2.37"
 
 [master]
-uri = http://api.rigsofrods.com/serverlist/
+uri = "http://api.rigsofrods.com/serverlist/"

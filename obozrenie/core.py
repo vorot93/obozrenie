@@ -81,7 +81,7 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
         try:
-            self.game_table[game]["servers"] = backends.backend_table[backend].stat_master()
+            self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
         except KeyError:
             print("Specified backend for", self.game_table[game]["info"]["name"], "does not exist.", ERROR_MSG)
         finally:
