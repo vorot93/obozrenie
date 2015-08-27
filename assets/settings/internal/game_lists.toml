@@ -7,3 +7,8 @@ settings = ["path"]
 name = "Quake III Arena"
 backend = "qstat"
 settings = ["path", "workdir", "master_uri"]
+
+[et]
+name = "Wolfenstein: Enemy Territory"
+backend = "qstat"
+settings = ["path", "workdir", "master_uri"]

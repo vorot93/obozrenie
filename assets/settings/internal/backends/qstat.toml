@@ -1,3 +1,9 @@
+[game.et]
+master_key = "woetm"
+master_type = "WOETM"
+server_key = "woets"
+server_type = "WOETS"
+
 [game.q3a]
 master_key = "q3m"
 master_type = "Q3M"
