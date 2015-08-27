@@ -415,8 +415,9 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Name_ServerList_TreeViewColumn">
+                        <property name="resizable">True</property>
                         <property name="spacing">5</property>
-                        <property name="sizing">autosize</property>
+                        <property name="sizing">fixed</property>
                         <property name="title" translatable="yes">Name</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
@@ -443,8 +444,9 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Host_ServerList_TreeViewColumn">
+                        <property name="resizable">True</property>
                         <property name="spacing">5</property>
-                        <property name="sizing">autosize</property>
+                        <property name="sizing">fixed</property>
                         <property name="title" translatable="yes">Host</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
@@ -466,6 +468,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <child>
                       <object class="GtkTreeViewColumn" id="Ping_ServerList_TreeViewColumn">
                         <property name="resizable">True</property>
+                        <property name="sizing">fixed</property>
                         <property name="title" translatable="yes">Ping</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
@@ -480,7 +483,8 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Players_ServerList_TreeViewColumn">
-                        <property name="sizing">autosize</property>
+                        <property name="resizable">True</property>
+                        <property name="sizing">fixed</property>
                         <property name="title" translatable="yes">Players</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
@@ -496,7 +500,8 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Terrain_ServerList_TreeViewColumn">
-                        <property name="sizing">autosize</property>
+                        <property name="resizable">True</property>
+                        <property name="sizing">fixed</property>
                         <property name="title" translatable="yes">Terrain</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
