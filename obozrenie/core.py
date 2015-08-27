@@ -81,13 +81,14 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
         try:
+            print("Refreshing servers for", game)
             self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
         except KeyError:
             print("Specified backend for", self.game_table[game]["info"]["name"], "does not exist.", ERROR_MSG)
-        finally:
-            # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
-            if callback is not None:
-                GLib.idle_add(callback, self.game_table[game])
+
+        # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
+        if callback is not None:
+            GLib.idle_add(callback, self.game_table[game])
 
     def get_server_info():
         pass

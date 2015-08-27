@@ -10,12 +10,6 @@ workdir = ""
 path = ""
 master_uri = ""
 
-[[games]]
-id = "etwolf"
-workdir = ""
-path = ""
-master_uri = "etmaster.idsoftware.com:27950"
-
 [common]
 nickname = ""
 server-pass = ""

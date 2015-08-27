@@ -45,9 +45,26 @@ def stat_master(game, game_table_slice):
     server_table = []
     for master_server in server_table_dict:  # For every master...
         if server_table_dict[master_server] is not None:  # If master is not bogus...
-            for server in server_table_dict[master_server]:  # For every server...
-                if server_table_dict[master_server]['server']['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
+            for qstat_entry in server_table_dict[master_server]['server']:  # For every server...
+                if qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
                     server_table.append({})
-                    pass
 
-    return server_table_dict
+                    server_table[-1]['host'] = qstat_entry['hostname']
+                    server_table[-1]['password'] = False  # Stub
+
+                    if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
+                        server_table[-1]['name'] = ""
+                        server_table[-1]['game_type'] = ""
+                        server_table[-1]['terrain'] = ""
+                        server_table[-1]['player_count'] = 0
+                        server_table[-1]['player_limit'] = 0
+                        server_table[-1]['ping'] = 9999
+                    else:
+                        server_table[-1]['name'] = qstat_entry['name']
+                        server_table[-1]['game_type'] = qstat_entry['gametype']
+                        server_table[-1]['terrain'] = qstat_entry['map']
+                        server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
+                        server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
+                        server_table[-1]['ping'] = int(qstat_entry['ping'])
+
+    return server_table
