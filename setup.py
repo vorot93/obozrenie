@@ -3,6 +3,8 @@
 import os
 from distutils.core import setup
 
+from obozrenie.globals import VERSION
+
 data_files = []
 
 for directory, _, filenames in os.walk('assets'):
@@ -15,12 +17,12 @@ for directory, _, filenames in os.walk('assets'):
         data_files.append((os.path.join('share', dest), files))
 
 setup(name='Obozrenie',
-      version='0.1',
+      version=VERSION,
       description='Simple and easy to use game server browser',
       author='Artem Vorotnikov',
       author_email='artem@vorotnikov.me',
       url='https://github.com/obozrenie',
-      packages=['obozrenie'],
-      package_dir={'obozrenie': 'obozrenie'},
+      packages=['obozrenie', 'obozrenie.backends'],
+      package_dir={'obozrenie': 'obozrenie', 'obozrenie.backends': 'obozrenie/backends'},
       data_files=data_files
       )
