@@ -25,9 +25,9 @@ import pytoml
 
 from gi.repository import GLib
 
-from . import helpers
-from . import backends
-from .globals import *
+from obozrenie import helpers
+from obozrenie import backends
+from obozrenie.globals import *
 
 try:
     import pygeoip

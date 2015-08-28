@@ -26,7 +26,7 @@ import threading
 
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
-from . import helpers
+from obozrenie import helpers
 from obozrenie.core import Core, Settings
 import obozrenie.gtk_templates as templates
 from obozrenie.globals import *
