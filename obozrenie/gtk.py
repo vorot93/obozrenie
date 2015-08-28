@@ -24,8 +24,6 @@ import os
 import shutil
 import threading
 
-import pytoml
-
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
 from . import helpers
