@@ -34,20 +34,20 @@ AUTHORS = ["Artem Vorotnikov"]
 ARTISTS = ["Artem Vorotnikov"]
 
 SYSTEM_DATA_DIR = '/usr/share'
-SYSTEM_PROJECT_DIR = os.path.join(SYSTEM_DATA_DIR, 'obozrenie')
 
 if is_run_from_git_workdir():
     ASSETS_DIR = 'assets'
-    LOCALE_DIR = 'locale'
 else:
-    ASSETS_DIR = os.path.join(SYSTEM_PROJECT_DIR, 'assets')
-    LOCALE_DIR = os.path.join(SYSTEM_DATA_DIR, 'locale')
+    ASSETS_DIR = SYSTEM_DATA_DIR
 
-ICON_DIR = os.path.join(ASSETS_DIR, 'icons')
+PROJECT_DIR = os.path.join(ASSETS_DIR, 'obozrenie')
+LOCALE_DIR = os.path.join(ASSETS_DIR, 'locale')
+
+ICON_DIR = os.path.join(ASSETS_DIR, 'pixmaps', 'obozrenie')
 ICON_FLAGS_DIR = os.path.join(ICON_DIR, 'flags')
 ICON_GAMES_DIR = os.path.join(ICON_DIR, 'games')
 
-SETTINGS_DIR = os.path.join(ASSETS_DIR, 'settings')
+SETTINGS_DIR = os.path.join(PROJECT_DIR, 'settings')
 SETTINGS_INTERNAL_DIR = os.path.join(SETTINGS_DIR, 'internal')
 SETTINGS_INTERNAL_BACKENDS_DIR = os.path.join(SETTINGS_INTERNAL_DIR, 'backends')
 SETTINGS_DEFAULTS_DIR = os.path.join(SETTINGS_DIR, 'defaults')
@@ -58,7 +58,8 @@ GAME_CONFIG_FILE = os.path.join(SETTINGS_INTERNAL_DIR, "game_lists.toml")
 
 GEOIP_DATA_FILE = os.path.join(SYSTEM_DATA_DIR, 'GeoIP', 'GeoIP.dat')
 
-GTK_UI_FILE = os.path.join(ASSETS_DIR, "obozrenie_gtk.ui")
-GTK_APPMENU_FILE = os.path.join(ASSETS_DIR, "obozrenie_gtk_appmenu.ui")
+UI_DIR = os.path.join(PROJECT_DIR, "ui")
+GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
+GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
 
 ERROR_MSG = "\nThis is an error. Please file a bug report at " + GIT_WEBSITE
