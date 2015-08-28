@@ -15,6 +15,7 @@
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 
 import ast
 import xmltodict
@@ -43,6 +44,7 @@ def stat_master(game, game_table_slice):
         server_table_dict[master_server] = xmltodict.parse(server_table_qstat_xml[master_server])['qstat']
 
     server_table = []
+    color_code_pattern = '[\\^](.)'
     for master_server in server_table_dict:  # For every master...
         if server_table_dict[master_server] is not None:  # If master is not bogus...
             for qstat_entry in server_table_dict[master_server]['server']:  # For every server...
@@ -60,7 +62,7 @@ def stat_master(game, game_table_slice):
                         server_table[-1]['player_limit'] = 0
                         server_table[-1]['ping'] = 9999
                     else:
-                        server_table[-1]['name'] = qstat_entry['name']
+                        server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
                         server_table[-1]['game_type'] = qstat_entry['gametype']
                         server_table[-1]['terrain'] = qstat_entry['map']
                         server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
