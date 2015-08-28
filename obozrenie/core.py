@@ -29,6 +29,19 @@ from . import helpers
 from . import backends
 from .globals import *
 
+try:
+    import pygeoip
+    try:
+        open(GEOIP_DATA_FILE)
+        print("GeoIP data file", GEOIP_DATA_FILE, "opened successfully")
+        GEOIP_ENABLED = True
+    except:
+        print("GeoIP data file not found. Disabling geolocation.")
+        GEOIP_ENABLED = False
+except ImportError:
+    print("PyGeoIP not found. Disabling geolocation.")
+    GEOIP_ENABLED = False
+
 
 class Core:
     """
@@ -85,6 +98,17 @@ class Core:
             self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
         except KeyError:
             print("Specified backend for", self.game_table[game]["info"]["name"], "does not exist.", ERROR_MSG)
+
+        for entry in self.game_table[game]["servers"]:
+            entry['country'] = ""
+            if GEOIP_ENABLED is True:
+                host = entry["host"].split(':')[0]
+                try:
+                    entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
+                except OSError:
+                    entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                except:
+                    pass
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:

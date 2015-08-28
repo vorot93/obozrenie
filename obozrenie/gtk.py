@@ -33,19 +33,6 @@ from obozrenie.core import Core, Settings
 import obozrenie.gtk_templates as templates
 from obozrenie.globals import *
 
-try:
-    import pygeoip
-    try:
-        open(GEOIP_DATA_FILE)
-        print("GeoIP data file", GEOIP_DATA_FILE, "opened successfully")
-        GEOIP_ENABLED = True
-    except:
-        print("GeoIP data file not found. Disabling geolocation.")
-        GEOIP_ENABLED = False
-except ImportError:
-    print("PyGeoIP not found. Disabling geolocation.")
-    GEOIP_ENABLED = False
-
 
 class GUIActions:
 
@@ -184,7 +171,8 @@ class GUIActions:
                             "host",
                             "name",
                             "terrain",
-                            "ping")
+                            "ping",
+                            "country")
 
         server_table = helpers.dict_to_list(game_table_slice["servers"],
                                             self.view_format)
@@ -208,22 +196,10 @@ class GUIActions:
                 entry.append(None)
 
             # Country flags
-            if GEOIP_ENABLED is True:
-                host = entry[self.view_format.index("host")].split(':')[0]
-                try:
-                    country_code = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
-                except OSError:
-                    country_code = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
-                except:
-                    country_code = 'unknown'
-                if country_code == '':
-                    country_code = 'unknown'
-            else:
-                country_code = 'unknown'
             try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, country_code.lower() + '.svg'), 24, 18))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.view_format.index("country")].lower() + '.svg'), 24, 18))
             except GLib.Error:
-                print("Error appending flag icon of " + country_code + " for host: " + entry[self.view_format.index("host")])
+                print("Error appending flag icon of " + entry[self.view_format.index("country")] + " for host: " + entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
             # Total / max players

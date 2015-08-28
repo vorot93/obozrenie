@@ -55,11 +55,13 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
       <!-- column-name ping -->
       <column type="gint"/>
+      <!-- column-name country -->
+      <column type="gchararray"/>
       <!-- column-name game_icon -->
       <column type="GdkPixbuf"/>
       <!-- column-name lockicon -->
       <column type="gchararray"/>
-      <!-- column-name geoip -->
+      <!-- column-name country_icon -->
       <column type="GdkPixbuf"/>
       <!-- column-name player -->
       <column type="gchararray"/>
@@ -425,13 +427,13 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">8</attribute>
+                            <attribute name="pixbuf">9</attribute>
                           </attributes>
                         </child>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Password_CellRenderer"/>
                           <attributes>
-                            <attribute name="icon-name">9</attribute>
+                            <attribute name="icon-name">10</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -454,7 +456,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="GeoIP_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">10</attribute>
+                            <attribute name="pixbuf">11</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -489,11 +491,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
                         <property name="sort_order">descending</property>
-                        <property name="sort_column_id">11</property>
+                        <property name="sort_column_id">12</property>
                         <child>
                           <object class="GtkCellRendererText" id="Player_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">11</attribute>
+                            <attribute name="text">12</attribute>
                           </attributes>
                         </child>
                       </object>
