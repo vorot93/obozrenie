@@ -53,9 +53,9 @@ def stat_master(game, game_table_slice):
                     server_table[-1]['password'] = False  # Stub
 
                     if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
-                        server_table[-1]['name'] = ""
-                        server_table[-1]['game_type'] = ""
-                        server_table[-1]['terrain'] = ""
+                        server_table[-1]['name'] = None
+                        server_table[-1]['game_type'] = None
+                        server_table[-1]['terrain'] = None
                         server_table[-1]['player_count'] = 0
                         server_table[-1]['player_limit'] = 0
                         server_table[-1]['ping'] = 9999
