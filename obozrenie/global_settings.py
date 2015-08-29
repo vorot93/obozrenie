@@ -20,18 +20,21 @@ import os
 from xdg import BaseDirectory
 
 
+def N_(msg): return msg
+
+
 def is_run_from_git_workdir():
     return os.path.exists('assets')
 
 APPLICATION_ID = "io.obozrenie"
-PROJECT = "Obozrenie"
-DESCRIPTION = "Game Server Browser"
+PROJECT = N_("Obozrenie")
+DESCRIPTION = N_("Game Server Browser")
 WEBSITE = "http://obozrenie.vorotnikov.me"
 GIT_WEBSITE = "https://github.com/obozrenie/obozrenie"
 VERSION = "0.1"
-COPYRIGHT = "© 2015 Artem Vorotnikov"
-AUTHORS = ["Artem Vorotnikov"]
-ARTISTS = ["Artem Vorotnikov"]
+COPYRIGHT = N_("© 2015 Artem Vorotnikov")
+AUTHORS = [N_("Artem Vorotnikov")]
+ARTISTS = [N_("Artem Vorotnikov")]
 
 SYSTEM_DATA_DIR = '/usr/share'
 
@@ -62,4 +65,6 @@ UI_DIR = os.path.join(PROJECT_DIR, "ui")
 GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
 
-ERROR_MSG = "\nThis is an error. Please file a bug report at " + GIT_WEBSITE
+ERROR_MSG = N_("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
+
+del N_

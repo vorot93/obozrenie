@@ -21,25 +21,26 @@
 import os
 import threading
 
-import pytoml
-
 from gi.repository import GLib
+
+from obozrenie import N_
 
 from obozrenie import helpers
 from obozrenie import backends
-from obozrenie.globals import *
+from obozrenie.option_lists import *
+from obozrenie.global_settings import *
 
 try:
     import pygeoip
     try:
         open(GEOIP_DATA_FILE)
-        print("GeoIP data file", GEOIP_DATA_FILE, "opened successfully")
+        print(N_("GeoIP data file {0} opened successfully").format(GEOIP_DATA_FILE))
         GEOIP_ENABLED = True
     except:
-        print("GeoIP data file not found. Disabling geolocation.")
+        print(N_("GeoIP data file not found. Disabling geolocation."))
         GEOIP_ENABLED = False
 except ImportError:
-    print("PyGeoIP not found. Disabling geolocation.")
+    print(N_("PyGeoIP not found. Disabling geolocation."))
     GEOIP_ENABLED = False
 
 
@@ -49,7 +50,7 @@ class Core:
     """
 
     def __init__(self):
-        self.gameconfig_object = pytoml.load(open(GAME_CONFIG_FILE, 'r'))
+        self.gameconfig_object = helpers.load_table(GAME_CONFIG_FILE)
 
         self.game_table = self.create_game_table()
 
@@ -94,10 +95,10 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
         try:
-            print("Refreshing servers for", game)
+            print(N_("Refreshing servers for {0}").format(game))
             self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
         except KeyError:
-            print("Specified backend for", self.game_table[game]["info"]["name"], "does not exist.", ERROR_MSG)
+            print(N_("Specified backend for {0} does not exist.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
 
         for entry in self.game_table[game]["servers"]:
             entry['country'] = ""
@@ -130,17 +131,15 @@ class Settings:
 
     def __init__(self, core, profile_path):
         """Loads base variables into the class."""
-        # Internal configs
-        self.common_settings_config_path = os.path.join(SETTINGS_INTERNAL_DIR, "options_common.toml")
-        self.dynamic_widget_config_path = os.path.join(SETTINGS_INTERNAL_DIR, "options_game.toml")
+        # Default configs
         self.defaults_path = os.path.join(SETTINGS_DEFAULTS_DIR, "defaults.toml")
 
         # User configs
         self.user_common_settings_path = os.path.join(profile_path, "settings.toml")
         self.user_game_settings_path = os.path.join(profile_path, "games.toml")
 
-        self.dynamic_widget_table = helpers.load_table(self.dynamic_widget_config_path)
-        self.common_settings_table = helpers.load_table(self.common_settings_config_path)
+        self.dynamic_widget_table = get_game_options()
+        self.common_settings_table = get_common_options()
 
         self.settings_table = {}
 
@@ -201,5 +200,5 @@ class Settings:
 
 
 if __name__ == "__main__":
-    print("This is a core module of Obozrenie Game Server Browser.\n"
-          "Please run an appropriate UI instead.")
+    print(N_("This is a core module of Obozrenie Game Server Browser.\n"
+             "Please run an appropriate UI instead."))

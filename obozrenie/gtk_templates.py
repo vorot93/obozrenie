@@ -20,6 +20,8 @@
 
 from gi.repository import Gtk
 
+from obozrenie import N_
+
 
 def get_option_widget(option_dict):
     name = option_dict["name"]
@@ -52,10 +54,10 @@ def get_entry_with_label(label_text="", tooltip_text=""):
     entry = Gtk.Entry()
     label = Gtk.Label()
 
-    label.set_text(label_text)
+    label.set_text(N_(label_text))
     label.set_halign(Gtk.Align.START)
 
-    entry.set_tooltip_text(tooltip_text)
+    entry.set_tooltip_text(N_(tooltip_text))
     entry.set_halign(Gtk.Align.END)
 
     grid.add(label)
@@ -97,6 +99,7 @@ class PreferencesDialog(Gtk.Dialog):
         if self.callback_close is not None:
             self.callback_close(self.game, self.widget_option_mapping)
         self.destroy()
+
 
 class AboutDialog(Gtk.AboutDialog):
     def __init__(self, parent_window, project, description, website, version, authors, artists, copyright, license_type, icon):

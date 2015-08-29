@@ -22,7 +22,7 @@ import requests
 
 import obozrenie.helpers as helpers
 import obozrenie.ping as ping
-from obozrenie.globals import *
+from obozrenie.global_settings import *
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
 

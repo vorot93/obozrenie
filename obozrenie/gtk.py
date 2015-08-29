@@ -18,18 +18,21 @@
 
 """Simple and easy to use game server browser."""
 
+
 import argparse
 import ast
 import os
 import shutil
 import threading
 
+from obozrenie import N_
+
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
 from obozrenie import helpers
 from obozrenie.core import Core, Settings
 import obozrenie.gtk_templates as templates
-from obozrenie.globals import *
+from obozrenie.global_settings import *
 
 
 class GUIActions:
@@ -75,11 +78,11 @@ class GUIActions:
     def cb_game_preferences_button_clicked(self, combobox, *data):
         game = self.app.settings.settings_table["common"]["selected-game"]
         prefs_dialog = templates.PreferencesDialog(self.main_window,
-                                             game,
-                                             self.core.game_table,
-                                             self.app.settings.dynamic_widget_table,
-                                             callback_start=self.apply_settings_to_preferences_dialog,
-                                             callback_close=self.update_game_settings_table)
+                                                   game,
+                                                   self.core.game_table,
+                                                   self.app.settings.dynamic_widget_table,
+                                                   callback_start=self.apply_settings_to_preferences_dialog,
+                                                   callback_close=self.update_game_settings_table)
         prefs_dialog.run()
         prefs_dialog.destroy()
 
@@ -187,7 +190,7 @@ class GUIActions:
                     entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24))
             except GLib.Error:
                 icon_missing = "image-missing.png"
-                print("Error appending game type icon for game type", self.view_format.index("game_type"), "; host:", entry[self.view_format.index("host")])
+                print(N_("Error appending game type icon for game type"), self.view_format.index("game_type"), "; host:", entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             # Lock icon
@@ -200,7 +203,7 @@ class GUIActions:
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.view_format.index("country")].lower() + '.svg'), 24, 18))
             except GLib.Error:
-                print("Error appending flag icon of " + entry[self.view_format.index("country")] + " for host: " + entry[self.view_format.index("host")])
+                print(N_("Error appending flag icon of ") + entry[self.view_format.index("country")] + " for host: " + entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
             # Total / max players
