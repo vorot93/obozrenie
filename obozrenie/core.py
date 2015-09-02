@@ -101,7 +101,7 @@ class Core:
             print(N_("Specified backend for {0} does not exist.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
 
         for entry in self.game_table[game]["servers"]:
-            entry['country'] = ""
+            entry['country'] = "unknown"
             if GEOIP_ENABLED is True:
                 host = entry["host"].split(':')[0]
                 try:
