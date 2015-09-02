@@ -1,0 +1,13 @@
+[rigsofrods]
+path = "RoR"
+master_uri = "http://api.rigsofrods.com/serverlist/"
+
+[q3a]
+workdir = ""
+path = ""
+master_uri = ""
+
+[et]
+workdir = ""
+path = "et"
+master_uri = "etmaster.idsoftware.com:27950"

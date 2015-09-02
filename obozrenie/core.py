@@ -132,11 +132,12 @@ class Settings:
     def __init__(self, core, profile_path):
         """Loads base variables into the class."""
         # Default configs
-        self.defaults_path = SETTINGS_DEFAULTS_FILE
+        self.default_common_settings_path = DEFAULT_COMMON_SETTINGS_PATH
+        self.default_game_settings_path = DEFAULT_GAME_SETTINGS_PATH
 
         # User configs
-        self.user_common_settings_path = os.path.join(profile_path, USER_COMMON_SETTINGS_FILE)
-        self.user_game_settings_path = os.path.join(profile_path, USER_GAME_SETTINGS_FILE)
+        self.user_common_settings_path = os.path.join(profile_path, COMMON_SETTINGS_FILE)
+        self.user_game_settings_path = os.path.join(profile_path, GAME_SETTINGS_FILE)
 
         self.dynamic_widget_table = get_game_options()
         self.common_settings_table = get_common_options()
@@ -147,7 +148,9 @@ class Settings:
 
     def load(self, callback_postgenload=None):
         """Loads configuration."""
-        defaults_table = helpers.load_table(self.defaults_path)
+        default_common_settings_table = helpers.load_table(self.default_common_settings_path)
+        default_game_settings_table = helpers.load_table(self.default_game_settings_path)
+
         user_common_settings_table = helpers.load_table(self.user_common_settings_path)
 
         # Load into common settings table
@@ -155,7 +158,7 @@ class Settings:
             self.settings_table[group] = {}
             for option in self.common_settings_table[group]:
                 # Define variables
-                value = defaults_table[group][option]
+                value = default_common_settings_table[group][option]
                 try:
                     value = user_common_settings_table[group][option]
                 except ValueError:
@@ -176,14 +179,17 @@ class Settings:
         # Set game settings
         for game in self.core.game_table:
             for option in self.core.game_table[game]["settings"]:
+                value = default_game_settings_table[game][option]
                 try:
-                    self.core.game_table[game]["settings"][option] = user_game_settings_table[game][option]
+                    value = user_game_settings_table[game][option]
                 except ValueError:
                     pass
                 except KeyError:
                     pass
                 except TypeError:
                     pass
+
+                self.core.game_table[game]["settings"][option] = value
 
     def save(self):
         """Saves configuration."""
