@@ -20,6 +20,8 @@ import ast
 import html.parser
 import requests
 
+from obozrenie import N_
+
 import obozrenie.helpers as helpers
 import obozrenie.ping as ping
 from obozrenie.global_settings import *
@@ -83,7 +85,8 @@ class ServerListParser(html.parser.HTMLParser):
 
 def add_game_name(array):
     for i in range(len(array)):
-        array[i]["game_type"] = "rigsofrods"
+        if array[i] != {}:
+            array[i]["game_type"] = "rigsofrods"
 
 
 def add_rtt_info(array):
@@ -95,7 +98,10 @@ def add_rtt_info(array):
     rtt_array.append([])
 
     for i in range(len(array)):
-        hosts_array.append(array[i]["host"].split(':')[0])
+        try:
+            hosts_array.append(array[i]["host"].split(':')[0])
+        except:
+            pass
 
     pinger = ping.Pinger()
     pinger.hosts = list(set(hosts_array))
@@ -106,8 +112,11 @@ def add_rtt_info(array):
 
     # Match ping in host list.
     for i in range(len(array)):
-        ip = array[i]["host"].split(':')[0]
-        array[i]["ping"] = rtt_array[ip]
+        try:
+            ip = array[i]["host"].split(':')[0]
+            array[i]["ping"] = rtt_array[ip]
+        except:
+            pass
 
 
 def stat_master(game, game_table_slice):
@@ -116,16 +125,31 @@ def stat_master(game, game_table_slice):
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-    master_uri = backend_config_object["master"]["uri"] + '?version=' + protocol
+    master_uri_list = game_table_slice["settings"]["master_uri"].split(',')
 
-    stream = requests.get(master_uri).text
     parser = ServerListParser()
 
-    for i in range(len(parser.replacements)):
-        stream = stream.replace(parser.replacements[i][0], parser.replacements[i][1])
+    server_table = []
 
-    parser.feed(stream)
-    server_table = parser.list1.copy()
+    for master_uri in master_uri_list:
+        master_page_uri = master_uri.strip('/') + '/?version=' + protocol
+        try:
+            master_page_object = requests.get(master_page_uri)
+            master_page = master_page_object.text
+        except:
+            print(N_("Accessing URI {0} failed with error code {1}").format(master_page_uri, "unknown"))
+
+        for i in range(len(parser.replacements)):
+            master_page = master_page.replace(parser.replacements[i][0], parser.replacements[i][1])
+
+        try:
+            parser.feed(master_page)
+        except:
+            print(N_("Error parsing URI {0}").format(master_page_uri))
+
+    server_table.append(parser.list1.copy())
+    server_table = helpers.flatten_list(server_table)
+    server_table = helpers.remove_all_occurences_from_list(server_table, {})
 
     add_rtt_info(server_table)
     add_game_name(server_table)

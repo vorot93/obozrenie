@@ -94,11 +94,18 @@ class Core:
     def stat_master_target(self, game, callback):
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
+
+        print(N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
+        server_list_temp = []
+        stat_master_cmd = backends.backend_table[backend].stat_master
         try:
-            print(N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
-            self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
+            server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
         except KeyError:
-            print(N_("Specified backend for {0} does not exist.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
+            print(N_("Internal backend error for {0}.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
+            exit(1)
+
+        self.game_table[game]["servers"] = server_list_temp
+
 
         for entry in self.game_table[game]["servers"]:
             entry['country'] = "unknown"

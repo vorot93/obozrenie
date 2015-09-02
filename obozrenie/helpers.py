@@ -77,6 +77,9 @@ def flatten_list(nested_list):
     flattened_list = [item for sublist in nested_list for item in sublist]
     return flattened_list
 
+def remove_all_occurences_from_list(target_list, value):
+    return [y for y in target_list if y != value]
+
 
 def load_table(path):
         """Loads settings table into dict"""
