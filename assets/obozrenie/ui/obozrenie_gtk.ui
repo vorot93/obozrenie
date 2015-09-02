@@ -63,8 +63,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
       <!-- column-name country_icon -->
       <column type="GdkPixbuf"/>
-      <!-- column-name player -->
-      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkImage" id="connect-icon">
@@ -491,11 +489,22 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
                         <property name="sort_order">descending</property>
-                        <property name="sort_column_id">12</property>
+                        <property name="sort_column_id">1</property>
                         <child>
-                          <object class="GtkCellRendererText" id="Player_CellRenderer"/>
+                          <object class="GtkCellRendererText" id="PlayerCount_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">12</attribute>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="PlayerSeparator_CellRenderer">
+                            <property name="text">/</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="PlayerLimit_CellRenderer"/>
+                          <attributes>
+                            <attribute name="text">2</attribute>
                           </attributes>
                         </child>
                       </object>

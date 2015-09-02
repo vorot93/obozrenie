@@ -206,9 +206,6 @@ class GUIActions:
                 print(N_("Error appending flag icon of ") + entry[self.view_format.index("country")] + " for host: " + entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
-            # Total / max players
-            entry.append(str(entry[1]) + '/' + str(entry[2]))
-
             treeiter = self.serverlist_model.append(entry)
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
