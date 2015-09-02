@@ -3,12 +3,13 @@
 import os
 from distutils.core import setup
 
-from obozrenie.globals import VERSION
+from obozrenie.global_settings import VERSION
 
 data_files = []
+data_dir = 'assets'
 
-for directory, _, filenames in os.walk('assets'):
-    dest = directory[7:]
+for directory, _, filenames in os.walk(data_dir):
+    dest = directory[len(data_dir) + 1:]
     if filenames:
         files = []
         for filename in filenames:

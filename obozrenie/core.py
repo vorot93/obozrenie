@@ -95,7 +95,7 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
         try:
-            print(N_("Refreshing servers for {0}").format(game))
+            print(N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
             self.game_table[game]["servers"] = backends.backend_table[backend].stat_master(game, self.game_table[game].copy())
         except KeyError:
             print(N_("Specified backend for {0} does not exist.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
@@ -132,11 +132,11 @@ class Settings:
     def __init__(self, core, profile_path):
         """Loads base variables into the class."""
         # Default configs
-        self.defaults_path = os.path.join(SETTINGS_DEFAULTS_DIR, "defaults.toml")
+        self.defaults_path = SETTINGS_DEFAULTS_FILE
 
         # User configs
-        self.user_common_settings_path = os.path.join(profile_path, "settings.toml")
-        self.user_game_settings_path = os.path.join(profile_path, "games.toml")
+        self.user_common_settings_path = os.path.join(profile_path, USER_COMMON_SETTINGS_FILE)
+        self.user_game_settings_path = os.path.join(profile_path, USER_GAME_SETTINGS_FILE)
 
         self.dynamic_widget_table = get_game_options()
         self.common_settings_table = get_common_options()
@@ -200,5 +200,5 @@ class Settings:
 
 
 if __name__ == "__main__":
-    print(N_("This is a core module of Obozrenie Game Server Browser.\n"
+    print(N_("This is the core module of Obozrenie Game Server Browser.\n"
              "Please run an appropriate UI instead."))
