@@ -4,8 +4,8 @@ master_uri = "http://api.rigsofrods.com/serverlist/"
 
 [q3a]
 workdir = ""
-path = ""
-master_uri = ""
+path = "quake3"
+master_uri = "master3.idsoftware.com:27950, master.quake3arena.com:27950, master.ioquake3.org:27950, dpmaster.deathmask.net:27950, master.maverickservers.com:27950"
 
 [et]
 workdir = ""
