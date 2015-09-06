@@ -1,24 +1,29 @@
 [rigsofrods]
 name = "Rigs of Rods"
 backend = "rigsofrods"
+launch_pattern = "rigsofrods"
 settings = ["path", "master_uri"]
 
 [q3a]
 name = "Quake III Arena"
 backend = "qstat"
+launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [et]
 name = "Wolfenstein: Enemy Territory"
 backend = "qstat"
+launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [unvanquished]
 name = "Unvanquished"
 backend = "qstat"
+launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [xonotic]
 name = "Xonotic"
 backend = "qstat"
+launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]

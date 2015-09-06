@@ -65,6 +65,7 @@ class Core:
 
             name = self.gameconfig_object[game_id]["name"]
             backend = self.gameconfig_object[game_id]["backend"]
+            launch_pattern = self.gameconfig_object[game_id]["launch_pattern"]
 
             # Create dict groups
             game_table[game_id]["info"] = {}
@@ -78,6 +79,7 @@ class Core:
 
             game_table[game_id]["info"]["name"] = name
             game_table[game_id]["info"]["backend"] = backend
+            game_table[game_id]["info"]["launch_pattern"] = launch_pattern
 
         return game_table
 
@@ -125,7 +127,7 @@ class Core:
 
     def start_game(self, game, server, password):
         """Start game"""
-        helpers.launch_game(game, self.game_table[game]["settings"], server, password)
+        helpers.launch_game(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password)
 
 
 class Settings:

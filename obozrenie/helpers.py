@@ -104,14 +104,18 @@ def save_table(path, data):
     pytoml.dump(table_open_object, data)
 
 
-def launch_game(game, game_settings, server, password):
+def launch_game(game, launch_pattern, game_settings, server, password):
+    """Launches the game based on specified launch pattern"""
     from subprocess import call
 
     try:
-        if game == "rigsofrods":
+        path = ""
+        launch_cmd = []
+        if launch_pattern == "rigsofrods":
             host, port = server.split(":")
             config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
             path = game_settings["path"]
+            launch_cmd = [path]
 
             if os.path.exists(config_file):
                 call(["sed", "-i", "s/Network enable.*/Network enable=Yes/", config_file])
@@ -128,11 +132,15 @@ def launch_game(game, game_settings, server, password):
                     f.write("Server password=" + password + "\n")
                     f.close()
 
-            print("Launching", path)
-            call_exit_code = call(path)
+        elif launch_pattern == "quake":
+            path = game_settings["path"]
+            launch_cmd = [path, "+password", password, "+connect", server]
 
+        print("Launching", path)
+        call_exit_code = call(launch_cmd)
+
+        if launch_pattern == "rigsofrods":
             call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
-            return call_exit_code
-        return 0
+        return call_exit_code
     except OSError:
         return 1
