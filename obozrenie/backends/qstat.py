@@ -20,6 +20,8 @@ import re
 import ast
 import xmltodict
 
+from obozrenie import N_
+
 import obozrenie.helpers as helpers
 import obozrenie.ping as ping
 from obozrenie.global_settings import *
@@ -30,6 +32,9 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 def stat_master(game, game_table_slice):
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
     hosts_array = game_table_slice["settings"]["master_uri"].split(',')
+
+    for entry in hosts_array:
+        entry = entry.strip()
 
     pinger = ping.Pinger()
     pinger.hosts = list(set(hosts_array))
@@ -48,31 +53,34 @@ def stat_master(game, game_table_slice):
     for master_server in server_table_dict:  # For every master...
         if server_table_dict[master_server] is not None:  # If master is not bogus...
             master_server_uri = None
-            for qstat_entry in server_table_dict[master_server]['server']:
-                if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
-                    master_server_uri = qstat_entry['@address']
-                    break
+            try:  # UGLY HACK! If server table is not a list of dicts but a dict itself then master is out
+                print(N_("Master server {0} is down. Skipping.".format(server_table_dict[master_server]['server']['@address'])))
+            except TypeError:
+                for qstat_entry in server_table_dict[master_server]['server']:
+                    if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
+                        master_server_uri = qstat_entry['@address']
+                        break
 
-            for qstat_entry in server_table_dict[master_server]['server']:  # For every server...
-                if qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
-                    server_table.append({})
-                    server_table[-1]['host'] = qstat_entry['hostname']
-                    server_table[-1]['password'] = False
-                    server_table[-1]['master'] = master_server_uri
+                for qstat_entry in server_table_dict[master_server]['server']:  # For every server...
+                    if qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
+                        server_table.append({})
+                        server_table[-1]['host'] = qstat_entry['hostname']
+                        server_table[-1]['password'] = False
+                        server_table[-1]['master'] = master_server_uri
 
-                    if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
-                        server_table[-1]['name'] = None
-                        server_table[-1]['game_type'] = None
-                        server_table[-1]['terrain'] = None
-                        server_table[-1]['player_count'] = 0
-                        server_table[-1]['player_limit'] = 0
-                        server_table[-1]['ping'] = 9999
-                    else:
-                        server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
-                        server_table[-1]['game_type'] = qstat_entry['gametype']
-                        server_table[-1]['terrain'] = qstat_entry['map']
-                        server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
-                        server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
-                        server_table[-1]['ping'] = int(qstat_entry['ping'])
+                        if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
+                            server_table[-1]['name'] = None
+                            server_table[-1]['game_type'] = None
+                            server_table[-1]['terrain'] = None
+                            server_table[-1]['player_count'] = 0
+                            server_table[-1]['player_limit'] = 0
+                            server_table[-1]['ping'] = 9999
+                        else:
+                            server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
+                            server_table[-1]['game_type'] = qstat_entry['gametype']
+                            server_table[-1]['terrain'] = qstat_entry['map']
+                            server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
+                            server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
+                            server_table[-1]['ping'] = int(qstat_entry['ping'])
 
     return server_table
