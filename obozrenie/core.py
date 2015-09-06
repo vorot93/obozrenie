@@ -122,9 +122,6 @@ class Core:
         if callback is not None:
             GLib.idle_add(callback, game, self.game_table[game])
 
-    def get_server_info():
-        pass
-
     def start_game(self, game, server, password):
         """Start game"""
         helpers.launch_game(game, self.game_table[game]["settings"], server, password)
