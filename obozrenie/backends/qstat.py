@@ -66,6 +66,7 @@ def stat_master(game, game_table_slice):
                         server_table.append({})
                         server_table[-1]['host'] = qstat_entry['hostname']
                         server_table[-1]['password'] = False
+                        server_table[-1]['game_id'] = game
                         server_table[-1]['master'] = master_server_uri
 
                         if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':

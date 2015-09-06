@@ -116,7 +116,7 @@ class GUIActions:
         if self.core.game_table[game]["servers"] == []:
             self.cb_update_button_clicked(combobox, *data)
         else:
-            self.fill_server_view(game, self.core.game_table[game])
+            self.fill_server_view(self.core.game_table[game]["servers"])
 
     def cb_update_button_clicked(self, combobox, *data):
         """Actions on server list update button click"""
@@ -156,9 +156,9 @@ class GUIActions:
 
             treeiter = self.game_store.append(entry)
 
-    def fill_server_view(self, game, game_table_slice):
+    def fill_server_view(self, server_table):
         """Fill the server view"""
-        self.view_format = ("game_type",
+        self.view_format = ("game_id",
                             "player_count",
                             "player_limit",
                             "password",
@@ -168,8 +168,7 @@ class GUIActions:
                             "ping",
                             "country")
 
-        server_table = helpers.dict_to_list(game_table_slice["servers"],
-                                            self.view_format)
+        server_list = helpers.dict_to_list(server_table, self.view_format)
 
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
@@ -178,18 +177,18 @@ class GUIActions:
         self.serverhost_entry.set_text(a)
 
         # Goodies for GUI
-        for i in range(len(server_table)):
-            entry = server_table[i].copy()
+        for i in range(len(server_list)):
+            entry = server_list[i].copy()
 
             # Game icon
             try:
-                if entry[self.view_format.index("game_type")] is not None:
-                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[self.view_format.index("game_type")] + '.png'), 24, 24))
+                if entry[self.view_format.index("game_id")] is not None:
+                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[self.view_format.index("game_id")] + '.png'), 24, 24))
                 else:
                     entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24))
             except GLib.Error:
                 icon_missing = "image-missing.png"
-                print(N_("Error appending game type icon for game type"), self.view_format.index("game_type"), "; host:", entry[self.view_format.index("host")])
+                print(N_("Error appending icon for game id:"), self.view_format.index("game_id"), "; host:", entry[self.view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             # Lock icon

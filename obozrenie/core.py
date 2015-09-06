@@ -123,7 +123,7 @@ class Core:
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:
-            GLib.idle_add(callback, game, self.game_table[game])
+            GLib.idle_add(callback, self.game_table[game]["servers"])
 
     def start_game(self, game, server, password):
         """Start game"""

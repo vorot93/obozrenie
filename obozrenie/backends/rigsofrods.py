@@ -86,6 +86,7 @@ class ServerListParser(html.parser.HTMLParser):
 
 def add_game_name(array, game_name):
     for entry in array:
+        entry["game_id"] = game_name
         entry["game_type"] = game_name
 
 
