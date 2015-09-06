@@ -18,6 +18,7 @@
 
 """Core functions for Obozrenie Game Server Browser."""
 
+from collections import OrderedDict
 import os
 import threading
 
@@ -67,7 +68,7 @@ class Core:
 
             # Create dict groups
             game_table[game_id]["info"] = {}
-            game_table[game_id]["settings"] = {}
+            game_table[game_id]["settings"] = OrderedDict()
             game_table[game_id]["servers"] = []
 
             # Create setting groups
