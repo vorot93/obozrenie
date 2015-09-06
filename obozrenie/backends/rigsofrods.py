@@ -27,6 +27,7 @@ import obozrenie.ping as ping
 from obozrenie.global_settings import *
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
+RIGSOFRODS_GAME_NAME = "rigsofrods"
 
 
 class ServerListParser(html.parser.HTMLParser):
@@ -83,10 +84,9 @@ class ServerListParser(html.parser.HTMLParser):
             self.list1[-1]["host"] = value[0][1].replace("/", "")
 
 
-def add_game_name(array):
-    for i in range(len(array)):
-        if array[i] != {}:
-            array[i]["game_type"] = "rigsofrods"
+def add_game_name(array, game_name):
+    for entry in array:
+        entry["game_type"] = game_name
 
 
 def add_rtt_info(array):
@@ -138,6 +138,7 @@ def stat_master(game, game_table_slice):
             master_page = master_page_object.text
         except:
             print(N_("Accessing URI {0} failed with error code {1}").format(master_page_uri, "unknown"))
+            continue
 
         for i in range(len(parser.replacements)):
             master_page = master_page.replace(parser.replacements[i][0], parser.replacements[i][1])
@@ -146,12 +147,17 @@ def stat_master(game, game_table_slice):
             parser.feed(master_page)
         except:
             print(N_("Error parsing URI {0}").format(master_page_uri))
+            continue
 
-    server_table.append(parser.list1.copy())
+        temp_table = parser.list1.copy()
+        parser.list1.clear()
+
+        temp_table = helpers.remove_all_occurences_from_list(temp_table, {})
+        add_game_name(temp_table, RIGSOFRODS_GAME_NAME)
+        server_table.append(temp_table)
+
     server_table = helpers.flatten_list(server_table)
-    server_table = helpers.remove_all_occurences_from_list(server_table, {})
 
     add_rtt_info(server_table)
-    add_game_name(server_table)
 
     return server_table

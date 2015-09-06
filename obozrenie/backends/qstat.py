@@ -52,7 +52,7 @@ def stat_master(game, game_table_slice):
                     server_table.append({})
 
                     server_table[-1]['host'] = qstat_entry['hostname']
-                    server_table[-1]['password'] = False  # Stub
+                    server_table[-1]['password'] = False
 
                     if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
                         server_table[-1]['name'] = None
