@@ -47,12 +47,18 @@ def stat_master(game, game_table_slice):
     color_code_pattern = '[\\^](.)'
     for master_server in server_table_dict:  # For every master...
         if server_table_dict[master_server] is not None:  # If master is not bogus...
+            master_server_uri = None
+            for qstat_entry in server_table_dict[master_server]['server']:
+                if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
+                    master_server_uri = qstat_entry['@address']
+                    break
+
             for qstat_entry in server_table_dict[master_server]['server']:  # For every server...
                 if qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
                     server_table.append({})
-
                     server_table[-1]['host'] = qstat_entry['hostname']
                     server_table[-1]['password'] = False
+                    server_table[-1]['master'] = master_server_uri
 
                     if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
                         server_table[-1]['name'] = None
