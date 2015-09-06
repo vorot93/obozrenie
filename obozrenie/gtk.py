@@ -113,7 +113,6 @@ class GUIActions:
         """Actions on game combobox selection change."""
         game = self.app.settings.settings_table["common"]["selected-game"]
 
-        self.serverlist_model.clear()
         if self.core.game_table[game]["servers"] == []:
             self.cb_update_button_clicked(combobox, *data)
         else:
@@ -130,12 +129,6 @@ class GUIActions:
 
         self.serverlist_update_button.set_sensitive(False)
         self.game_combobox.set_sensitive(False)
-
-        # UGLY HACK!
-        # Workaround for chaotic TreeViewSelection on ListModel erase
-        a = self.serverhost_entry.get_text()
-        self.serverlist_model.clear()
-        self.serverhost_entry.set_text(a)
 
         self.core.update_server_list(game, self.fill_server_view)
 
@@ -177,6 +170,12 @@ class GUIActions:
 
         server_table = helpers.dict_to_list(game_table_slice["servers"],
                                             self.view_format)
+
+        # UGLY HACK!
+        # Workaround for chaotic TreeViewSelection on ListModel erase
+        a = self.serverhost_entry.get_text()
+        self.serverlist_model.clear()
+        self.serverhost_entry.set_text(a)
 
         # Goodies for GUI
         for i in range(len(server_table)):
