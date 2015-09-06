@@ -12,6 +12,11 @@ workdir = ""
 path = "et"
 master_uri = "etmaster.idsoftware.com:27950"
 
+[unvanquished]
+workdir = ""
+path = "unvanquished"
+master_uri = "unvanquished.net:27950"
+
 [xonotic]
 workdir = ""
 path = "xonotic-sdl"
