@@ -23,30 +23,15 @@ from gi.repository import Gtk
 from obozrenie import N_
 
 
-def get_option_widget(option_dict):
-    name = option_dict["name"]
-    description = option_dict["description"]
-    widget_type = option_dict["gtk_type"]
-    if widget_type == "CheckButton":
-        widget = get_checkbutton(label_text=name+":",
-                                 tooltip_text=description)
-    if widget_type == "Entry with Label":
-        widget = get_entry_with_label(label_text=name+":",
-                                      tooltip_text=description)
-    else:
-        print("No widget generated for type " + widget_type)
-        widget = None
-
-    return widget
-
-
 def get_checkbutton(label_text="", tooltip_text=""):
     checkbutton = Gtk.CheckButton.new()
 
     checkbutton.set_label(label_text)
     checkbutton.set_tooltip_text(tooltip_text)
 
-    return checkbutton, checkbutton
+    widget_group = {"container": checkbutton, "substance": checkbutton}
+
+    return widget_group
 
 
 def get_entry_with_label(label_text="", tooltip_text=""):
@@ -66,7 +51,49 @@ def get_entry_with_label(label_text="", tooltip_text=""):
     grid.set_column_homogeneous(True)
     grid.set_column_spacing(5)
 
-    return grid, entry
+    widget_group = {"container": grid, "substance": entry}
+
+    return widget_group
+
+
+def get_textview_with_label(label_text="Single entry per line", tooltip_text=""):
+    grid = Gtk.Grid()
+    text_buffer = Gtk.TextBuffer()
+    text_view = Gtk.TextView.new_with_buffer(text_buffer)
+    label = Gtk.Label()
+
+    label.set_text(N_(label_text))
+    label.set_halign(Gtk.Align.START)
+
+    text_view.set_tooltip_text(N_(tooltip_text))
+    text_view.set_galign(Gtk.Align.END)
+
+    grid.add(label)
+    grid.add(text_view)
+
+    grid.set_column_homogeneous(True)
+    grid.set_column_spacing(5)
+
+    widget_group = {"container": grid, "substance": text_buffer}
+
+    return widget_group
+
+
+def get_option_widget(option_dict):
+    name = option_dict["name"]
+    description = option_dict["description"]
+    widget_type = option_dict["gtk_type"]
+    if widget_type == "CheckButton":
+        widget = get_checkbutton(label_text=name+":", tooltip_text=description)
+    elif widget_type == "Entry with Label":
+        widget = get_entry_with_label(label_text=name+":", tooltip_text=description)
+    elif widget_type == "Multiline Entry with Label":
+        widget = get_textview_with_label(label_text=name, tooltip_text=description)
+    else:
+        print(N_("No widget generated for type {0}".format(widget_type)))
+        widget = None
+
+    return widget
 
 
 class PreferencesDialog(Gtk.Dialog):
@@ -79,11 +106,15 @@ class PreferencesDialog(Gtk.Dialog):
             self.callback_close = callback_close
 
         self.game = game
+        self.dynamic_settings_table = dynamic_settings_table
 
-        preferences_grid, self.widget_option_mapping = get_preferences_grid(game, game_table, dynamic_settings_table)
+        preferences_grid_info = get_preferences_grid(game, game_table, dynamic_settings_table)
+
+        preferences_grid = preferences_grid_info["widget"]
+        self.widget_option_mapping = preferences_grid_info["mapping"]
 
         if callback_start is not None:
-            callback_start(self.game, self.widget_option_mapping)
+            callback_start(self.game, self.widget_option_mapping, self.dynamic_settings_table)
 
         self.set_resizable(False)
         self.set_border_width(10)
@@ -97,7 +128,7 @@ class PreferencesDialog(Gtk.Dialog):
 
     def cb_close_button_clicked(self, widget):
         if self.callback_close is not None:
-            self.callback_close(self.game, self.widget_option_mapping)
+            self.callback_close(self.game, self.widget_option_mapping, self.dynamic_settings_table)
         self.destroy()
 
 
@@ -128,13 +159,12 @@ def get_preferences_grid(game, game_table, dynamic_settings_table):
     widget_option_mapping = {}
 
     for option in game_table[game]["settings"]:
-        widget = get_option_widget(dynamic_settings_table[option])
+        option_object = get_option_widget(dynamic_settings_table[option])
 
-        widget_grid = widget[0]
-        widget_main = widget[1]
+        grid.add(option_object["container"])
 
-        grid.add(widget_grid)
+        widget_option_mapping[option] = option_object["substance"]
 
-        widget_option_mapping[option] = widget_main
+    preferences_grid_info = {"widget": grid, "mapping": widget_option_mapping}
 
-    return grid, widget_option_mapping
+    return preferences_grid_info

@@ -245,9 +245,12 @@ class GUIActions:
     def cb_listed_widget_changed(self, *data):
         self.update_settings_table()
 
-    def apply_settings_to_preferences_dialog(self, game, widget_option_mapping):
+    def apply_settings_to_preferences_dialog(self, game, widget_option_mapping, dynamic_settings_table):
         for option in widget_option_mapping:
-            self.set_widget_value(widget_option_mapping[option], self.core.game_table[game]["settings"][option])
+            value = self.core.game_table[game]["settings"][option]
+            if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
+                value.join("\n")
+            self.set_widget_value(widget_option_mapping[option], value)
 
     def update_settings_table(self, *data):
         for group in self.widget_table:
@@ -257,9 +260,12 @@ class GUIActions:
 
                 self.app.settings.settings_table[group][option] = str(self.get_widget_value(widget))
 
-    def update_game_settings_table(self, game, widget_option_mapping, *args):
-        for i in widget_option_mapping:
-            self.core.game_table[game]["settings"][i] = self.get_widget_value(widget_option_mapping[i])
+    def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
+        for option in widget_option_mapping:
+            value = self.get_widget_value(widget_option_mapping[option])
+            if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
+                value.split("\n")
+            self.core.game_table[game]["settings"][option] = value
 
     def cb_post_settings_genload(self, widget_table, group, option, value):
         self.widget_table = widget_table
