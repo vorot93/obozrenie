@@ -10,3 +10,8 @@ master_type = "Q3M"
 server_key = "q3s"
 server_type = "Q3S"
 
+[game.xonotic]
+master_key = "xonoticm"
+master_type = "XONOTICM"
+server_key = "xonotics"
+server_type = "XONOTICS"

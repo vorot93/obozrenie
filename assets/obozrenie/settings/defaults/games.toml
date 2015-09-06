@@ -11,3 +11,8 @@ master_uri = "master3.idsoftware.com:27950, master.quake3arena.com:27950, master
 workdir = ""
 path = "et"
 master_uri = "etmaster.idsoftware.com:27950"
+
+[xonotic]
+workdir = ""
+path = "xonotic-sdl"
+master_uri = "ghdigital.com:27950, dpmaster.deathmask.net:27950, dpmaster.tchr.no:27950"

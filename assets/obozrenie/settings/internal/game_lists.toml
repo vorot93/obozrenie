@@ -12,3 +12,8 @@ settings = ["path", "workdir", "master_uri"]
 name = "Wolfenstein: Enemy Territory"
 backend = "qstat"
 settings = ["path", "workdir", "master_uri"]
+
+[xonotic]
+name = "Xonotic"
+backend = "qstat"
+settings = ["path", "workdir", "master_uri"]
