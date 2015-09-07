@@ -108,8 +108,8 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="valign">start</property>
+            <property name="hexpand">True</property>
             <property name="column_spacing">10</property>
-            <property name="column_homogeneous">True</property>
             <child>
               <object class="GtkGrid" id="Nickname_Spot">
                 <property name="visible">True</property>
@@ -117,6 +117,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="halign">end</property>
                 <property name="margin_top">5</property>
                 <property name="margin_bottom">5</property>
+                <property name="hexpand">True</property>
                 <property name="column_spacing">5</property>
                 <child>
                   <object class="GtkLabel" id="Nickname_Label">
@@ -185,50 +186,13 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               </packing>
             </child>
             <child>
-              <object class="GtkGrid" id="Game_Grid">
+              <object class="GtkGrid" id="Game_Top_Grid">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="halign">start</property>
                 <property name="valign">center</property>
                 <property name="row_spacing">10</property>
                 <property name="column_spacing">10</property>
-                <child>
-                  <object class="GtkLabel" id="Game_Label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Game:</property>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBox" id="Game_ComboBox">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Select a game.</property>
-                    <property name="model">Game_Store</property>
-                    <property name="id_column">0</property>
-                    <property name="active_id">0</property>
-                    <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
-                    <child>
-                      <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
-                      <attributes>
-                        <attribute name="pixbuf">3</attribute>
-                      </attributes>
-                    </child>
-                    <child>
-                      <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer"/>
-                      <attributes>
-                        <attribute name="text">1</attribute>
-                      </attributes>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
                 <child>
                   <object class="GtkButton" id="Game_Preferences_button">
                     <property name="visible">True</property>
@@ -239,7 +203,72 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
                   </object>
                   <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkGrid" id="Game_ComboBox_Spot">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="valign">center</property>
+                    <property name="margin_left">5</property>
+                    <property name="margin_right">5</property>
+                    <property name="hexpand">True</property>
+                    <property name="row_spacing">5</property>
+                    <property name="column_spacing">5</property>
+                    <child>
+                      <object class="GtkComboBox" id="Game_ComboBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Select a game.</property>
+                        <property name="model">Game_Store</property>
+                        <property name="id_column">0</property>
+                        <property name="active_id">0</property>
+                        <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="pixbuf">3</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
+                            <property name="xpad">5</property>
+                            <property name="single_paragraph_mode">True</property>
+                            <property name="placeholder_text">Select a game</property>
+                          </object>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
                     <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkRevealer" id="revealer1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="transition_type">none</property>
+                    <child>
+                      <object class="GtkToggleButton" id="Game_TreeView_ToggleButton">
+                        <property name="label" translatable="yes">Multiple selection</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
                     <property name="top_attach">0</property>
                   </packing>
                 </child>
@@ -253,6 +282,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">0</property>
+            <property name="width">2</property>
           </packing>
         </child>
         <child>
@@ -380,7 +410,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             </child>
           </object>
           <packing>
-            <property name="left_attach">0</property>
+            <property name="left_attach">1</property>
             <property name="top_attach">2</property>
           </packing>
         </child>
@@ -594,8 +624,59 @@ Select a game or press refresh button below</property>
             </child>
           </object>
           <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkRevealer" id="Game_View_Revealer">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="transition_type">slide-right</property>
+            <child>
+              <object class="GtkScrolledWindow" id="Game_View_ScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="hscrollbar_policy">never</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="Game_TreeView">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="model">Game_Store</property>
+                    <property name="search_column">0</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="treeview-selection"/>
+                    </child>
+                    <child>
+                      <object class="GtkTreeViewColumn" id="Game_TreeView_Column">
+                        <property name="title" translatable="yes">Available games</property>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_TreeView_Icon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="pixbuf">3</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="Game_TreeView_Name_CellRenderer">
+                            <property name="xpad">5</property>
+                          </object>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
+            <property name="height">2</property>
           </packing>
         </child>
       </object>
