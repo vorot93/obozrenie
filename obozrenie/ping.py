@@ -39,13 +39,6 @@ class Pinger():
 
         return rtt_info
 
-    def stat_qstat(self, entry):
-        qstat_cmd = ["qstat", "-xml", "-utf8", ' '.join(self.options), entry.strip()]
-
-        qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
-
-        return qstat_output
-
     def pop_queue(self):
         entry = None
 
@@ -67,8 +60,8 @@ class Pinger():
 
             if self.action == "ping":
                 result = self.ping(entry)
-            elif self.action == "qstat":
-                result = self.stat_qstat(entry)
+            else:
+                result = None
 
             self.status[entry] = result
 
