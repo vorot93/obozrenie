@@ -158,15 +158,16 @@ class GUIActions:
 
     def fill_server_view(self, server_table):
         """Fill the server view"""
-        self.view_format = ("game_id",
+        self.view_format = ("host",
+                            "password",
                             "player_count",
                             "player_limit",
-                            "password",
-                            "host",
-                            "name",
-                            "terrain",
                             "ping",
-                            "country")
+                            "country",
+                            "name",
+                            "game_id",
+                            "game_type",
+                            "terrain")
 
         server_list = helpers.dict_to_list(server_table, self.view_format)
 
