@@ -140,7 +140,7 @@ class GUIActions:
 
         self.game_store = self.builder.get_object("Game_Store")
 
-        for game_id in table:
+        for game_id in sorted(table):
             entry = []
             entry.append(game_id)
             entry.append(table[game_id]["info"]["name"])
