@@ -194,6 +194,7 @@ class GUIActions:
                                    "game_type",
                                    "terrain")
 
+        server_table = helpers.sort_dict_table(server_table, "ping")
         server_list = helpers.dict_to_list(server_table, self.server_view_format)
 
         # UGLY HACK!
