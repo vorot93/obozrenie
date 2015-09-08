@@ -30,6 +30,7 @@ from obozrenie import N_
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib
 
 from obozrenie import helpers
+from obozrenie import gtk_helpers
 from obozrenie.core import Core, Settings
 import obozrenie.gtk_templates as templates
 from obozrenie.global_settings import *
@@ -47,8 +48,12 @@ class GUIActions:
         self.main_window = self.builder.get_object("Main_Window")
 
         self.game_combobox = self.builder.get_object("Game_ComboBox")
+        self.game_treeview = self.builder.get_object("Game_TreeView")
         self.game_model = self.builder.get_object("Game_Store")
+        self.game_combobox_revealer = self.builder.get_object("Game_ComboBox_Revealer")
+        self.game_view_revealer = self.builder.get_object("Game_View_Revealer")
 
+        self.game_view_togglebutton = self.builder.get_object("Game_View_ToggleButton")
         self.serverlist_update_button = self.builder.get_object("Update_Button")
         self.serverlist_info_button = self.builder.get_object("Info_Button")
         self.serverlist_connect_button = self.builder.get_object("Connect_Button")
@@ -109,16 +114,30 @@ class GUIActions:
         """Exits the program."""
         self.app.quit()
 
-    def cb_game_combobox_changed(self, combobox, *data):
+    def cb_game_combobox_changed(self, widget, *data):
         """Actions on game combobox selection change."""
-        game = self.app.settings.settings_table["common"]["selected-game"]
+        game_id = gtk_helpers.get_widget_value(widget)
+        gtk_helpers.set_widget_value(self.game_treeview, game_id, treeview_colnum=self.game_view_format.index("game_id"))
 
-        if self.core.game_table[game]["servers"] == []:
-            self.cb_update_button_clicked(combobox, *data)
+    def cb_game_treeview_togglebutton_clicked(self, widget, *data):
+        """Switches between TreeView and ComboBox game selection."""
+        if self.game_view_togglebutton.get_active() is True:
+            self.game_combobox_revealer.set_reveal_child(False)
+            self.game_view_revealer.set_reveal_child(True)
         else:
-            self.fill_server_view(self.core.game_table[game]["servers"])
+            self.game_combobox_revealer.set_reveal_child(True)
+            self.game_view_revealer.set_reveal_child(False)
 
-    def cb_update_button_clicked(self, combobox, *data):
+    def cb_game_treeview_selection_changed(self, widget, *data):
+        game_id = self.app.settings.settings_table["common"]["selected-game"]
+
+        gtk_helpers.set_widget_value(self.game_combobox, game_id)
+        if self.core.game_table[game_id]["servers"] == []:
+            self.cb_update_button_clicked(widget, *data)
+        else:
+            self.fill_server_view(self.core.game_table[game_id]["servers"])
+
+    def cb_update_button_clicked(self, widget, *data):
         """Actions on server list update button click"""
         ping_button = self.builder.get_object("PingingEnable_CheckButton")
         ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
@@ -128,6 +147,7 @@ class GUIActions:
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
 
         self.serverlist_update_button.set_sensitive(False)
+        self.game_treeview.set_sensitive(False)
         self.game_combobox.set_sensitive(False)
 
         self.core.update_server_list(game, self.fill_server_view)
@@ -136,6 +156,11 @@ class GUIActions:
         """
         Loads game list into a list store
         """
+        self.game_view_format = ("game_id",
+                                 "name",
+                                 "backend",
+                                 "icon")
+
         table = self.core.game_table.copy()
 
         self.game_store = self.builder.get_object("Game_Store")
@@ -158,18 +183,18 @@ class GUIActions:
 
     def fill_server_view(self, server_table):
         """Fill the server view"""
-        self.view_format = ("host",
-                            "password",
-                            "player_count",
-                            "player_limit",
-                            "ping",
-                            "country",
-                            "name",
-                            "game_id",
-                            "game_type",
-                            "terrain")
+        self.server_view_format = ("host",
+                                   "password",
+                                   "player_count",
+                                   "player_limit",
+                                   "ping",
+                                   "country",
+                                   "name",
+                                   "game_id",
+                                   "game_type",
+                                   "terrain")
 
-        server_list = helpers.dict_to_list(server_table, self.view_format)
+        server_list = helpers.dict_to_list(server_table, self.server_view_format)
 
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
@@ -183,26 +208,26 @@ class GUIActions:
 
             # Game icon
             try:
-                if entry[self.view_format.index("game_id")] is not None:
-                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[self.view_format.index("game_id")] + '.png'), 24, 24))
+                if entry[self.server_view_format.index("game_id")] is not None:
+                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[self.server_view_format.index("game_id")] + '.png'), 24, 24))
                 else:
                     entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24))
             except GLib.Error:
                 icon_missing = "image-missing.png"
-                print(N_("Error appending icon for game id:"), self.view_format.index("game_id"), "; host:", entry[self.view_format.index("host")])
+                print(N_("Error appending icon for game id:"), self.server_view_format.index("game_id"), "; host:", entry[self.server_view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             # Lock icon
-            if entry[self.view_format.index("password")] == True:
+            if entry[self.server_view_format.index("password")] == True:
                 entry.append("network-wireless-encrypted-symbolic")
             else:
                 entry.append(None)
 
             # Country flags
             try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.view_format.index("country")].lower() + '.svg'), 24, 18))
+                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.server_view_format.index("country")].lower() + '.svg'), 24, 18))
             except GLib.Error:
-                print(N_("Error appending flag icon of ") + entry[self.view_format.index("country")] + " for host: " + entry[self.view_format.index("host")])
+                print(N_("Error appending flag icon of ") + entry[self.server_view_format.index("country")] + " for host: " + entry[self.server_view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
             treeiter = self.serverlist_model.append(entry)
@@ -211,22 +236,15 @@ class GUIActions:
 
         self.serverlist_update_button.set_sensitive(True)
         self.game_combobox.set_sensitive(True)
+        self.game_treeview.set_sensitive(True)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
         entry_field = self.serverhost_entry
 
-        model, treeiter = widget.get_selected()
-        try:
-            text = model[treeiter][self.view_format.index("host")]
-        except TypeError:
-            return
+        text = gtk_helpers.get_widget_value(widget, treeview_colnum=self.server_view_format.index("host"))
 
-        if text != "SERVER_FULL":
-            try:
-                entry_field.set_text(text)
-            except TypeError:
-                pass
+        gtk_helpers.set_widget_value(entry_field, text)
 
     def cb_server_list_view_row_activated(self, widget, path, column, *data):
         """Launches the game"""
@@ -250,74 +268,31 @@ class GUIActions:
             value = self.core.game_table[game]["settings"][option]
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value.join("\n")
-            self.set_widget_value(widget_option_mapping[option], value)
+            gtk_helpers.set_widget_value(widget_option_mapping[option], value)
 
     def update_settings_table(self, *data):
         for group in self.widget_table:
             for option in self.widget_table[group]:
                 # Define variables
-                widget = self.builder.get_object(self.widget_table[group][option]["gtk_widget_name"])
+                widget_name = self.widget_table[group][option]["gtk_widget_name"]
+                widget = self.builder.get_object(widget_name)
 
-                self.app.settings.settings_table[group][option] = str(self.get_widget_value(widget))
+                self.app.settings.settings_table[group][option] = str(gtk_helpers.get_widget_value(widget))
 
     def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
         for option in widget_option_mapping:
-            value = self.get_widget_value(widget_option_mapping[option])
+            value = gtk_helpers.get_widget_value(widget_option_mapping[option])
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value.split("\n")
             self.core.game_table[game]["settings"][option] = value
 
     def cb_post_settings_genload(self, widget_table, group, option, value):
         self.widget_table = widget_table
-        widget = self.builder.get_object(widget_table[group][option]["gtk_widget_name"])
+        widget_name = widget_table[group][option]["gtk_widget_name"]
+        widget = self.builder.get_object(widget_name)
 
-        self.set_widget_value(widget, value)
-        self.bind_widget_to_callback(widget, self.update_settings_table)
-
-    # Static methods
-    @staticmethod
-    def set_widget_value(widget, value):
-        """Applies setting to widget."""
-        if value == 'None':
-            value is None
-        if isinstance(widget, Gtk.Adjustment):
-            widget.set_value(int(value))
-        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-            try:
-                value = ast.literal_eval(value)
-            except ValueError:
-                value = False
-            widget.set_active(value)
-
-        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-            widget.set_active_id(str(value))
-
-        elif isinstance(widget, Gtk.Entry):
-            widget.set_text(str(value))
-            if value == "":
-                widget.emit("changed")
-
-    @staticmethod
-    def get_widget_value(widget):
-        """Fetches widget setting."""
-        if isinstance(widget, Gtk.Adjustment):
-            value = widget.get_value()
-        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-            value = widget.get_active()
-        elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-            value = widget.get_active_id()
-        elif isinstance(widget, Gtk.Entry):
-            value = widget.get_text()
-
-        return value
-
-    @staticmethod
-    def bind_widget_to_callback(widget, callback, *data):
-        if isinstance(widget, Gtk.Entry) or isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-            widget.connect("changed", callback, data)
-
-        elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-            widget.connect("clicked", callback, data)
+        gtk_helpers.set_widget_value(widget, value)
+        gtk_helpers.bind_widget_to_callback(widget, self.update_settings_table)
 
 
 class App(Gtk.Application):
@@ -351,6 +326,7 @@ class App(Gtk.Application):
         # Load settings
         self.guiactions.get_games_list_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
+        gtk_helpers.set_widget_value(self.guiactions.game_combobox, gtk_helpers.get_widget_value(self.guiactions.game_treeview))
 
         # Connect signals
         self.builder.connect_signals(self.guiactions)

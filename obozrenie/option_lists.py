@@ -24,7 +24,7 @@ def get_common_options():
     option_list['common'] = {}
 
     option_list['common']['selected-game'] = {}
-    option_list['common']['selected-game']['gtk_widget_name'] = "Game_ComboBox"
+    option_list['common']['selected-game']['gtk_widget_name'] = "Game_TreeView"
 
     option_list['common']['nickname'] = {}
     option_list['common']['nickname']['gtk_widget_name'] = "Nickname_Entry"

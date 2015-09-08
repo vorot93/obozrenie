@@ -172,11 +172,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkToggleButton" id="Game_TreeView_ToggleButton">
-                    <property name="sensitive">False</property>
+                  <object class="GtkToggleButton" id="Game_View_ToggleButton">
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="image">image1</property>
+                    <signal name="clicked" handler="cb_game_treeview_togglebutton_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -184,29 +184,37 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBox" id="Game_ComboBox">
+                  <object class="GtkRevealer" id="Game_ComboBox_Revealer">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Select a game.</property>
-                    <property name="model">Game_Store</property>
-                    <property name="id_column">0</property>
-                    <property name="active_id">0</property>
-                    <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
+                    <property name="transition_type">slide-left</property>
+                    <property name="reveal_child">True</property>
                     <child>
-                      <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
-                      <attributes>
-                        <attribute name="pixbuf">3</attribute>
-                      </attributes>
-                    </child>
-                    <child>
-                      <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
-                        <property name="xpad">5</property>
-                        <property name="single_paragraph_mode">True</property>
-                        <property name="placeholder_text">Select a game</property>
+                      <object class="GtkComboBox" id="Game_ComboBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Select a game.</property>
+                        <property name="model">Game_Store</property>
+                        <property name="id_column">0</property>
+                        <property name="active_id">0</property>
+                        <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="pixbuf">3</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
+                            <property name="xpad">5</property>
+                            <property name="single_paragraph_mode">True</property>
+                            <property name="placeholder_text">Select a game</property>
+                          </object>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
                       </object>
-                      <attributes>
-                        <attribute name="text">1</attribute>
-                      </attributes>
                     </child>
                   </object>
                   <packing>
@@ -613,7 +621,9 @@ Select a game or press refresh button below</property>
                     <property name="model">Game_Store</property>
                     <property name="search_column">0</property>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="treeview-selection"/>
+                      <object class="GtkTreeSelection" id="treeview-selection">
+                        <signal name="changed" handler="cb_game_treeview_selection_changed" swapped="no"/>
+                      </object>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Game_TreeView_Column">
