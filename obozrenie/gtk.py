@@ -158,7 +158,8 @@ class GUIActions:
         """
         self.game_view_format = ("game_id",
                                  "name",
-                                 "backend")
+                                 "backend",
+                                 "game_icon")
 
         table = self.core.game_table.copy()
 
@@ -166,24 +167,23 @@ class GUIActions:
 
         game_store_table = []
         for entry in self.core.game_table:
+            icon = entry + '.png'
+            icon_missing = "image-missing.png"
+
             game_store_table.append({})
             game_store_table[-1]["game_id"] = entry
             game_store_table[-1]["name"] = self.core.game_table[entry]["info"]["name"]
             game_store_table[-1]["backend"] = self.core.game_table[entry]["info"]["backend"]
 
+            try:
+                game_store_table[-1]["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon), 24, 24)
+            except GLib.Error:
+                game_store_table[-1]["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24)
+
         game_store_table = helpers.sort_dict_table(game_store_table, "name")
         game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
 
         for entry in game_store_list:
-            game_id = entry[self.game_view_format.index("game_id")]
-            icon = game_id + '.png'
-            icon_missing = "image-missing.png"
-
-            try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon), 24, 24))
-            except GLib.Error:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
-
             treeiter = self.game_store.append(entry)
 
     def fill_server_view(self, server_table):
@@ -197,45 +197,48 @@ class GUIActions:
                                    "name",
                                    "game_id",
                                    "game_type",
-                                   "terrain")
+                                   "terrain",
+                                   "game_icon",
+                                   "password_icon",
+                                   "country_icon")
 
-        server_table = helpers.sort_dict_table(server_table, "ping")
-        server_list = helpers.dict_to_list(server_table, self.server_view_format)
+        view_table = server_table.copy()
 
+        # Goodies for GUI
+        for entry in view_table:
+            # Game icon
+            try:
+                if entry["game_id"] is not None:
+                    entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry["game_id"] + '.png'), 24, 24)
+                else:
+                    entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24)
+            except GLib.Error:
+                icon_missing = "image-missing.png"
+                print(GTK_MSG, N_("Error adding icon for {0} (host {1})".format(entry["game_id"], entry["host"])))
+                entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24)
+
+            # Lock icon
+            if entry["password"] == True:
+                entry["password_icon"] = "network-wireless-encrypted-symbolic"
+            else:
+                entry["password_icon"] = None
+
+            # Country flags
+            try:
+                entry["country_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry["country"].lower() + '.svg'), 24, 18)
+            except GLib.Error:
+                print(GTK_MSG, N_("Error adding flag icon of {0} for host {1}".format(entry["country"], entry["host"])))
+                entry["country_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18)
+
+        view_table = helpers.sort_dict_table(view_table, "ping")
+        server_list = helpers.dict_to_list(view_table, self.server_view_format)
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
         a = self.serverhost_entry.get_text()
         self.serverlist_model.clear()
         self.serverhost_entry.set_text(a)
 
-        # Goodies for GUI
-        for i in range(len(server_list)):
-            entry = server_list[i].copy()
-
-            # Game icon
-            try:
-                if entry[self.server_view_format.index("game_id")] is not None:
-                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry[self.server_view_format.index("game_id")] + '.png'), 24, 24))
-                else:
-                    entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24))
-            except GLib.Error:
-                icon_missing = "image-missing.png"
-                print(GTK_MSG, N_("Error appending icon for game id:"), self.server_view_format.index("game_id"), "; host:", entry[self.server_view_format.index("host")])
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
-
-            # Lock icon
-            if entry[self.server_view_format.index("password")] == True:
-                entry.append("network-wireless-encrypted-symbolic")
-            else:
-                entry.append(None)
-
-            # Country flags
-            try:
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.server_view_format.index("country")].lower() + '.svg'), 24, 18))
-            except GLib.Error:
-                print(GTK_MSG, N_("Error appending flag icon of ") + entry[self.server_view_format.index("country")] + " for host: " + entry[self.server_view_format.index("host")])
-                entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
-
+        for entry in server_list:
             treeiter = self.serverlist_model.append(entry)
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
