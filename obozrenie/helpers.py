@@ -60,17 +60,28 @@ def search_dict_table(table, key, value):
         return None
 
 
+def flatten_dict_table(dict_table, leading_key_spec):
+    flattened_dict_table = []
+    for leading_key in sorted(dict_table):
+        flattened_dict_table.append({})
+
+        flattened_dict_table[-1][leading_key_spec] = leading_key
+        for key in dict_table[leading_key]:
+            flattened_dict_table[-1][key] = dict_table[leading_key][key]
+
+    return flattened_dict_table
+
 def dict_to_list(dict_table, key_list):
-        list_table = []
+    list_table = []
 
-        if dict_table is not None:
-            for i in range(len(dict_table)):
-                list_table.append([])
+    if dict_table is not None:
+        for entry in dict_table:
+            list_table.append([])
 
-                for j in range(len(key_list)):
-                    list_table[i].append(dict_table[i][key_list[j]])
+            for key in key_list:
+                list_table[-1].append(entry[key])
 
-        return list_table
+    return list_table
 
 
 def flatten_list(nested_list):
