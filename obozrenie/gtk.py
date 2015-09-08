@@ -214,7 +214,7 @@ class GUIActions:
                     entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24))
             except GLib.Error:
                 icon_missing = "image-missing.png"
-                print(N_("Error appending icon for game id:"), self.server_view_format.index("game_id"), "; host:", entry[self.server_view_format.index("host")])
+                print(GTK_MSG, N_("Error appending icon for game id:"), self.server_view_format.index("game_id"), "; host:", entry[self.server_view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24))
 
             # Lock icon
@@ -227,7 +227,7 @@ class GUIActions:
             try:
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry[self.server_view_format.index("country")].lower() + '.svg'), 24, 18))
             except GLib.Error:
-                print(N_("Error appending flag icon of ") + entry[self.server_view_format.index("country")] + " for host: " + entry[self.server_view_format.index("host")])
+                print(GTK_MSG, N_("Error appending flag icon of ") + entry[self.server_view_format.index("country")] + " for host: " + entry[self.server_view_format.index("host")])
                 entry.append(GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18))
 
             treeiter = self.serverlist_model.append(entry)

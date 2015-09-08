@@ -81,35 +81,41 @@ def stat_master(game, game_table_slice):
     server_table = []
     color_code_pattern = '[\\^](.)'
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
-        if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
-            master_server_uri = qstat_entry['@address']
-            master_server_status = qstat_entry['@status']
-            if master_server_status == 'UP':
-                master_server_entry_count = qstat_entry['@servers']
-                print(N_("Queried Master. Address: {0}, status: {1}, server count: {2}".format(master_server_uri, master_server_status, master_server_entry_count)))
-            else:
-                print(N_("Master query failed. Address: {0}, status: {1}".format(master_server_uri, master_server_status)))
+        try:
+            if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
+                print(QSTAT_MSG, N_("No valid masters specified. Please check your master server settings."))
+                break
 
-        elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
-            server_table.append({})
-            server_table[-1]['host'] = qstat_entry['hostname']
-            server_table[-1]['password'] = False
-            server_table[-1]['game_id'] = game
-            server_table[-1]['master'] = None
+        except TypeError:
+            if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
+                master_server_uri = qstat_entry['@address']
+                master_server_status = qstat_entry['@status']
+                if master_server_status == 'UP':
+                    master_server_entry_count = qstat_entry['@servers']
+                    print(QSTAT_MSG, N_("Queried Master. Address: {0}, status: {1}, server count: {2}".format(master_server_uri, master_server_status, master_server_entry_count)))
+                else:
+                    print(QSTAT_MSG, N_("Master query failed. Address: {0}, status: {1}".format(master_server_uri, master_server_status)))
 
-            if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
-                server_table[-1]['name'] = None
-                server_table[-1]['game_type'] = None
-                server_table[-1]['terrain'] = None
-                server_table[-1]['player_count'] = 0
-                server_table[-1]['player_limit'] = 0
-                server_table[-1]['ping'] = 9999
-            else:
-                server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
-                server_table[-1]['game_type'] = qstat_entry['gametype']
-                server_table[-1]['terrain'] = qstat_entry['map']
-                server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
-                server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
-                server_table[-1]['ping'] = int(qstat_entry['ping'])
+            elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
+                server_table.append({})
+                server_table[-1]['host'] = qstat_entry['hostname']
+                server_table[-1]['password'] = False
+                server_table[-1]['game_id'] = game
+                server_table[-1]['master'] = None
+
+                if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
+                    server_table[-1]['name'] = None
+                    server_table[-1]['game_type'] = None
+                    server_table[-1]['terrain'] = None
+                    server_table[-1]['player_count'] = 0
+                    server_table[-1]['player_limit'] = 0
+                    server_table[-1]['ping'] = 9999
+                else:
+                    server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
+                    server_table[-1]['game_type'] = qstat_entry['gametype']
+                    server_table[-1]['terrain'] = qstat_entry['map']
+                    server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
+                    server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
+                    server_table[-1]['ping'] = int(qstat_entry['ping'])
 
     return server_table

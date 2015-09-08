@@ -71,12 +71,17 @@ UI_DIR = os.path.join(PROJECT_DIR, "ui")
 GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
 
+SEPARATOR_MSG = ("-------------------------------------------\n")
 ERROR_MSG = N_("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
-QSTAT_MSG = N_("QStat backend:")
-RIGSOFRODS_MSG = N_("Rigs of Rods backend:")
-CORE_MSG = N_("Core:")
-SETTINGS_MSG = N_("Settings:")
-GTK_MSG = N_("GTK+ UI:")
+CORECAT_MSG = N_("Core/")
+UICAT_MSG = N_("UI/")
+BACKENDCAT_MSG = N_("Backend/")
+
+QSTAT_MSG = BACKENDCAT_MSG + N_("QStat:")
+RIGSOFRODS_MSG = BACKENDCAT_MSG + N_("Rigs of Rods:")
+CORE_MSG = CORECAT_MSG + N_("Core:")
+SETTINGS_MSG = CORECAT_MSG + N_("Settings:")
+GTK_MSG = UICAT_MSG + N_("GTK+:")
 
 
 del N_

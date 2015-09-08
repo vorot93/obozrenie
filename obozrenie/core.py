@@ -93,13 +93,13 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
 
-        print(CORE_MSG, N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
+        print(SEPARATOR_MSG + CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
         server_list_temp = []
         stat_master_cmd = backends.backend_table[backend].stat_master
         try:
             server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
         except KeyError:
-            print(CORE_MSG, N_("Internal backend error for {0}.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
+            print(CORE_MSG + N_("Internal backend error for {0}.".format(self.game_table[game]["info"]["name"])), ERROR_MSG)
             exit(1)
 
         self.game_table[game]["servers"] = server_list_temp
