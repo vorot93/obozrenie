@@ -83,11 +83,6 @@ class Core:
 
         return game_table
 
-    def clear_server_list(self, game):
-        """Clears server list"""
-        game_index = helpers.search_dict_table(self.game_table, "id", game)
-        self.game_table[game_index]["servers"].clear()
-
     def update_server_list(self, game, stat_callback=None):
         """Updates server lists"""
         stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
