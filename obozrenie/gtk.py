@@ -330,6 +330,7 @@ class App(Gtk.Application):
         """
 
         # Load settings
+        print(SEPARATOR_MSG + GTK_MSG, N_("Obozrenie is starting"))
         self.guiactions.get_games_list_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
         gtk_helpers.set_widget_value(self.guiactions.game_combobox, gtk_helpers.get_widget_value(self.guiactions.game_treeview))
@@ -361,6 +362,7 @@ class App(Gtk.Application):
 
     def on_shutdown(self, app):
         self.settings.save()
+        print(GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
 
 if __name__ == "__main__":
     app = App(Core)
