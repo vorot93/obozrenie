@@ -54,6 +54,7 @@ def stat_master(game, game_table_slice):
     stat_start_time = None
     stat_end_time = None
 
+    game_name = game_table_slice["info"]["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
     hosts_array = game_table_slice["settings"]["master_uri"].split(',')
 
@@ -69,7 +70,7 @@ def stat_master(game, game_table_slice):
         qstat_cmd.append("-" + backend_config_object['game'][game]['master_key'])
         qstat_cmd.append(entry)
 
-    print(QSTAT_MSG, "Requesting server info")
+    print(QSTAT_MSG, N_("|{0}| Requesting server info".format(game_name)))
     stat_start_time = time.time()
     qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
     server_table_qstat_xml = qstat_output.decode()
@@ -77,13 +78,13 @@ def stat_master(game, game_table_slice):
     server_table_dict = xmltodict.parse(server_table_qstat_xml)
 
     stat_total_time = stat_end_time - stat_start_time
-    print(QSTAT_MSG, N_("Received server info. Elapsed time: {0}s".format(round(stat_total_time, 2))))
+    print(QSTAT_MSG, N_("|{0}| Received server info. Elapsed time: {1}s".format(game_name, round(stat_total_time, 2))))
     server_table = []
     color_code_pattern = '[\\^](.)'
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
             if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
-                print(QSTAT_MSG, N_("No valid masters specified. Please check your master server settings."))
+                print(QSTAT_MSG, N_("|{0}| No valid masters specified. Please check your master server settings.".format(game_name)))
                 break
 
         except TypeError:
@@ -92,9 +93,9 @@ def stat_master(game, game_table_slice):
                 master_server_status = qstat_entry['@status']
                 if master_server_status == 'UP':
                     master_server_entry_count = qstat_entry['@servers']
-                    print(QSTAT_MSG, N_("Queried Master. Address: {0}, status: {1}, server count: {2}".format(master_server_uri, master_server_status, master_server_entry_count)))
+                    print(QSTAT_MSG, N_("|{0}| Queried Master. Address: {1}, status: {2}, server count: {3}".format(game_name, master_server_uri, master_server_status, master_server_entry_count)))
                 else:
-                    print(QSTAT_MSG, N_("Master query failed. Address: {0}, status: {1}".format(master_server_uri, master_server_status)))
+                    print(QSTAT_MSG, N_("|{0}| Master query failed. Address: {1}, status: {2}".format(game_name, master_server_uri, master_server_status)))
 
             elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
                 server_table.append({})

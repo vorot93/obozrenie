@@ -80,6 +80,7 @@ class Core:
             game_table[game_id]["info"]["name"] = name
             game_table[game_id]["info"]["backend"] = backend
             game_table[game_id]["info"]["launch_pattern"] = launch_pattern
+            game_table[game_id]["query-status"] = None
 
         return game_table
 
@@ -90,35 +91,40 @@ class Core:
         stat_master_thread.start()
 
     def stat_master_target(self, game, callback):
-        """Separate update thread"""
+        """Separate update thread. Strictly per-game."""
         backend = self.game_table[game]["info"]["backend"]
+        state = self.game_table[game]["query-status"]
 
-        print(SEPARATOR_MSG + CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
-        server_list_temp = []
-        stat_master_cmd = backends.backend_table[backend].stat_master
-        try:
-            server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
-        except KeyError:
-            print(CORE_MSG + N_("Internal backend error for {0}.".format(self.game_table[game]["info"]["name"])), ERROR_MSG)
-            exit(1)
+        # Start query if it's not up already
+        if state != "working":
+            self.game_table[game]["query-status"] = "working"
+            print(SEPARATOR_MSG + CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
+            server_list_temp = []
+            stat_master_cmd = backends.backend_table[backend].stat_master
+            try:
+                server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
+            except KeyError:
+                print(CORE_MSG + N_("Internal backend error for {0}.".format(self.game_table[game]["info"]["name"])), ERROR_MSG)
+                exit(1)
 
-        self.game_table[game]["servers"] = server_list_temp
+            self.game_table[game]["servers"] = server_list_temp
+            self.game_table[game]["query-status"] = "ready"
 
 
-        for entry in self.game_table[game]["servers"]:
-            entry['country'] = "unknown"
-            if GEOIP_ENABLED is True:
-                host = entry["host"].split(':')[0]
-                try:
-                    entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
-                except OSError:
-                    entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
-                except:
-                    pass
+            for entry in self.game_table[game]["servers"]:
+                entry['country'] = "unknown"
+                if GEOIP_ENABLED is True:
+                    host = entry["host"].split(':')[0]
+                    try:
+                        entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
+                    except OSError:
+                        entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                    except:
+                        pass
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:
-            GLib.idle_add(callback, self.game_table[game]["servers"])
+            GLib.idle_add(callback, game, self.game_table.copy())
 
     def start_game(self, game, server, password):
         """Start game"""

@@ -135,7 +135,7 @@ class GUIActions:
         if self.core.game_table[game_id]["servers"] == []:
             self.cb_update_button_clicked(widget, *data)
         else:
-            self.fill_server_view(self.core.game_table[game_id]["servers"])
+            GLib.idle_add(self.show_game_page, game_id, self.core.game_table.copy())
 
     def cb_update_button_clicked(self, widget, *data):
         """Actions on server list update button click"""
@@ -144,13 +144,9 @@ class GUIActions:
 
         game = self.app.settings.settings_table["common"]["selected-game"]
 
-        self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
+        self.set_loading_state("working")
 
-        self.serverlist_update_button.set_sensitive(False)
-        self.game_treeview.set_sensitive(False)
-        self.game_combobox.set_sensitive(False)
-
-        self.core.update_server_list(game, self.fill_server_view)
+        self.core.update_server_list(game, self.show_game_page)
 
     def get_games_list_store(self):
         """
@@ -185,6 +181,19 @@ class GUIActions:
 
         for entry in game_store_list:
             treeiter = self.game_store.append(entry)
+
+    def show_game_page(self, game, game_table):
+        if self.app.settings.settings_table["common"]["selected-game"] == game and game_table[game]["query-status"] == "ready":
+            self.set_loading_state("working")
+            self.fill_server_view(game_table[game]["servers"])
+            self.set_loading_state("ready")
+
+    def set_loading_state(self, state):
+        if state == "working":
+            self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
+        elif state == "ready":
+            self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
+
 
     def fill_server_view(self, server_table):
         """Fill the server view"""
@@ -240,12 +249,6 @@ class GUIActions:
 
         for entry in server_list:
             treeiter = self.serverlist_model.append(entry)
-
-        self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
-
-        self.serverlist_update_button.set_sensitive(True)
-        self.game_combobox.set_sensitive(True)
-        self.game_treeview.set_sensitive(True)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
