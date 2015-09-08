@@ -158,19 +158,24 @@ class GUIActions:
         """
         self.game_view_format = ("game_id",
                                  "name",
-                                 "backend",
-                                 "icon")
+                                 "backend")
 
         table = self.core.game_table.copy()
 
         self.game_store = self.builder.get_object("Game_Store")
 
-        for game_id in sorted(table):
-            entry = []
-            entry.append(game_id)
-            entry.append(table[game_id]["info"]["name"])
-            entry.append(table[game_id]["info"]["backend"])
+        game_store_table = []
+        for entry in self.core.game_table:
+            game_store_table.append({})
+            game_store_table[-1]["game_id"] = entry
+            game_store_table[-1]["name"] = self.core.game_table[entry]["info"]["name"]
+            game_store_table[-1]["backend"] = self.core.game_table[entry]["info"]["backend"]
 
+        game_store_table = helpers.sort_dict_table(game_store_table, "name")
+        game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
+
+        for entry in game_store_list:
+            game_id = entry[self.game_view_format.index("game_id")]
             icon = game_id + '.png'
             icon_missing = "image-missing.png"
 
