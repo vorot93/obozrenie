@@ -143,7 +143,7 @@ def stat_master(game, game_table_slice):
             master_page_object = requests.get(master_page_uri)
             master_page = master_page_object.text
         except:
-            print(N_("Accessing URI {0} failed with error code {1}").format(master_page_uri, "unknown"))
+            print(N_("Accessing URI {0} failed with error code {1}".format(master_page_uri, "unknown")))
             continue
 
         for i in range(len(parser.replacements)):
@@ -152,7 +152,7 @@ def stat_master(game, game_table_slice):
         try:
             parser.feed(master_page)
         except:
-            print(N_("Error parsing URI {0}").format(master_page_uri))
+            print(N_("Error parsing URI {0}".format(master_page_uri)))
             continue
 
         temp_table = parser.list1.copy()

@@ -72,5 +72,11 @@ GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
 
 ERROR_MSG = N_("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
+QSTAT_MSG = N_("QStat backend:")
+RIGSOFRODS_MSG = N_("Rigs of Rods backend:")
+CORE_MSG = N_("Core:")
+SETTINGS_MSG = N_("Settings:")
+GTK_MSG = N_("GTK+ UI:")
+
 
 del N_

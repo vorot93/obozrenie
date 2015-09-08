@@ -69,7 +69,7 @@ def stat_master(game, game_table_slice):
         qstat_cmd.append("-" + backend_config_object['game'][game]['master_key'])
         qstat_cmd.append(entry)
 
-    print("Starting single-threaded QStat server query")
+    print(QSTAT_MSG, "Requesting server info")
     stat_start_time = time.time()
     qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
     server_table_qstat_xml = qstat_output.decode()
@@ -77,7 +77,7 @@ def stat_master(game, game_table_slice):
     server_table_dict = xmltodict.parse(server_table_qstat_xml)
 
     stat_total_time = stat_end_time - stat_start_time
-    print(N_("QStat server query complete. Elapsed time: {0}s".format(round(stat_total_time, 2))))
+    print(QSTAT_MSG, N_("Received server info. Elapsed time: {0}s".format(round(stat_total_time, 2))))
     server_table = []
     color_code_pattern = '[\\^](.)'
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...

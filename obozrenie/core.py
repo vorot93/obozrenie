@@ -35,13 +35,13 @@ try:
     import pygeoip
     try:
         open(GEOIP_DATA_FILE)
-        print(N_("GeoIP data file {0} opened successfully").format(GEOIP_DATA_FILE))
+        print(CORE_MSG, N_("GeoIP data file {0} opened successfully".format(GEOIP_DATA_FILE)))
         GEOIP_ENABLED = True
     except:
-        print(N_("GeoIP data file not found. Disabling geolocation."))
+        print(CORE_MSG, N_("GeoIP data file not found. Disabling geolocation."))
         GEOIP_ENABLED = False
 except ImportError:
-    print(N_("PyGeoIP not found. Disabling geolocation."))
+    print(CORE_MSG, N_("PyGeoIP not found. Disabling geolocation."))
     GEOIP_ENABLED = False
 
 
@@ -93,13 +93,13 @@ class Core:
         """Separate update thread"""
         backend = self.game_table[game]["info"]["backend"]
 
-        print(N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
+        print(CORE_MSG, N_("Refreshing servers for {0}").format(self.game_table[game]["info"]["name"]))
         server_list_temp = []
         stat_master_cmd = backends.backend_table[backend].stat_master
         try:
             server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
         except KeyError:
-            print(N_("Internal backend error for {0}.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
+            print(CORE_MSG, N_("Internal backend error for {0}.").format(self.game_table[game]["info"]["name"]), ERROR_MSG)
             exit(1)
 
         self.game_table[game]["servers"] = server_list_temp
@@ -208,5 +208,5 @@ class Settings:
 
 
 if __name__ == "__main__":
-    print(N_("This is the core module of Obozrenie Game Server Browser.\n"
+    print(CORE_MSG, N_("This is the core module of Obozrenie Game Server Browser.\n"
              "Please run an appropriate UI instead."))
