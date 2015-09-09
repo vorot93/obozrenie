@@ -132,9 +132,10 @@ class GUIActions:
         game_id = self.app.settings.settings_table["common"]["selected-game"]
 
         gtk_helpers.set_widget_value(self.game_combobox, game_id)
-        if self.core.game_table[game_id]["servers"] == []:
+        if self.core.game_table[game_id]["query-status"] is None:
             self.cb_update_button_clicked(widget, *data)
         else:
+            self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id, self.core.game_table.copy())
 
     def cb_update_button_clicked(self, widget, *data):
