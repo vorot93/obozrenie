@@ -31,18 +31,6 @@ from obozrenie import backends
 from obozrenie.option_lists import *
 from obozrenie.global_settings import *
 
-try:
-    import pygeoip
-    try:
-        open(GEOIP_DATA_FILE)
-        print(CORE_MSG, N_("GeoIP data file {0} opened successfully".format(GEOIP_DATA_FILE)))
-        GEOIP_ENABLED = True
-    except:
-        print(CORE_MSG, N_("GeoIP data file not found. Disabling geolocation."))
-        GEOIP_ENABLED = False
-except ImportError:
-    print(CORE_MSG, N_("PyGeoIP not found. Disabling geolocation."))
-    GEOIP_ENABLED = False
 
 
 class Core:
@@ -54,6 +42,19 @@ class Core:
         self.gameconfig_object = helpers.load_table(GAME_CONFIG_FILE)
 
         self.game_table = self.create_game_table()
+
+        try:
+            import pygeoip
+            try:
+                open(GEOIP_DATA_FILE)
+                print(CORE_MSG, N_("GeoIP data file {0} opened successfully".format(GEOIP_DATA_FILE)))
+                self.geolocation = pygeoip
+            except:
+                print(CORE_MSG, N_("GeoIP data file not found. Disabling geolocation."))
+                self.geolocation = None
+        except ImportError:
+            print(CORE_MSG, N_("PyGeoIP not found. Disabling geolocation."))
+            self.geolocation = None
 
     def create_game_table(self):
         """
@@ -113,12 +114,12 @@ class Core:
 
             for entry in self.game_table[game]["servers"]:
                 entry['country'] = "unknown"
-                if GEOIP_ENABLED is True:
+                if self.geolocation is not None:
                     host = entry["host"].split(':')[0]
                     try:
-                        entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
+                        entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
                     except OSError:
-                        entry['country'] = pygeoip.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                        entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
                     except:
                         pass
 

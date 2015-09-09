@@ -76,9 +76,29 @@ class GUIActions:
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_welcome_page)
 
+        # Load flags
+        country_db = self.core.geolocation.const.COUNTRY_CODES
+        self.flag_icons = self.get_country_flags(country_db)
+
     def cb_set_widgets_active(self, status):
         """Sets sensitivity and visibility for conditional widgets."""
         pass
+
+    @staticmethod
+    def get_country_flags(country_list):
+        """Loads country flag pixbufs into memory for later usage"""
+        flags = {}
+        for country in country_list:
+            try:
+                flags[country] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, country.lower() + '.svg'), 24, 18)
+            except GLib.Error:
+                print(GTK_MSG, N_("Error adding loading flag icon of {0}".format(country)))
+                try:
+                    flags[country] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18)
+                except GLib.Error:
+                    flags[country] = None
+
+        return flags
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
         game = self.app.settings.settings_table["common"]["selected-game"]
@@ -235,10 +255,9 @@ class GUIActions:
 
             # Country flags
             try:
-                entry["country_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, entry["country"].lower() + '.svg'), 24, 18)
-            except GLib.Error:
-                print(GTK_MSG, N_("Error adding flag icon of {0} for host {1}".format(entry["country"], entry["host"])))
-                entry["country_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18)
+                entry["country_icon"] = self.flag_icons[entry["country"]]
+            except KeyError:
+                entry["country_icon"] = None
 
         view_table = helpers.sort_dict_table(view_table, "ping")
         server_list = helpers.dict_to_list(view_table, self.server_view_format)
