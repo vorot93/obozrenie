@@ -84,7 +84,10 @@ def dict_to_list(dict_table, key_list):
             list_table.append([])
 
             for key in key_list:
-                list_table[-1].append(entry[key])
+                try:
+                    list_table[-1].append(entry[key])
+                except KeyError:
+                    list_table[-1].append(None)
 
     return list_table
 
