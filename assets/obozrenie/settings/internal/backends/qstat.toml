@@ -1,3 +1,9 @@
+[game.doom3]
+master_key = "dm3m"
+master_type = "DM3M"
+server_key = "dm3s"
+server_type = "DM3S"
+
 [game.et]
 master_key = "woetm"
 master_type = "WOETM"

@@ -2,6 +2,11 @@
 path = "RoR"
 master_uri = "http://api.rigsofrods.com/serverlist/"
 
+[doom3]
+workdir = ""
+path = "doom3"
+master_uri = "idnet.ua-corp.com:27650"
+
 [q2]
 workdir = ""
 path = "quake2"

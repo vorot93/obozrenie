@@ -4,6 +4,12 @@ backend = "rigsofrods"
 launch_pattern = "rigsofrods"
 settings = ["path", "master_uri"]
 
+[doom3]
+name = "Doom 3"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [q2]
 name = "Quake II"
 backend = "qstat"
