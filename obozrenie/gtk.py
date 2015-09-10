@@ -232,6 +232,7 @@ class GUIActions:
                                          "country",
                                          "name",
                                          "game_id",
+                                         "game_mod",
                                          "game_type",
                                          "terrain",
                                          "game_icon",

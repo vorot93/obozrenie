@@ -57,6 +57,8 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
       <!-- column-name game_id -->
       <column type="gchararray"/>
+      <!-- column-name game_mod -->
+      <column type="gchararray"/>
       <!-- column-name game_type -->
       <column type="gchararray"/>
       <!-- column-name terrain -->
@@ -422,15 +424,15 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="sort_indicator">True</property>
                         <property name="sort_column_id">6</property>
                         <child>
-                          <object class="GtkCellRendererPixbuf" id="Game_CellRenderer"/>
+                          <object class="GtkCellRendererPixbuf" id="GameIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">10</attribute>
+                            <attribute name="pixbuf">11</attribute>
                           </attributes>
                         </child>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="PasswordIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="icon-name">11</attribute>
+                            <attribute name="icon-name">12</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -454,7 +456,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="CountryIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">12</attribute>
+                            <attribute name="pixbuf">13</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -514,13 +516,25 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                       </object>
                     </child>
                     <child>
+                      <object class="GtkTreeViewColumn" id="GameMod_Column">
+                        <property name="title" translatable="yes">Game Mod</property>
+                        <property name="sort_column_id">8</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="GameMod_CellRenderer"/>
+                          <attributes>
+                            <attribute name="text">8</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkTreeViewColumn" id="GameType_ServerList_TreeViewColumn">
                         <property name="title" translatable="yes">Game Type</property>
-                        <property name="sort_column_id">8</property>
+                        <property name="sort_column_id">9</property>
                         <child>
                           <object class="GtkCellRendererText" id="GameType_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">8</attribute>
+                            <attribute name="text">9</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -532,11 +546,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="title" translatable="yes">Terrain</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
-                        <property name="sort_column_id">9</property>
+                        <property name="sort_column_id">10</property>
                         <child>
                           <object class="GtkCellRendererText" id="Terrain_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">9</attribute>
+                            <attribute name="text">10</attribute>
                           </attributes>
                         </child>
                       </object>
