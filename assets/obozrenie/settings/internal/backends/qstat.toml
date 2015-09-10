@@ -16,6 +16,12 @@ master_type = "Q3M"
 server_key = "q3s"
 server_type = "Q3S"
 
+[game.q4]
+master_key = "q4m"
+master_type = "Q4M"
+server_key = "q4s"
+server_type = "Q4S"
+
 [game.qw]
 master_key = "qwm"
 master_type = "QWM"

@@ -16,6 +16,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[q4]
+name = "Quake 4"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [qw]
 name = "QuakeWorld"
 backend = "qstat"
