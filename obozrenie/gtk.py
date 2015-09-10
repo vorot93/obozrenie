@@ -156,7 +156,7 @@ class GUIActions:
 
         self.core.update_server_list(game, self.show_game_page)
 
-    def get_games_list_store(self):
+    def fill_game_store(self):
         """
         Loads game list into a list store
         """
@@ -166,26 +166,27 @@ class GUIActions:
                                  "game_icon",
                                  "status_icon")
 
-        table = self.core.game_table.copy()
+        game_table = self.core.game_table.copy()
+        game_icons = self.game_icons
 
         self.game_store = self.builder.get_object("Game_Store")
 
         game_store_table = []
-        for entry in self.core.game_table:
+        for entry in game_table:
             icon = entry + '.png'
 
             game_store_table.append({})
             game_store_table[-1]["game_id"] = entry
-            game_store_table[-1]["name"] = self.core.game_table[entry]["info"]["name"]
-            game_store_table[-1]["backend"] = self.core.game_table[entry]["info"]["backend"]
+            game_store_table[-1]["name"] = game_table[entry]["info"]["name"]
+            game_store_table[-1]["backend"] = game_table[entry]["info"]["backend"]
             game_store_table[-1]["status_icon"] = None
-            game_store_table[-1]["game_icon"] = self.game_icons[entry]
+            game_store_table[-1]["game_icon"] = game_icons[entry]
 
         game_store_table = helpers.sort_dict_table(game_store_table, "name")
         game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
 
-        for entry in game_store_list:
-            treeiter = self.game_store.append(entry)
+        for list_entry in game_store_list:
+            self.game_store.append(list_entry)
 
     def show_game_page(self, game, game_table):
         self.set_game_state(game, game_table[game]["query-status"])
@@ -235,25 +236,24 @@ class GUIActions:
 
         view_table = server_table.copy()
 
+        game_icons = self.game_icons
+        flag_icons = self.flag_icons
+
         # Goodies for GUI
         for entry in view_table:
+            game_id = entry.get("game_id")
+            country = entry.get("country")
             # Game icon
-            try:
-                entry["game_icon"] = self.game_icons[entry["game_id"]]
-            except KeyError:
-                entry["game_icon"] = None
+            entry["game_icon"] = game_icons.get(game_id)
 
             # Lock icon
-            if entry["password"] == True:
+            if entry["password"] is True:
                 entry["password_icon"] = "network-wireless-encrypted-symbolic"
             else:
                 entry["password_icon"] = None
 
             # Country flags
-            try:
-                entry["country_icon"] = self.flag_icons[entry["country"]]
-            except KeyError:
-                entry["country_icon"] = None
+            entry["country_icon"] = flag_icons.get(country)
 
         view_table = helpers.sort_dict_table(view_table, "ping")
         server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
@@ -354,7 +354,7 @@ class App(Gtk.Application):
         # Load settings
         print(SEPARATOR_MSG + GTK_MSG, N_("Obozrenie is starting"))
         self.status = "starting"
-        self.guiactions.get_games_list_store()
+        self.guiactions.fill_game_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
         gtk_helpers.set_widget_value(self.guiactions.game_combobox, gtk_helpers.get_widget_value(self.guiactions.game_treeview))
 
@@ -388,8 +388,11 @@ class App(Gtk.Application):
     def on_shutdown(self, app):
         if self.status == "up":
             self.settings.save()
-        self.status = "shutting down"
-        print(GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
+            self.status = "shutting down"
+            print(GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
+        else:
+            self.status = "start failed"
+            print(GTK_MSG, N_("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
 
 if __name__ == "__main__":
     app = App(Core)
