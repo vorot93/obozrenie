@@ -28,6 +28,12 @@ master_type = "QWM"
 server_key = "qws"
 server_type = "QWS"
 
+[game.rtcw]
+master_key = "rwm"
+master_type = "RWM"
+server_key = "rws"
+server_type = "RWS"
+
 [game.unvanquished]
 master_key = "unvanquishedm"
 master_type = "UNVANQUISHEDM"

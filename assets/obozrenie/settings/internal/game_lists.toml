@@ -28,6 +28,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[rtcw]
+name = "Return to Castle Wolfenstein"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [et]
 name = "Wolfenstein: Enemy Territory"
 backend = "qstat"

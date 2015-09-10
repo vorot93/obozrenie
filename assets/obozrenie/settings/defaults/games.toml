@@ -22,6 +22,11 @@ workdir = ""
 path = "qwcl"
 master_uri = "qwmaster.ocrana.de:27000"
 
+[rtcw]
+workdir = ""
+path = "rtcwmp"
+master_uri = "107.161.23.68:27950"
+
 [et]
 workdir = ""
 path = "et"
