@@ -2,6 +2,11 @@
 path = "RoR"
 master_uri = "http://api.rigsofrods.com/serverlist/"
 
+[q2]
+workdir = ""
+path = "quake2"
+master_uri = "netdome.biz:27900"
+
 [q3a]
 workdir = ""
 path = "quake3"

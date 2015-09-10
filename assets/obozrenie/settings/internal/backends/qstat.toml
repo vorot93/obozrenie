@@ -4,6 +4,12 @@ master_type = "WOETM"
 server_key = "woets"
 server_type = "WOETS"
 
+[game.q2]
+master_key = "q2m"
+master_type = "Q2M"
+server_key = "q2s"
+server_type = "Q2S"
+
 [game.q3a]
 master_key = "q3m"
 master_type = "Q3M"
