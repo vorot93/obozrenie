@@ -141,7 +141,8 @@ class GUIActions:
         if self.core.game_table[game_id]["query-status"] is None:
             self.cb_update_button_clicked(widget, *data)
         else:
-            self.set_loading_state("working")
+            if self.core.game_table[game_id]["query-status"] == "working":
+                self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id, self.core.game_table.copy())
 
     def cb_update_button_clicked(self, widget, *data):
@@ -191,7 +192,6 @@ class GUIActions:
     def show_game_page(self, game, game_table):
         self.set_game_state(game, game_table[game]["query-status"])
         if self.app.settings.settings_table["common"]["selected-game"] == game and game_table[game]["query-status"] == "ready":
-            self.set_loading_state("working")
             self.fill_server_list_model(game_table[game]["servers"])
             self.set_loading_state("ready")
 
@@ -236,6 +236,10 @@ class GUIActions:
 
         view_table = server_table.copy()
 
+        model = self.serverlist_model
+        model_append = model.append
+        model_format = self.server_list_model_format
+
         game_icons = self.game_icons
         flag_icons = self.flag_icons
 
@@ -260,11 +264,11 @@ class GUIActions:
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
         a = self.serverhost_entry.get_text()
-        self.serverlist_model.clear()
+        model.clear()
         self.serverhost_entry.set_text(a)
 
         for entry in server_list:
-            treeiter = self.serverlist_model.append(entry)
+            treeiter = model_append(entry)
 
     def cb_server_list_selection_changed(self, widget, *data):
         """Updates text in Entry on TreeView selection change."""
