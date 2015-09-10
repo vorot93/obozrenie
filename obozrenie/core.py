@@ -129,7 +129,9 @@ class Core:
 
     def start_game(self, game, server, password):
         """Start game"""
-        helpers.launch_game(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password)
+        launch_thread = threading.Thread(target=helpers.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
+        launch_thread.daemon = True
+        launch_thread.start()
 
 
 class Settings:
