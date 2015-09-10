@@ -46,6 +46,7 @@ def split_server_list_into_masters(orig_list, split_key, split_value):
 
 
 def stat_master(game, game_table_slice):
+    hosts_array = []
     server_table_qstat_xml = []
     server_table_xmltodict = []
     server_table_dict = []
@@ -56,10 +57,10 @@ def stat_master(game, game_table_slice):
 
     game_name = game_table_slice["info"]["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
-    hosts_array = game_table_slice["settings"]["master_uri"].split(',')
+    hosts_temp_array = game_table_slice["settings"]["master_uri"].split(',')
 
-    for entry in hosts_array:
-        entry = entry.strip()
+    for entry in hosts_temp_array:
+        hosts_array.append(entry.strip())
 
     hosts_array = list(set(hosts_array))
 
