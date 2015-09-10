@@ -106,6 +106,7 @@ class Core:
                 server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
             except KeyError:
                 print(CORE_MSG + N_("Internal backend error for {0}.".format(self.game_table[game]["info"]["name"])), ERROR_MSG)
+                self.game_table[game]["query-status"] = "error"
                 exit(1)
 
             self.game_table[game]["servers"] = server_list_temp

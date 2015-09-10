@@ -202,6 +202,8 @@ class GUIActions:
             icon = "emblem-synchronizing-symbolic"
         elif state == "ready":
             icon = "emblem-ok-symbolic"
+        elif state == "error":
+            icon = "error"
         else:
             return
 
@@ -216,6 +218,8 @@ class GUIActions:
             self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
         elif state == "ready":
             self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
+        elif state == "error":
+            pass
 
 
     def fill_server_list_model(self, server_table):
