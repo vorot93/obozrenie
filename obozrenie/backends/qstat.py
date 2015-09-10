@@ -104,7 +104,9 @@ def stat_master(game, game_table_slice):
                 server_table[-1]['game_id'] = game
                 server_table[-1]['master'] = None
 
-                if qstat_entry['@status'] == 'TIMEOUT' or qstat_entry['@status'] == 'DOWN':
+                server_status = qstat_entry['@status']
+
+                if server_status == 'TIMEOUT' or server_status == 'DOWN' or server_status == 'ERROR':
                     server_table[-1]['name'] = None
                     server_table[-1]['game_type'] = None
                     server_table[-1]['terrain'] = None
