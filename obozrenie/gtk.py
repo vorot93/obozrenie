@@ -166,6 +166,7 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game"]
 
         self.set_loading_state("working")
+        self.set_game_state(game, "working")
 
         self.core.update_server_list(game, self.show_game_page)
 
@@ -176,7 +177,8 @@ class GUIActions:
         self.game_view_format = ("game_id",
                                  "name",
                                  "backend",
-                                 "game_icon")
+                                 "game_icon",
+                                 "status_icon")
 
         table = self.core.game_table.copy()
 
@@ -185,12 +187,12 @@ class GUIActions:
         game_store_table = []
         for entry in self.core.game_table:
             icon = entry + '.png'
-            icon_missing = "image-missing.png"
 
             game_store_table.append({})
             game_store_table[-1]["game_id"] = entry
             game_store_table[-1]["name"] = self.core.game_table[entry]["info"]["name"]
             game_store_table[-1]["backend"] = self.core.game_table[entry]["info"]["backend"]
+            game_store_table[-1]["status_icon"] = None
 
             try:
                 game_store_table[-1]["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon), 24, 24)
@@ -204,10 +206,27 @@ class GUIActions:
             treeiter = self.game_store.append(entry)
 
     def show_game_page(self, game, game_table):
+        self.set_game_state(game, game_table[game]["query-status"])
         if self.app.settings.settings_table["common"]["selected-game"] == game and game_table[game]["query-status"] == "ready":
             self.set_loading_state("working")
             self.fill_server_view(game_table[game]["servers"])
             self.set_loading_state("ready")
+
+    def set_game_state(self, game, state):
+        icon = ""
+
+        if state == "working":
+            icon = "emblem-synchronizing-symbolic"
+        elif state == "ready":
+            icon = "emblem-ok-symbolic"
+        else:
+            return
+
+        model = self.game_model
+        column = self.game_view_format.index("game_id")
+        game_index = gtk_helpers.search_model(model, column, game)
+
+        model[game_index][self.game_view_format.index("status_icon")] = icon
 
     def set_loading_state(self, state):
         if state == "working":

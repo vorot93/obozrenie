@@ -35,6 +35,8 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
       <!-- column-name game_icon -->
       <column type="GdkPixbuf"/>
+      <!-- column-name status_icon -->
+      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkListStore" id="ServerList_Store">
@@ -77,15 +79,15 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
     <property name="can_focus">False</property>
     <property name="icon_name">edit-find-symbolic</property>
   </object>
-  <object class="GtkImage" id="image1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">view-list-symbolic</property>
-  </object>
   <object class="GtkImage" id="info-icon">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-information-symbolic</property>
+  </object>
+  <object class="GtkImage" id="list-icon">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">view-list-symbolic</property>
   </object>
   <object class="GtkImage" id="preferences_desktop_image">
     <property name="visible">True</property>
@@ -177,7 +179,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">Toggle game list view mode.</property>
-                    <property name="image">image1</property>
+                    <property name="image">list-icon</property>
                     <signal name="clicked" handler="cb_game_treeview_togglebutton_clicked" swapped="no"/>
                   </object>
                   <packing>
@@ -214,6 +216,12 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                           </object>
                           <attributes>
                             <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer1"/>
+                          <attributes>
+                            <attribute name="icon-name">4</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -645,6 +653,12 @@ Select a game or press refresh button below</property>
                           </object>
                           <attributes>
                             <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_TreeView_StatusIcon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="icon-name">4</attribute>
                           </attributes>
                         </child>
                       </object>
