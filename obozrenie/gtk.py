@@ -27,7 +27,7 @@ import threading
 
 from obozrenie import N_
 
-from gi.repository import GdkPixbuf, Gtk, Gio, GLib
+from gi.repository import GLib, Gio, Gtk
 
 from obozrenie import helpers
 from obozrenie import gtk_helpers
@@ -78,27 +78,13 @@ class GUIActions:
 
         # Load flags
         country_db = self.core.geolocation.const.COUNTRY_CODES
-        self.flag_icons = self.get_country_flags(country_db)
+        game_list = self.core.game_table.keys()
+        self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
+        self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
     def cb_set_widgets_active(self, status):
         """Sets sensitivity and visibility for conditional widgets."""
         pass
-
-    @staticmethod
-    def get_country_flags(country_list):
-        """Loads country flag pixbufs into memory for later usage"""
-        flags = {}
-        for country in country_list:
-            try:
-                flags[country] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, country.lower() + '.svg'), 24, 18)
-            except GLib.Error:
-                print(GTK_MSG, N_("Error adding loading flag icon of {0}".format(country)))
-                try:
-                    flags[country] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_FLAGS_DIR, 'unknown' + '.svg'), 24, 18)
-                except GLib.Error:
-                    flags[country] = None
-
-        return flags
 
     def cb_game_preferences_button_clicked(self, combobox, *data):
         game = self.app.settings.settings_table["common"]["selected-game"]
@@ -193,11 +179,7 @@ class GUIActions:
             game_store_table[-1]["name"] = self.core.game_table[entry]["info"]["name"]
             game_store_table[-1]["backend"] = self.core.game_table[entry]["info"]["backend"]
             game_store_table[-1]["status_icon"] = None
-
-            try:
-                game_store_table[-1]["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon), 24, 24)
-            except GLib.Error:
-                game_store_table[-1]["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24)
+            game_store_table[-1]["game_icon"] = self.game_icons[entry]
 
         game_store_table = helpers.sort_dict_table(game_store_table, "name")
         game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
@@ -209,7 +191,7 @@ class GUIActions:
         self.set_game_state(game, game_table[game]["query-status"])
         if self.app.settings.settings_table["common"]["selected-game"] == game and game_table[game]["query-status"] == "ready":
             self.set_loading_state("working")
-            self.fill_server_view(game_table[game]["servers"])
+            self.fill_server_list_model(game_table[game]["servers"])
             self.set_loading_state("ready")
 
     def set_game_state(self, game, state):
@@ -235,21 +217,21 @@ class GUIActions:
             self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
 
 
-    def fill_server_view(self, server_table):
+    def fill_server_list_model(self, server_table):
         """Fill the server view"""
-        self.server_view_format = ("host",
-                                   "password",
-                                   "player_count",
-                                   "player_limit",
-                                   "ping",
-                                   "country",
-                                   "name",
-                                   "game_id",
-                                   "game_type",
-                                   "terrain",
-                                   "game_icon",
-                                   "password_icon",
-                                   "country_icon")
+        self.server_list_model_format = ("host",
+                                         "password",
+                                         "player_count",
+                                         "player_limit",
+                                         "ping",
+                                         "country",
+                                         "name",
+                                         "game_id",
+                                         "game_type",
+                                         "terrain",
+                                         "game_icon",
+                                         "password_icon",
+                                         "country_icon")
 
         view_table = server_table.copy()
 
@@ -257,14 +239,9 @@ class GUIActions:
         for entry in view_table:
             # Game icon
             try:
-                if entry["game_id"] is not None:
-                    entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, entry["game_id"] + '.png'), 24, 24)
-                else:
-                    entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, game + '.png'), 24, 24)
-            except GLib.Error:
-                icon_missing = "image-missing.png"
-                print(GTK_MSG, N_("Error adding icon for {0} (host {1})".format(entry["game_id"], entry["host"])))
-                entry["game_icon"] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(ICON_GAMES_DIR, icon_missing), 24, 24)
+                entry["game_icon"] = self.game_icons[entry["game_id"]]
+            except KeyError:
+                entry["game_icon"] = None
 
             # Lock icon
             if entry["password"] == True:
@@ -279,7 +256,7 @@ class GUIActions:
                 entry["country_icon"] = None
 
         view_table = helpers.sort_dict_table(view_table, "ping")
-        server_list = helpers.dict_to_list(view_table, self.server_view_format)
+        server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
         a = self.serverhost_entry.get_text()
@@ -293,7 +270,7 @@ class GUIActions:
         """Updates text in Entry on TreeView selection change."""
         entry_field = self.serverhost_entry
 
-        text = gtk_helpers.get_widget_value(widget, treeview_colnum=self.server_view_format.index("host"))
+        text = gtk_helpers.get_widget_value(widget, treeview_colnum=self.server_list_model_format.index("host"))
 
         gtk_helpers.set_widget_value(entry_field, text)
 

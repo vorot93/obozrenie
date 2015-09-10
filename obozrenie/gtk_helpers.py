@@ -18,8 +18,26 @@
 
 """Useful functions for GTK+ UI"""
 
+import os
 
-from gi.repository import Gtk
+from gi.repository import GdkPixbuf, GLib, Gtk
+
+
+def get_icon_dict(key_list, icon_type, icon_format, icon_dir, width, height, error_msg=None):
+    """Loads icon pixbufs into memory for later usage"""
+    icon_dict = {}
+    for entry in key_list:
+        try:
+            icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, entry.lower() + "." + icon_format), width, height)
+        except GLib.Error:
+            if error_msg is not None:
+                error_msg(entry)
+            try:
+                icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, 'unknown' + "." + icon_format), width, height)
+            except GLib.Error:
+                icon_dict[entry] = None
+
+    return icon_dict
 
 
 def search_model(model, column, value):
