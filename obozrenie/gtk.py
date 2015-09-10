@@ -45,36 +45,40 @@ class GUIActions:
         self.builder = builder
         self.core = core_library
 
-        self.main_window = self.builder.get_object("Main_Window")
+        builder_object = self.builder.get_object
 
-        self.game_combobox = self.builder.get_object("Game_ComboBox")
-        self.game_treeview = self.builder.get_object("Game_TreeView")
-        self.game_model = self.builder.get_object("Game_Store")
-        self.game_combobox_revealer = self.builder.get_object("Game_ComboBox_Revealer")
-        self.game_view_revealer = self.builder.get_object("Game_View_Revealer")
+        self.main_window = builder_object("Main_Window")
 
-        self.game_view_togglebutton = self.builder.get_object("Game_View_ToggleButton")
-        self.serverlist_update_button = self.builder.get_object("Update_Button")
-        self.serverlist_info_button = self.builder.get_object("Info_Button")
-        self.serverlist_connect_button = self.builder.get_object("Connect_Button")
+        self.game_combobox = builder_object("Game_ComboBox")
+        self.game_treeview = builder_object("Game_TreeView")
+        self.game_model = builder_object("Game_Store")
+        self.game_combobox_revealer = builder_object("Game_ComboBox_Revealer")
+        self.game_view_revealer = builder_object("Game_View_Revealer")
 
-        self.serverlist_model = self.builder.get_object("ServerList_Store")
-        self.serverlist_view = self.builder.get_object("ServerList_View")
-        self.serverlist_view_selection = self.builder.get_object("ServerList_View").get_selection()
+        self.game_view_togglebutton = builder_object("Game_View_ToggleButton")
+        self.serverlist_update_button = builder_object("Update_Button")
+        self.serverlist_info_button = builder_object("Info_Button")
+        self.serverlist_connect_button = builder_object("Connect_Button")
 
-        self.serverlist_notebook = self.builder.get_object("ServerList_Notebook")
+        self.serverlist_model = builder_object("ServerList_Store")
+        self.serverlist_view = builder_object("ServerList_View")
+        self.serverlist_view_selection = builder_object("ServerList_View").get_selection()
 
-        self.serverlist_scrolledwindow = self.builder.get_object("ServerList_ScrolledWindow")
-        self.welcome_label = self.builder.get_object("ServerList_Welcome_Label")
-        self.refresh_spinner = self.builder.get_object("ServerList_Refresh_Spinner")
+        self.serverlist_notebook = builder_object("ServerList_Notebook")
 
-        self.serverlist_notebook_servers_page = self.serverlist_notebook.page_num(self.serverlist_scrolledwindow)
-        self.serverlist_notebook_welcome_page = self.serverlist_notebook.page_num(self.welcome_label)
-        self.serverlist_notebook_loading_page = self.serverlist_notebook.page_num(self.refresh_spinner)
+        self.serverlist_scrolledwindow = builder_object("ServerList_ScrolledWindow")
+        self.welcome_label = builder_object("ServerList_Welcome_Label")
+        self.refresh_spinner = builder_object("ServerList_Refresh_Spinner")
+        self.error_grid = builder_object("Error_Grid")
+
+        self.serverlist_notebook_pages = self.get_notebook_page_dict(self.serverlist_notebook, {"servers": self.serverlist_scrolledwindow,
+                                                                                           "welcome": self.welcome_label,
+                                                                                           "loading": self.refresh_spinner,
+                                                                                           "error":   self.error_grid})
 
         self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
 
-        self.serverlist_notebook.set_property("page", self.serverlist_notebook_welcome_page)
+        self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["welcome"])
 
         # Load flags
         country_db = self.core.geolocation.const.COUNTRY_CODES
@@ -138,7 +142,7 @@ class GUIActions:
         game_id = self.app.settings.settings_table["common"]["selected-game"]
 
         gtk_helpers.set_widget_value(self.game_combobox, game_id)
-        if self.core.game_table[game_id]["query-status"] is None:
+        if self.core.game_table[game_id]["query-status"] is None:  # Refresh server list on first access
             self.cb_update_button_clicked(widget, *data)
         else:
             if self.core.game_table[game_id]["query-status"] == "working":
@@ -156,6 +160,15 @@ class GUIActions:
         self.set_game_state(game, "working")
 
         self.core.update_server_list(game, self.show_game_page)
+
+    @staticmethod
+    def get_notebook_page_dict(notebook, widget_mapping):
+        """Get mapping for notebook pages."""
+        notebook_pages = {}
+        for entry in widget_mapping:
+            notebook_pages[entry] = notebook.page_num(widget_mapping[entry])
+
+        return notebook_pages
 
     def fill_game_store(self):
         """
@@ -190,10 +203,14 @@ class GUIActions:
             self.game_store.append(list_entry)
 
     def show_game_page(self, game, game_table):
-        self.set_game_state(game, game_table[game]["query-status"])
-        if self.app.settings.settings_table["common"]["selected-game"] == game and game_table[game]["query-status"] == "ready":
-            self.fill_server_list_model(game_table[game]["servers"])
-            self.set_loading_state("ready")
+        """Set of actions to do after query is complete."""
+        self.set_game_state(game, game_table[game]["query-status"])  # Display game status in GUI
+        if self.app.settings.settings_table["common"]["selected-game"] == game:  # Is callback for the game that is currently viewed?
+            if game_table[game]["query-status"] == "ready":
+                self.fill_server_list_model(game_table[game]["servers"])
+                self.set_loading_state("ready")
+            elif game_table[game]["query-status"] == "error":
+                self.set_loading_state("error")
 
     def set_game_state(self, game, state):
         icon = ""
@@ -215,11 +232,11 @@ class GUIActions:
 
     def set_loading_state(self, state):
         if state == "working":
-            self.serverlist_notebook.set_property("page", self.serverlist_notebook_loading_page)
+            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["loading"])
         elif state == "ready":
-            self.serverlist_notebook.set_property("page", self.serverlist_notebook_servers_page)
+            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["servers"])
         elif state == "error":
-            pass
+            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["error"])
 
 
     def fill_server_list_model(self, server_table):
