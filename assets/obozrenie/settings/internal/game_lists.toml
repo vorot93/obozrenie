@@ -10,6 +10,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[qw]
+name = "QuakeWorld"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [et]
 name = "Wolfenstein: Enemy Territory"
 backend = "qstat"

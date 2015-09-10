@@ -10,6 +10,12 @@ master_type = "Q3M"
 server_key = "q3s"
 server_type = "Q3S"
 
+[game.qw]
+master_key = "qwm"
+master_type = "QWM"
+server_key = "qws"
+server_type = "QWS"
+
 [game.unvanquished]
 master_key = "unvanquishedm"
 master_type = "UNVANQUISHEDM"
