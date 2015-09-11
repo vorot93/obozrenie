@@ -80,6 +80,22 @@ class GUIActions:
 
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["welcome"])
 
+
+        self.server_list_model_format = ("host",
+                                         "password",
+                                         "player_count",
+                                         "player_limit",
+                                         "ping",
+                                         "country",
+                                         "name",
+                                         "game_id",
+                                         "game_mod",
+                                         "game_type",
+                                         "terrain",
+                                         "game_icon",
+                                         "password_icon",
+                                         "country_icon")
+
         # Load flags
         try:
             country_db = self.core.geolocation.const.COUNTRY_CODES
@@ -110,7 +126,9 @@ class GUIActions:
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
-        game = self.app.settings.settings_table["common"]["selected-game"]
+        game = gtk_helpers.get_widget_value(self.serverlist_view, treeview_colnum=self.server_list_model_format.index("game_id"))
+        if game is None:
+            game = self.app.settings.settings_table["common"]["selected-game"]
         server = self.app.settings.settings_table["common"]["server-host"]
         password = self.app.settings.settings_table["common"]["server-pass"]
 
@@ -244,20 +262,6 @@ class GUIActions:
 
     def fill_server_list_model(self, server_table):
         """Fill the server view"""
-        self.server_list_model_format = ("host",
-                                         "password",
-                                         "player_count",
-                                         "player_limit",
-                                         "ping",
-                                         "country",
-                                         "name",
-                                         "game_id",
-                                         "game_mod",
-                                         "game_type",
-                                         "terrain",
-                                         "game_icon",
-                                         "password_icon",
-                                         "country_icon")
 
         view_table = server_table.copy()
 
