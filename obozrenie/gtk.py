@@ -72,9 +72,9 @@ class GUIActions:
         self.error_grid = builder_object("Error_Grid")
 
         self.serverlist_notebook_pages = self.get_notebook_page_dict(self.serverlist_notebook, {"servers": self.serverlist_scrolledwindow,
-                                                                                           "welcome": self.welcome_label,
-                                                                                           "loading": self.refresh_spinner,
-                                                                                           "error":   self.error_grid})
+                                                                                                "welcome": self.welcome_label,
+                                                                                                "loading": self.refresh_spinner,
+                                                                                                "error":   self.error_grid})
 
         self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
 
@@ -385,7 +385,7 @@ class App(Gtk.Application):
         """
 
         # Load settings
-        print(SEPARATOR_MSG + GTK_MSG, N_("Obozrenie is starting"))
+        print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
         self.status = "starting"
         self.guiactions.fill_game_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
@@ -422,10 +422,10 @@ class App(Gtk.Application):
         if self.status == "up":
             self.settings.save()
             self.status = "shutting down"
-            print(GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
+            print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
         else:
             self.status = "start failed"
-            print(GTK_MSG, N_("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
+            print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
 
 if __name__ == "__main__":
     app = App(Core)

@@ -99,7 +99,7 @@ class Core:
         # Start query if it's not up already
         if state != "working":
             self.game_table[game]["query-status"] = "working"
-            print(SEPARATOR_MSG + CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
+            print(CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
             server_list_temp = []
             stat_master_cmd = backends.backend_table[backend].stat_master
             try:

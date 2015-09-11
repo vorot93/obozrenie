@@ -71,7 +71,7 @@ UI_DIR = os.path.join(PROJECT_DIR, "ui")
 GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
 
-SEPARATOR_MSG = ("-------------------------------------------\n")
+SEPARATOR_MSG = ("-------------------------------------------")
 ERROR_MSG = N_("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
 CORECAT_MSG = N_("Core/")
 UICAT_MSG = N_("UI/")
