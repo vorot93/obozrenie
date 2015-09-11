@@ -310,7 +310,7 @@ class GUIActions:
     def cb_server_list_view_row_activated(self, widget, path, column, *data):
         """Launches the game"""
         self.cb_server_list_selection_changed(widget)
-        self.cb_info_button_clicked(widget)
+        self.cb_connect_button_clicked(widget)
 
     def cb_server_host_entry_changed(self, widget, *data):
         """Resets button sensitivity on Gtk.Entry change"""
