@@ -82,6 +82,7 @@ RIGSOFRODS_MSG = BACKENDCAT_MSG + N_("Rigs of Rods:")
 CORE_MSG = CORECAT_MSG + N_("Core:")
 SETTINGS_MSG = CORECAT_MSG + N_("Settings:")
 GTK_MSG = UICAT_MSG + N_("GTK+:")
+HELPER_MSG = N_("Helpers:")
 
 
 del N_

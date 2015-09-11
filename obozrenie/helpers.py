@@ -21,6 +21,7 @@
 import os
 import pytoml
 
+from obozrenie.global_settings import *
 
 def search_table(table, level, value):
         if level == 0:
@@ -130,6 +131,8 @@ def launch_game(game, launch_pattern, game_settings, server, password):
     try:
         path = game_settings["path"]
         launch_cmd = []
+
+        # Pre-launch
         if launch_pattern == "rigsofrods":
             host, port = server.split(":")
             config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
@@ -156,9 +159,11 @@ def launch_game(game, launch_pattern, game_settings, server, password):
         elif launch_pattern == "openttd":
             launch_cmd = [path, "-n", server]
 
-        print("Launching", path)
+        # Launch
+        print(HELPER_MSG, "Launching", path)
         call_exit_code = call(launch_cmd)
 
+        # Post-launch
         if launch_pattern == "rigsofrods":
             call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
         return call_exit_code
