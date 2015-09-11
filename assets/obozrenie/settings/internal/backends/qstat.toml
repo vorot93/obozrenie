@@ -10,6 +10,12 @@ master_type = "WOETM"
 server_key = "woets"
 server_type = "WOETS"
 
+[game.openarena]
+master_key = "openarenam"
+master_type = "OPENARENAM"
+server_key = "openarenas"
+server_type = "OPENARENAS"
+
 [game.q2]
 master_key = "q2m"
 master_type = "Q2M"

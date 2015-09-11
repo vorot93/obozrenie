@@ -46,6 +46,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[openarena]
+name = "OpenArena"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [openttd]
 name = "OpenTTD"
 backend = "qstat"
