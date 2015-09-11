@@ -81,9 +81,12 @@ class GUIActions:
         self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["welcome"])
 
         # Load flags
-        country_db = self.core.geolocation.const.COUNTRY_CODES
+        try:
+            country_db = self.core.geolocation.const.COUNTRY_CODES
+            self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
+        except TypeError:
+            self.flag_icons = {}
         game_list = self.core.game_table.keys()
-        self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
     def cb_set_widgets_active(self, status):
