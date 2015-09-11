@@ -103,7 +103,7 @@ def stat_master(game, game_table_slice):
                 server_table[-1]['host'] = qstat_entry['hostname']
                 server_table[-1]['password'] = False
                 server_table[-1]['game_id'] = game
-                server_table[-1]['master'] = None
+                server_table[-1]['game_mod'] = None
 
                 server_status = qstat_entry['@status']
 
@@ -117,17 +117,19 @@ def stat_master(game, game_table_slice):
                     server_table[-1]['ping'] = 9999
                 else:
                     server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
-                    for rule in qstat_entry['rules']['rule']:
-                        try:
-                            if rule['@name'] == 'game':
-                                server_table[-1]['game_mod'] = rule['#text']
-                                break
-                        except TypeError:
-                            server_table[-1]['game_mod'] = None
                     server_table[-1]['game_type'] = qstat_entry['gametype']
                     server_table[-1]['terrain'] = qstat_entry['map']
                     server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
                     server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
                     server_table[-1]['ping'] = int(qstat_entry['ping'])
+
+                    for rule in qstat_entry['rules']['rule']:
+                        try:
+                            if rule['@name'] == 'game':
+                                server_table[-1]['game_mod'] = rule['#text']
+                            if rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
+                                server_table[-1]['password'] = bool(int(rule['#text']))
+                        except TypeError:
+                            pass
 
     return server_table
