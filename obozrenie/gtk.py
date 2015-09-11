@@ -45,41 +45,27 @@ class GUIActions:
         self.builder = builder
         self.core = core_library
 
-        builder_object = self.builder.get_object
+        self.gtk_widgets = {}
 
-        self.main_window = builder_object("Main_Window")
-
-        self.game_combobox = builder_object("Game_ComboBox")
-        self.game_treeview = builder_object("Game_TreeView")
-        self.game_model = builder_object("Game_Store")
-        self.game_combobox_revealer = builder_object("Game_ComboBox_Revealer")
-        self.game_view_revealer = builder_object("Game_View_Revealer")
-
-        self.game_view_togglebutton = builder_object("Game_View_ToggleButton")
-        self.serverlist_update_button = builder_object("Update_Button")
-        self.serverlist_info_button = builder_object("Info_Button")
-        self.serverlist_connect_button = builder_object("Connect_Button")
-
-        self.serverlist_model = builder_object("ServerList_Store")
-        self.serverlist_view = builder_object("ServerList_View")
-        self.serverlist_view_selection = builder_object("ServerList_View").get_selection()
-
-        self.serverlist_notebook = builder_object("ServerList_Notebook")
-
-        self.serverlist_scrolledwindow = builder_object("ServerList_ScrolledWindow")
-        self.welcome_label = builder_object("ServerList_Welcome_Label")
-        self.refresh_spinner = builder_object("ServerList_Refresh_Spinner")
-        self.error_grid = builder_object("Error_Grid")
-
-        self.serverlist_notebook_pages = self.get_notebook_page_dict(self.serverlist_notebook, {"servers": self.serverlist_scrolledwindow,
-                                                                                                "welcome": self.welcome_label,
-                                                                                                "loading": self.refresh_spinner,
-                                                                                                "error":   self.error_grid})
-
-        self.serverhost_entry = self.builder.get_object("ServerHost_Entry")
-
-        self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["welcome"])
-
+        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Main_Window":                "main-window",
+                                                                      "Game_ComboBox":              "game-combobox",
+                                                                      "Game_TreeView":              "game-treeview",
+                                                                      "Game_Store":                 "game-model",
+                                                                      "Game_ComboBox_Revealer":     "game-combobox-revealer",
+                                                                      "Game_View_Revealer":         "game-view-revealer",
+                                                                      "Game_View_ToggleButton":     "game-view-togglebutton",
+                                                                      "Update_Button":              "serverlist-update-button",
+                                                                      "Info_Button":                "serverlist-info-button",
+                                                                      "Connect_Button":             "serverlist-connect-button",
+                                                                      "ServerList_Store":           "serverlist-model",
+                                                                      "ServerList_View":            "serverlist-view",
+                                                                      "ServerList_Notebook":        "serverlist-notebook",
+                                                                      "ServerList_ScrolledWindow":  "serverlist-scrolledwindow",
+                                                                      "ServerList_Welcome_Label":   "serverlist-welcome-label",
+                                                                      "ServerList_Refresh_Spinner": "serverlist-refresh-spinner",
+                                                                      "Error_Grid":                 "error-grid",
+                                                                      "ServerHost_Entry":           "serverhost-entry"
+                                                                      })
 
         self.server_list_model_format = ("host",
                                          "password",
@@ -96,6 +82,15 @@ class GUIActions:
                                          "password_icon",
                                          "country_icon")
 
+        self.serverlist_notebook_pages = gtk_helpers.get_notebook_page_dict(self.gtk_widgets["serverlist-notebook"], {"servers": self.gtk_widgets["serverlist-scrolledwindow"],
+                                                                                                                      "welcome": self.gtk_widgets["serverlist-welcome-label"],
+                                                                                                                      "loading": self.gtk_widgets["serverlist-refresh-spinner"],
+                                                                                                                      "error":   self.gtk_widgets["error-grid"]
+                                                                                                                      })
+
+        self.gtk_widgets["serverlist-notebook"].set_property("page", self.serverlist_notebook_pages["welcome"])
+
+
         # Load flags
         try:
             country_db = self.core.geolocation.const.COUNTRY_CODES
@@ -105,13 +100,9 @@ class GUIActions:
         game_list = self.core.game_table.keys()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
-    def cb_set_widgets_active(self, status):
-        """Sets sensitivity and visibility for conditional widgets."""
-        pass
-
-    def cb_game_preferences_button_clicked(self, combobox, *data):
+    def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game"]
-        prefs_dialog = templates.PreferencesDialog(self.main_window,
+        prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
                                                    self.core.game_table,
                                                    self.app.settings.dynamic_widget_table,
@@ -126,7 +117,7 @@ class GUIActions:
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
-        game = gtk_helpers.get_widget_value(self.serverlist_view, treeview_colnum=self.server_list_model_format.index("game_id"))
+        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"], treeview_colnum=self.server_list_model_format.index("game_id"))
         if game is None:
             game = self.app.settings.settings_table["common"]["selected-game"]
         server = self.app.settings.settings_table["common"]["server-host"]
@@ -145,51 +136,43 @@ class GUIActions:
         """Exits the program."""
         self.app.quit()
 
-    def cb_game_combobox_changed(self, widget, *data):
+    def cb_game_combobox_changed(self, *args):
         """Actions on game combobox selection change."""
-        game_id = gtk_helpers.get_widget_value(widget)
-        gtk_helpers.set_widget_value(self.game_treeview, game_id, treeview_colnum=self.game_view_format.index("game_id"))
+        combobox = self.gtk_widgets["game-combobox"]
+        treeview = self.gtk_widgets["game-treeview"]
+        game_id = gtk_helpers.get_widget_value(combobox)
+        game_id_colnum = self.game_view_format.index("game_id")
 
-    def cb_game_treeview_togglebutton_clicked(self, widget, *data):
+        gtk_helpers.set_widget_value(treeview, game_id, treeview_colnum=game_id_colnum)
+
+    def cb_game_treeview_togglebutton_clicked(self, *args):
         """Switches between TreeView and ComboBox game selection."""
-        if self.game_view_togglebutton.get_active() is True:
-            self.game_combobox_revealer.set_reveal_child(False)
-            self.game_view_revealer.set_reveal_child(True)
+        if self.gtk_widgets["game-view-togglebutton"].get_active() is True:
+            self.gtk_widgets["game-combobox-revealer"].set_reveal_child(False)
+            self.gtk_widgets["game-view-revealer"].set_reveal_child(True)
         else:
-            self.game_combobox_revealer.set_reveal_child(True)
-            self.game_view_revealer.set_reveal_child(False)
+            self.gtk_widgets["game-combobox-revealer"].set_reveal_child(True)
+            self.gtk_widgets["game-view-revealer"].set_reveal_child(False)
 
-    def cb_game_treeview_selection_changed(self, widget, *data):
+    def cb_game_treeview_selection_changed(self, *args):
         game_id = self.app.settings.settings_table["common"]["selected-game"]
 
-        gtk_helpers.set_widget_value(self.game_combobox, game_id)
+        gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
         if self.core.game_table[game_id]["query-status"] is None:  # Refresh server list on first access
-            self.cb_update_button_clicked(widget, *data)
+            self.cb_update_button_clicked()
         else:
             if self.core.game_table[game_id]["query-status"] == "working":
                 self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id, self.core.game_table.copy())
 
-    def cb_update_button_clicked(self, widget, *data):
+    def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
-        ping_button = self.builder.get_object("PingingEnable_CheckButton")
-        ping_column = self.builder.get_object("Ping_ServerList_TreeViewColumn")
-
         game = self.app.settings.settings_table["common"]["selected-game"]
 
         self.set_loading_state("working")
         self.set_game_state(game, "working")
 
         self.core.update_server_list(game, self.show_game_page)
-
-    @staticmethod
-    def get_notebook_page_dict(notebook, widget_mapping):
-        """Get mapping for notebook pages."""
-        notebook_pages = {}
-        for entry in widget_mapping:
-            notebook_pages[entry] = notebook.page_num(widget_mapping[entry])
-
-        return notebook_pages
 
     def fill_game_store(self):
         """
@@ -203,8 +186,7 @@ class GUIActions:
 
         game_table = self.core.game_table.copy()
         game_icons = self.game_icons
-
-        self.game_store = self.builder.get_object("Game_Store")
+        game_model = self.gtk_widgets["game-model"]
 
         game_store_table = []
         for entry in game_table:
@@ -221,16 +203,20 @@ class GUIActions:
         game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
 
         for list_entry in game_store_list:
-            self.game_store.append(list_entry)
+            game_model.append(list_entry)
 
     def show_game_page(self, game, game_table):
         """Set of actions to do after query is complete."""
-        self.set_game_state(game, game_table[game]["query-status"])  # Display game status in GUI
-        if self.app.settings.settings_table["common"]["selected-game"] == game:  # Is callback for the game that is currently viewed?
-            if game_table[game]["query-status"] == "ready":
-                self.fill_server_list_model(game_table[game]["servers"])
+        query_status = game_table[game]["query-status"]
+        server_table = game_table[game]["servers"]
+        selected_game = self.app.settings.settings_table["common"]["selected-game"]
+
+        self.set_game_state(game, query_status)  # Display game status in GUI
+        if selected_game == game:  # Is callback for the game that is currently viewed?
+            if query_status == "ready":
+                self.fill_server_list_model(server_table)
                 self.set_loading_state("ready")
-            elif game_table[game]["query-status"] == "error":
+            elif query_status == "error":
                 self.set_loading_state("error")
 
     def set_game_state(self, game, state):
@@ -245,19 +231,21 @@ class GUIActions:
         else:
             return
 
-        model = self.game_model
+        model = self.gtk_widgets["game-model"]
         column = self.game_view_format.index("game_id")
         game_index = gtk_helpers.search_model(model, column, game)
 
         model[game_index][self.game_view_format.index("status_icon")] = icon
 
     def set_loading_state(self, state):
+        notebook = self.gtk_widgets["serverlist-notebook"]
+
         if state == "working":
-            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["loading"])
+            notebook.set_property("page", self.serverlist_notebook_pages["loading"])
         elif state == "ready":
-            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["servers"])
+            notebook.set_property("page", self.serverlist_notebook_pages["servers"])
         elif state == "error":
-            self.serverlist_notebook.set_property("page", self.serverlist_notebook_pages["error"])
+            notebook.set_property("page", self.serverlist_notebook_pages["error"])
 
 
     def fill_server_list_model(self, server_table):
@@ -265,7 +253,7 @@ class GUIActions:
 
         view_table = server_table.copy()
 
-        model = self.serverlist_model
+        model = self.gtk_widgets["serverlist-model"]
         model_append = model.append
         model_format = self.server_list_model_format
 
@@ -292,36 +280,41 @@ class GUIActions:
         server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
-        a = self.serverhost_entry.get_text()
+        a = self.gtk_widgets["serverhost-entry"].get_text()
         model.clear()
-        self.serverhost_entry.set_text(a)
+        self.gtk_widgets["serverhost-entry"].set_text(a)
 
         for entry in server_list:
             treeiter = model_append(entry)
 
-    def cb_server_list_selection_changed(self, widget, *data):
+    def cb_server_list_selection_changed(self, *args):
         """Updates text in Entry on TreeView selection change."""
-        entry_field = self.serverhost_entry
+        entry_field = self.gtk_widgets["serverhost-entry"]
+        treeview = self.gtk_widgets["serverlist-view"]
 
-        text = gtk_helpers.get_widget_value(widget, treeview_colnum=self.server_list_model_format.index("host"))
+        text = gtk_helpers.get_widget_value(treeview, treeview_colnum=self.server_list_model_format.index("host"))
 
         gtk_helpers.set_widget_value(entry_field, text)
 
     def cb_server_list_view_row_activated(self, widget, path, column, *data):
         """Launches the game"""
-        self.cb_server_list_selection_changed(widget)
-        self.cb_connect_button_clicked(widget)
+        self.cb_server_list_selection_changed()
+        self.cb_connect_button_clicked()
 
-    def cb_server_host_entry_changed(self, widget, *data):
+    def cb_server_host_entry_changed(self, *args):
         """Resets button sensitivity on Gtk.Entry change"""
-        if widget.get_text() == '':
-            self.serverlist_info_button.set_sensitive(False)
-            self.serverlist_connect_button.set_sensitive(False)
-        else:
-            self.serverlist_info_button.set_sensitive(True)
-            self.serverlist_connect_button.set_sensitive(True)
+        entry_field = self.gtk_widgets["serverhost-entry"]
+        info_button = self.gtk_widgets["serverlist-info-button"]
+        connect_button = self.gtk_widgets["serverlist-connect-button"]
 
-    def cb_listed_widget_changed(self, *data):
+        if entry_field.get_text() == '':
+            info_button.set_sensitive(False)
+            connect_button.set_sensitive(False)
+        else:
+            info_button.set_sensitive(True)
+            connect_button.set_sensitive(True)
+
+    def cb_listed_widget_changed(self, *args):
         self.update_settings_table()
 
     def apply_settings_to_preferences_dialog(self, game, widget_option_mapping, dynamic_settings_table):
@@ -331,7 +324,7 @@ class GUIActions:
                 value.join("\n")
             gtk_helpers.set_widget_value(widget_option_mapping[option], value)
 
-    def update_settings_table(self, *data):
+    def update_settings_table(self, *args):
         for group in self.widget_table:
             for option in self.widget_table[group]:
                 # Define variables
@@ -389,7 +382,7 @@ class App(Gtk.Application):
         self.status = "starting"
         self.guiactions.fill_game_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
-        gtk_helpers.set_widget_value(self.guiactions.game_combobox, gtk_helpers.get_widget_value(self.guiactions.game_treeview))
+        gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], gtk_helpers.get_widget_value(self.guiactions.gtk_widgets["game-treeview"]))
 
         # Connect signals
         self.builder.connect_signals(self.guiactions)

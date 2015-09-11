@@ -40,6 +40,26 @@ def get_icon_dict(key_list, icon_type, icon_format, icon_dir, width, height, err
     return icon_dict
 
 
+def get_object_dict(builder, object_mapping):
+    object_dict = {}
+
+    builder_object = builder.get_object
+
+    for entry in object_mapping:
+        object_dict[object_mapping[entry]] = builder_object(entry)
+
+    return object_dict
+
+
+def get_notebook_page_dict(notebook, widget_mapping):
+    """Get mapping for notebook pages."""
+    notebook_pages = {}
+    for entry in widget_mapping:
+        notebook_pages[entry] = notebook.page_num(widget_mapping[entry])
+
+    return notebook_pages
+
+
 def search_model(model, column, value):
     row_index = None
     for row in range(len(model)):
@@ -89,10 +109,13 @@ def get_widget_value(widget, treeview_colnum=0):
         value = widget.get_active_id()
     elif isinstance(widget, Gtk.Entry):
         value = widget.get_text()
-    elif isinstance(widget, Gtk.TreeView) or isinstance(widget, Gtk.TreeSelection):
-        if isinstance(widget, Gtk.TreeView):
-            widget = widget.get_selection()
-        model, treeiter = widget.get_selected()
+    elif isinstance(widget, Gtk.TreeView):
+        selection = None
+        if isinstance(widget, Gtk.TreeSelection):
+            selection = widget
+        else:
+            selection = widget.get_selection()
+        model, treeiter = selection.get_selected()
         if treeview_colnum is not None and treeiter is not None:
             value = model[treeiter][treeview_colnum]
 

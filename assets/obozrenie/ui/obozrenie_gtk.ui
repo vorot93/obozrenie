@@ -120,134 +120,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
         <property name="vexpand">True</property>
         <property name="row_spacing">10</property>
         <child>
-          <object class="GtkGrid" id="Network_Top_Grid">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="valign">start</property>
-            <property name="hexpand">True</property>
-            <property name="column_spacing">10</property>
-            <child>
-              <object class="GtkGrid" id="Nickname_Spot">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="halign">end</property>
-                <property name="margin_top">5</property>
-                <property name="margin_bottom">5</property>
-                <property name="hexpand">True</property>
-                <property name="column_spacing">5</property>
-                <child>
-                  <object class="GtkEntry" id="Nickname_Entry">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="tooltip_text" translatable="yes">Your network name.</property>
-                    <property name="text" translatable="yes">Anonymous</property>
-                    <property name="placeholder_text" translatable="yes">Nickname</property>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkGrid" id="Game_Top_Grid">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="halign">start</property>
-                <property name="valign">center</property>
-                <property name="row_spacing">10</property>
-                <property name="column_spacing">10</property>
-                <child>
-                  <object class="GtkButton" id="Game_Preferences_button">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Configure the selected game.</property>
-                    <property name="image">preferences_desktop_image</property>
-                    <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToggleButton" id="Game_View_ToggleButton">
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Toggle game list view mode.</property>
-                    <property name="image">list-icon</property>
-                    <signal name="clicked" handler="cb_game_treeview_togglebutton_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkRevealer" id="Game_ComboBox_Revealer">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="transition_type">slide-left</property>
-                    <property name="reveal_child">True</property>
-                    <child>
-                      <object class="GtkComboBox" id="Game_ComboBox">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Select a game.</property>
-                        <property name="model">Game_Store</property>
-                        <property name="id_column">0</property>
-                        <property name="active_id">0</property>
-                        <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
-                        <child>
-                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
-                          <attributes>
-                            <attribute name="pixbuf">3</attribute>
-                          </attributes>
-                        </child>
-                        <child>
-                          <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
-                            <property name="xpad">5</property>
-                            <property name="single_paragraph_mode">True</property>
-                            <property name="placeholder_text">Select a game</property>
-                          </object>
-                          <attributes>
-                            <attribute name="text">1</attribute>
-                          </attributes>
-                        </child>
-                        <child>
-                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer1"/>
-                          <attributes>
-                            <attribute name="icon-name">4</attribute>
-                          </attributes>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">2</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">0</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
           <object class="GtkGrid" id="Network_Bottom_Grid">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -407,7 +279,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="vexpand">True</property>
                     <property name="model">ServerList_Store</property>
                     <property name="search_column">6</property>
-                    <signal name="row-activated" handler="cb_server_list_view_row_activated" object="ServerList_Selection" swapped="no"/>
+                    <signal name="row-activated" handler="cb_server_list_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="ServerList_Selection">
                         <signal name="changed" handler="cb_server_list_selection_changed" swapped="no"/>
@@ -740,6 +612,131 @@ Select a game or press refresh button below</property>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
             <property name="height">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkGrid" id="Network_Top_Grid">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="valign">start</property>
+            <property name="hexpand">True</property>
+            <property name="column_spacing">10</property>
+            <child>
+              <object class="GtkGrid" id="Game_Top_Grid">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="row_spacing">10</property>
+                <property name="column_spacing">10</property>
+                <child>
+                  <object class="GtkButton" id="Game_Preferences_button">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Configure the selected game.</property>
+                    <property name="image">preferences_desktop_image</property>
+                    <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="Game_View_ToggleButton">
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Toggle game list view mode.</property>
+                    <property name="image">list-icon</property>
+                    <signal name="clicked" handler="cb_game_treeview_togglebutton_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkRevealer" id="Game_ComboBox_Revealer">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="transition_type">slide-left</property>
+                    <property name="reveal_child">True</property>
+                    <child>
+                      <object class="GtkComboBox" id="Game_ComboBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Select a game.</property>
+                        <property name="model">Game_Store</property>
+                        <property name="id_column">0</property>
+                        <property name="active_id">0</property>
+                        <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="pixbuf">3</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
+                            <property name="xpad">5</property>
+                            <property name="single_paragraph_mode">True</property>
+                            <property name="placeholder_text">Select a game</property>
+                          </object>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer1"/>
+                          <attributes>
+                            <attribute name="icon-name">4</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkGrid" id="Refresh_Date_Spot">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">end</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="hexpand">True</property>
+                <property name="column_spacing">5</property>
+                <child>
+                  <object class="GtkLabel" id="Refresh_Date_Label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+            <property name="width">2</property>
           </packing>
         </child>
       </object>

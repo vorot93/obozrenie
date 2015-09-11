@@ -26,9 +26,6 @@ def get_common_options():
     option_list['common']['selected-game'] = {}
     option_list['common']['selected-game']['gtk_widget_name'] = "Game_TreeView"
 
-    option_list['common']['nickname'] = {}
-    option_list['common']['nickname']['gtk_widget_name'] = "Nickname_Entry"
-
     option_list['common']['server-host'] = {}
     option_list['common']['server-host']['gtk_widget_name'] = "ServerHost_Entry"
 
