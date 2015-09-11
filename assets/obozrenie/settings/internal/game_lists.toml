@@ -46,6 +46,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[openttd]
+name = "OpenTTD"
+backend = "qstat"
+launch_pattern = "openttd"
+settings = ["path", "master_uri"]
+
 [unvanquished]
 name = "Unvanquished"
 backend = "qstat"

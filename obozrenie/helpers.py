@@ -128,12 +128,11 @@ def launch_game(game, launch_pattern, game_settings, server, password):
     from subprocess import call
 
     try:
-        path = ""
+        path = game_settings["path"]
         launch_cmd = []
         if launch_pattern == "rigsofrods":
             host, port = server.split(":")
             config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
-            path = game_settings["path"]
             launch_cmd = [path]
 
             if os.path.exists(config_file):
@@ -152,8 +151,10 @@ def launch_game(game, launch_pattern, game_settings, server, password):
                     f.close()
 
         elif launch_pattern == "quake":
-            path = game_settings["path"]
             launch_cmd = [path, "+password", password, "+connect", server]
+
+        elif launch_pattern == "openttd":
+            launch_cmd = [path, "-n", server]
 
         print("Launching", path)
         call_exit_code = call(launch_cmd)

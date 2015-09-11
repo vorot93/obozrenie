@@ -37,6 +37,10 @@ workdir = ""
 path = "et"
 master_uri = "etmaster.idsoftware.com:27950"
 
+[openttd]
+path = "openttd"
+master_uri = "master.openttd.org:3978"
+
 [unvanquished]
 workdir = ""
 path = "unvanquished"

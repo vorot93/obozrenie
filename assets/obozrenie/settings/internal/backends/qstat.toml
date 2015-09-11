@@ -40,6 +40,12 @@ master_type = "RWM"
 server_key = "rws"
 server_type = "RWS"
 
+[game.openttd]
+master_key = "ottdm"
+master_type = "OTTDM"
+server_key = "ottds"
+server_type = "OTTDS"
+
 [game.unvanquished]
 master_key = "unvanquishedm"
 master_type = "UNVANQUISHEDM"
