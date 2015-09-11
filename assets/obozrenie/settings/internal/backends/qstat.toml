@@ -52,6 +52,12 @@ master_type = "OTTDM"
 server_key = "ottds"
 server_type = "OTTDS"
 
+[game.turtlearena]
+master_key = "turtlearenam"
+master_type = "TURTLEARENAM"
+server_key = "turtlearenas"
+server_type = "TURTLEARENAS"
+
 [game.unvanquished]
 master_key = "unvanquishedm"
 master_type = "UNVANQUISHEDM"
