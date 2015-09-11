@@ -56,6 +56,11 @@ workdir = ""
 path = "wop"
 master_uri = "master.worldofpadman.com:27955"
 
+[urbanterror]
+workdir = ""
+path = "urbanterror"
+master_uri = "master.urbanterror.info:27900, master2.urbanterror.info:27900"
+
 [xonotic]
 workdir = ""
 path = "xonotic-sdl"

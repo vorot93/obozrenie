@@ -58,6 +58,12 @@ master_type = "UNVANQUISHEDM"
 server_key = "unvanquisheds"
 server_type = "UNVANQUISHEDS"
 
+[game.urbanterror]
+master_key = "iourtm"
+master_type = "IOURTM"
+server_key = "iourts"
+server_type = "IOURTS"
+
 [game.wop]
 master_key = "wopm"
 master_type = "WOPM"
