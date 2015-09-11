@@ -58,6 +58,12 @@ master_type = "UNVANQUISHEDM"
 server_key = "unvanquisheds"
 server_type = "UNVANQUISHEDS"
 
+[game.wop]
+master_key = "wopm"
+master_type = "WOPM"
+server_key = "wops"
+server_type = "WOPS"
+
 [game.xonotic]
 master_key = "xonoticm"
 master_type = "XONOTICM"

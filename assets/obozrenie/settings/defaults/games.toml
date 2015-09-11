@@ -51,6 +51,11 @@ workdir = ""
 path = "unvanquished"
 master_uri = "unvanquished.net:27950"
 
+[wop]
+workdir = ""
+path = "wop"
+master_uri = "master.worldofpadman.com:27955"
+
 [xonotic]
 workdir = ""
 path = "xonotic-sdl"
