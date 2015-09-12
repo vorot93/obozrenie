@@ -1,0 +1,173 @@
+# Translations template for PROJECT.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-09-12 13:46+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.0\n"
+
+#: obozrenie/core.py:50
+msgid "GeoIP data file {0} opened successfully"
+msgstr ""
+
+#: obozrenie/core.py:53
+msgid "GeoIP data file not found. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/core.py:56
+msgid "PyGeoIP not found. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/core.py:103
+msgid "Refreshing servers for {0}"
+msgstr ""
+
+#: obozrenie/core.py:114
+msgid "Internal backend error for {0}."
+msgstr ""
+
+#: obozrenie/core.py:231
+msgid ""
+"This is the core module of Obozrenie Game Server Browser.\n"
+"Please run an appropriate UI instead."
+msgstr ""
+
+#: obozrenie/global_settings.py:30
+msgid "Obozrenie"
+msgstr ""
+
+#: obozrenie/global_settings.py:31
+msgid "Game Server Browser"
+msgstr ""
+
+#: obozrenie/global_settings.py:35
+msgid "Â© 2015 Artem Vorotnikov"
+msgstr ""
+
+#: obozrenie/global_settings.py:36 obozrenie/global_settings.py:37
+msgid "Artem Vorotnikov"
+msgstr ""
+
+#: obozrenie/global_settings.py:75
+msgid ""
+"\n"
+"This is an error. Please file a bug report at "
+msgstr ""
+
+#: obozrenie/global_settings.py:76
+msgid "Core/"
+msgstr ""
+
+#: obozrenie/global_settings.py:77
+msgid "UI/"
+msgstr ""
+
+#: obozrenie/global_settings.py:78
+msgid "Backend/"
+msgstr ""
+
+#: obozrenie/global_settings.py:80
+msgid "QStat:"
+msgstr ""
+
+#: obozrenie/global_settings.py:81
+msgid "Rigs of Rods:"
+msgstr ""
+
+#: obozrenie/global_settings.py:82
+msgid "Core:"
+msgstr ""
+
+#: obozrenie/global_settings.py:83
+msgid "Settings:"
+msgstr ""
+
+#: obozrenie/global_settings.py:84
+msgid "GTK+:"
+msgstr ""
+
+#: obozrenie/global_settings.py:85
+msgid "Helpers:"
+msgstr ""
+
+#: obozrenie/gtk.py:381
+msgid "Obozrenie is starting"
+msgstr ""
+
+#: obozrenie/gtk.py:418
+msgid "Shutting down"
+msgstr ""
+
+#: obozrenie/gtk.py:421
+msgid "Initialization failed. Aborting."
+msgstr ""
+
+#: obozrenie/gtk_templates.py:93
+msgid "No widget generated for type {0}"
+msgstr ""
+
+#: obozrenie/option_lists.py:44
+msgid "Game path"
+msgstr ""
+
+#: obozrenie/option_lists.py:45
+msgid "Path to the game"
+msgstr ""
+
+#: obozrenie/option_lists.py:49
+msgid "Working directory"
+msgstr ""
+
+#: obozrenie/option_lists.py:50
+msgid "Working directory of the game"
+msgstr ""
+
+#: obozrenie/option_lists.py:54
+msgid "Master URI list"
+msgstr ""
+
+#: obozrenie/option_lists.py:55
+msgid "List of master servers to query"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:75
+msgid "|{0}| Requesting server info"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:83
+msgid "|{0}| Received server info. Elapsed time: {1}s"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:88
+msgid ""
+"|{0}| No valid masters specified. Please check your master server "
+"settings."
+msgstr ""
+
+#: obozrenie/backends/qstat.py:97
+msgid "|{0}| Queried Master. Address: {1}, status: {2}, server count: {3}"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:99
+msgid "|{0}| Master query failed. Address: {1}, status: {2}"
+msgstr ""
+
+#: obozrenie/backends/rigsofrods.py:146
+msgid "Accessing URI {0} failed with error code {1}"
+msgstr ""
+
+#: obozrenie/backends/rigsofrods.py:155
+msgid "Error parsing URI {0}"
+msgstr ""
+
