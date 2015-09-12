@@ -101,7 +101,7 @@ class Core:
         if state != "working":
             table[game]["query-status"] = "working"
             print(CORE_MSG, N_("Refreshing servers for {0}".format(table[game]["info"]["name"])))
-            server_list_temp = None
+            server_list_proxy = None
             stat_master_cmd = backends.backend_table[backend].stat_master
             try:
                 mgr = multiprocessing.Manager()
