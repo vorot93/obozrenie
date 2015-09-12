@@ -20,6 +20,7 @@
 
 from collections import OrderedDict
 import os
+import multiprocessing
 import threading
 
 from gi.repository import GLib
@@ -30,7 +31,6 @@ from obozrenie import helpers
 from obozrenie import backends
 from obozrenie.option_lists import *
 from obozrenie.global_settings import *
-
 
 
 class Core:
@@ -93,27 +93,35 @@ class Core:
 
     def stat_master_target(self, game, callback):
         """Separate update thread. Strictly per-game."""
-        backend = self.game_table[game]["info"]["backend"]
-        state = self.game_table[game]["query-status"]
+        table = self.game_table
+        backend = table[game]["info"]["backend"]
+        state = table[game]["query-status"]
 
         # Start query if it's not up already
         if state != "working":
-            self.game_table[game]["query-status"] = "working"
-            print(CORE_MSG, N_("Refreshing servers for {0}".format(self.game_table[game]["info"]["name"])))
-            server_list_temp = []
+            table[game]["query-status"] = "working"
+            print(CORE_MSG, N_("Refreshing servers for {0}".format(table[game]["info"]["name"])))
+            server_list_temp = None
             stat_master_cmd = backends.backend_table[backend].stat_master
             try:
-                server_list_temp = stat_master_cmd(game, self.game_table[game].copy())
+                mgr = multiprocessing.Manager()
+                server_list_proxy = mgr.list()
+                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, table[game].copy(), server_list_proxy))
+                backend_process.daemon=True
+                backend_process.start()
+                backend_process.join()
             except KeyError:
-                print(CORE_MSG + N_("Internal backend error for {0}.".format(self.game_table[game]["info"]["name"])), ERROR_MSG)
-                self.game_table[game]["query-status"] = "error"
+                print(CORE_MSG + N_("Internal backend error for {0}.".format(table[game]["info"]["name"])), ERROR_MSG)
+                table[game]["query-status"] = "error"
                 exit(1)
 
-            self.game_table[game]["servers"] = server_list_temp
-            self.game_table[game]["query-status"] = "ready"
+            # ListProxy -> list
+            table[game]["servers"] = []
+            server_table = table[game]["servers"]
+            for entry in server_list_proxy:
+                server_table.append(entry)
 
-
-            for entry in self.game_table[game]["servers"]:
+            for entry in table[game]["servers"]:
                 entry['country'] = "unknown"
                 if self.geolocation is not None:
                     host = entry["host"].split(':')[0]
@@ -124,9 +132,11 @@ class Core:
                     except:
                         pass
 
+            table[game]["query-status"] = "ready"
+
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:
-            GLib.idle_add(callback, game, self.game_table.copy())
+            GLib.idle_add(callback, game, table.copy())
 
     def start_game(self, game, server, password):
         """Start game"""

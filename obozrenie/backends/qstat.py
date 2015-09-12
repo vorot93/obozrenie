@@ -45,8 +45,9 @@ def split_server_list_into_masters(orig_list, split_key, split_value):
     return split_dict
 
 
-def stat_master(game, game_table_slice):
+def stat_master(game, game_table_slice, proxy=None):
     hosts_array = []
+    server_table = []
     server_table_qstat_xml = []
     server_table_xmltodict = []
     server_table_dict = []
@@ -80,7 +81,6 @@ def stat_master(game, game_table_slice):
 
     stat_total_time = stat_end_time - stat_start_time
     print(QSTAT_MSG, N_("|{0}| Received server info. Elapsed time: {1}s".format(game_name, round(stat_total_time, 2))))
-    server_table = []
     color_code_pattern = '[\\^](.)'
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
@@ -131,5 +131,9 @@ def stat_master(game, game_table_slice):
                                 server_table[-1]['password'] = bool(int(rule['#text']))
                         except TypeError:
                             pass
+
+    if proxy is not None:
+        for entry in server_table:
+            proxy.append(entry)
 
     return server_table

@@ -125,7 +125,7 @@ def add_rtt_info(array):
             pass
 
 
-def stat_master(game, game_table_slice):
+def stat_master(game, game_table_slice, proxy=None):
     """Stats the master server"""
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
@@ -166,5 +166,9 @@ def stat_master(game, game_table_slice):
     server_table = helpers.flatten_list(server_table)
 
     add_rtt_info(server_table)
+
+    if proxy is not None:
+        for entry in server_table:
+            proxy.append(entry)
 
     return server_table
