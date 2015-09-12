@@ -22,6 +22,7 @@ import os
 import pytoml
 
 from obozrenie.global_settings import *
+from obozrenie.global_strings import *
 
 def search_table(table, level, value):
         if level == 0:

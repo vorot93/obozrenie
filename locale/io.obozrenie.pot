@@ -1,0 +1,186 @@
+# Translations template for Obozrenie.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the Obozrenie project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Obozrenie 0.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-09-12 20:48+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.0\n"
+
+#: obozrenie/core.py:51
+#, python-format
+msgid "GeoIP data file %(geoip_data_file)s opened successfully."
+msgstr ""
+
+#: obozrenie/core.py:54
+msgid "GeoIP data file not found. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/core.py:57
+msgid "PyGeoIP not found. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/core.py:104
+#, python-format
+msgid "Refreshing server list for %(game)s."
+msgstr ""
+
+#: obozrenie/core.py:115
+#, python-format
+msgid "Internal backend error for %(game)s."
+msgstr ""
+
+#: obozrenie/core.py:232
+msgid ""
+"This is the core module of Obozrenie Game Server Browser.\n"
+"Please run an appropriate UI instead."
+msgstr ""
+
+#: obozrenie/global_strings.py:21
+msgid "Obozrenie"
+msgstr ""
+
+#: obozrenie/global_strings.py:22
+msgid "Game Server Browser"
+msgstr ""
+
+#: obozrenie/global_strings.py:25
+msgid "Â© 2015 Artem Vorotnikov"
+msgstr ""
+
+#: obozrenie/global_strings.py:26 obozrenie/global_strings.py:27
+msgid "Artem Vorotnikov"
+msgstr ""
+
+#: obozrenie/global_strings.py:31
+msgid ""
+"\n"
+"This is an error. Please file a bug report at "
+msgstr ""
+
+#: obozrenie/global_strings.py:32
+msgid "Core/"
+msgstr ""
+
+#: obozrenie/global_strings.py:33
+msgid "UI/"
+msgstr ""
+
+#: obozrenie/global_strings.py:34
+msgid "Backend/"
+msgstr ""
+
+#: obozrenie/global_strings.py:36
+msgid "Core:"
+msgstr ""
+
+#: obozrenie/global_strings.py:37
+msgid "Settings:"
+msgstr ""
+
+#: obozrenie/global_strings.py:38
+msgid "GTK+:"
+msgstr ""
+
+#: obozrenie/global_strings.py:39
+msgid "Helpers:"
+msgstr ""
+
+#: obozrenie/gtk.py:382
+msgid "Obozrenie is starting"
+msgstr ""
+
+#: obozrenie/gtk.py:419
+msgid "Shutting down"
+msgstr ""
+
+#: obozrenie/gtk.py:422
+msgid "Initialization failed. Aborting."
+msgstr ""
+
+#: obozrenie/gtk_templates.py:93
+#, python-format
+msgid "No widget generated for type %(widget_type)s"
+msgstr ""
+
+#: obozrenie/option_lists.py:42
+msgid "Game path"
+msgstr ""
+
+#: obozrenie/option_lists.py:43
+msgid "Path to the game"
+msgstr ""
+
+#: obozrenie/option_lists.py:47
+msgid "Working directory"
+msgstr ""
+
+#: obozrenie/option_lists.py:48
+msgid "Working directory of the game"
+msgstr ""
+
+#: obozrenie/option_lists.py:52
+msgid "Master URI list"
+msgstr ""
+
+#: obozrenie/option_lists.py:53
+msgid "List of master servers to query"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:32
+msgid "QStat:"
+msgstr ""
+
+#: obozrenie/backends/qstat.py:76
+#, python-format
+msgid "|%(game)s| Requesting server info."
+msgstr ""
+
+#: obozrenie/backends/qstat.py:84
+#, python-format
+msgid "|%(game)s| Received server info. Elapsed time: %(stat_time)s s."
+msgstr ""
+
+#: obozrenie/backends/qstat.py:89
+#, python-format
+msgid ""
+"|%(game)s| No valid masters specified. Please check your master server "
+"settings."
+msgstr ""
+
+#: obozrenie/backends/qstat.py:98
+#, python-format
+msgid ""
+"|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, "
+"server count: %(servers)s."
+msgstr ""
+
+#: obozrenie/backends/qstat.py:100
+#, python-format
+msgid "|%(game)s| Master query failed. Address: %(address)s, status: %(status)s."
+msgstr ""
+
+#: obozrenie/backends/rigsofrods.py:29
+msgid "Rigs of Rods:"
+msgstr ""
+
+#: obozrenie/backends/rigsofrods.py:139
+#, python-format
+msgid "Accessing URI %(uri)s failed with error code %(code)s."
+msgstr ""
+
+#: obozrenie/backends/rigsofrods.py:148
+#, python-format
+msgid "Error parsing URI %(uri)s."
+msgstr ""
+

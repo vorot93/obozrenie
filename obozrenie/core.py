@@ -25,12 +25,13 @@ import threading
 
 from gi.repository import GLib
 
-from obozrenie import N_
-
-from obozrenie import helpers
-from obozrenie import backends
-from obozrenie.option_lists import *
 from obozrenie.global_settings import *
+from obozrenie.global_strings import *
+from obozrenie.option_lists import *
+
+import obozrenie.i18n as i18n
+import obozrenie.helpers as helpers
+import obozrenie.backends as backends
 
 
 class Core:
@@ -47,13 +48,13 @@ class Core:
             import pygeoip
             try:
                 open(GEOIP_DATA_FILE)
-                print(CORE_MSG, N_("GeoIP data file {0} opened successfully".format(GEOIP_DATA_FILE)))
+                print(CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {'geoip_data_file': GEOIP_DATA_FILE})
                 self.geolocation = pygeoip
-            except:
-                print(CORE_MSG, N_("GeoIP data file not found. Disabling geolocation."))
+            except FileNotFoundError:
+                print(CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation."))
                 self.geolocation = None
         except ImportError:
-            print(CORE_MSG, N_("PyGeoIP not found. Disabling geolocation."))
+            print(CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation."))
             self.geolocation = None
 
     def create_game_table(self):
@@ -86,7 +87,7 @@ class Core:
         return game_table
 
     def update_server_list(self, game, stat_callback=None):
-        """Updates server lists"""
+        """Updates server lists."""
         stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
@@ -100,7 +101,7 @@ class Core:
         # Start query if it's not up already
         if state != "working":
             table[game]["query-status"] = "working"
-            print(CORE_MSG, N_("Refreshing servers for {0}".format(table[game]["info"]["name"])))
+            print(CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': table[game]["info"]["name"]})
             server_list_proxy = None
             stat_master_cmd = backends.backend_table[backend].stat_master
             try:
@@ -111,7 +112,7 @@ class Core:
                 backend_process.start()
                 backend_process.join()
             except KeyError:
-                print(CORE_MSG + N_("Internal backend error for {0}.".format(table[game]["info"]["name"])), ERROR_MSG)
+                print(CORE_MSG + i18n._("Internal backend error for %(game)s.") % {'game': table[game]["info"]["name"]}, ERROR_MSG)
                 table[game]["query-status"] = "error"
                 exit(1)
 
@@ -228,5 +229,5 @@ class Settings:
 
 
 if __name__ == "__main__":
-    print(CORE_MSG, N_("This is the core module of Obozrenie Game Server Browser.\n"
-             "Please run an appropriate UI instead."))
+    print(CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser.\n"
+                           "Please run an appropriate UI instead."))

@@ -20,31 +20,21 @@ import os
 from xdg import BaseDirectory
 
 
-def N_(msg): return msg
-
-
 def is_run_from_git_workdir():
     return os.path.exists('assets')
 
 APPLICATION_ID = "io.obozrenie"
-PROJECT = N_("Obozrenie")
-DESCRIPTION = N_("Game Server Browser")
-WEBSITE = "http://obozrenie.vorotnikov.me"
-GIT_WEBSITE = "https://github.com/obozrenie/obozrenie"
 VERSION = "0.1"
-COPYRIGHT = N_("© 2015 Artem Vorotnikov")
-AUTHORS = [N_("Artem Vorotnikov")]
-ARTISTS = [N_("Artem Vorotnikov")]
 
 SYSTEM_DATA_DIR = '/usr/share'
+ASSETS_DIR = SYSTEM_DATA_DIR
+LOCALE_DIR = os.path.join(SYSTEM_DATA_DIR, 'locale')
 
 if is_run_from_git_workdir():
     ASSETS_DIR = 'assets'
-else:
-    ASSETS_DIR = SYSTEM_DATA_DIR
+    LOCALE_DIR = 'locale'
 
 PROJECT_DIR = os.path.join(ASSETS_DIR, 'obozrenie')
-LOCALE_DIR = os.path.join(ASSETS_DIR, 'locale')
 
 ICON_DIR = os.path.join(ASSETS_DIR, 'pixmaps', 'obozrenie')
 ICON_FLAGS_DIR = os.path.join(ICON_DIR, 'flags')
@@ -70,19 +60,3 @@ GEOIP_DATA_FILE = os.path.join(SYSTEM_DATA_DIR, 'GeoIP', 'GeoIP.dat')
 UI_DIR = os.path.join(PROJECT_DIR, "ui")
 GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")
-
-SEPARATOR_MSG = ("-------------------------------------------")
-ERROR_MSG = N_("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
-CORECAT_MSG = N_("Core/")
-UICAT_MSG = N_("UI/")
-BACKENDCAT_MSG = N_("Backend/")
-
-QSTAT_MSG = BACKENDCAT_MSG + N_("QStat:")
-RIGSOFRODS_MSG = BACKENDCAT_MSG + N_("Rigs of Rods:")
-CORE_MSG = CORECAT_MSG + N_("Core:")
-SETTINGS_MSG = CORECAT_MSG + N_("Settings:")
-GTK_MSG = UICAT_MSG + N_("GTK+:")
-HELPER_MSG = N_("Helpers:")
-
-
-del N_

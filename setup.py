@@ -2,6 +2,7 @@
 
 import os
 from distutils.core import setup
+from babel.messages import frontend as babel
 
 from obozrenie.global_settings import VERSION
 
@@ -25,5 +26,9 @@ setup(name='Obozrenie',
       url='https://github.com/obozrenie',
       packages=['obozrenie', 'obozrenie.backends'],
       package_dir={'obozrenie': 'obozrenie', 'obozrenie.backends': 'obozrenie/backends'},
-      data_files=data_files
+      data_files=data_files,
+      cmdclass={'compile_catalog':  babel.compile_catalog,
+                'extract_messages': babel.extract_messages,
+                'init_catalog':     babel.init_catalog,
+                'update_catalog':   babel.update_catalog}
       )

@@ -13,21 +13,20 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
-
 import os
 
-import ast
 import html.parser
 import requests
 
-from obozrenie import N_
+from obozrenie.global_settings import *
+from obozrenie.global_strings import *
 
+import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
 import obozrenie.ping as ping
-from obozrenie.global_settings import *
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
-RIGSOFRODS_GAME_NAME = "rigsofrods"
+RIGSOFRODS_MSG = BACKENDCAT_MSG + i18n._("Rigs of Rods:")
 
 
 class ServerListParser(html.parser.HTMLParser):
@@ -39,15 +38,15 @@ class ServerListParser(html.parser.HTMLParser):
         self.list2 = []
         self.parser_mode = 0
 
-        self.replacements = (["<tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr>", ""],
-                             ["rorserver://", ""],
-                             ["user:pass@", ""],
-                             ["<td valign='middle'>password</td>", "<td valign='middle'>True</td>"],
-                             ["<td valign='middle'></td>", "<td valign='middle'>False</td>"])
-        self.format = (("players", int),
+        self.replacements = ({"original": "<tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr>", "replacement": ""                              },
+                             {"original": "rorserver://",                                                                                    "replacement": ""                              },
+                             {"original": "user:pass@",                                                                                      "replacement": ""                              },
+                             {"original": "<td valign='middle'>password</td>",                                                               "replacement": "<td valign='middle'>True</td>" },
+                             {"original": "<td valign='middle'></td>",                                                                       "replacement": "<td valign='middle'>False</td>"})
+        self.format = (("players",  int ),
                        ("password", bool),
-                       ("name", str),
-                       ("terrain", str))
+                       ("name",     str ),
+                       ("terrain",  str ))
 
         self.col_num = 0
 
@@ -103,11 +102,8 @@ def add_rtt_info(array):
     rtt_array = []
     rtt_array.append([])
 
-    for i in range(len(array)):
-        try:
-            hosts_array.append(array[i]["host"].split(':')[0])
-        except:
-            pass
+    for entry in array:
+        hosts_array.append(entry["host"].split(':')[0])
 
     pinger = ping.Pinger()
     pinger.hosts = list(set(hosts_array))
@@ -117,12 +113,9 @@ def add_rtt_info(array):
     rtt_array = pinger.start()
 
     # Match ping in host list.
-    for i in range(len(array)):
-        try:
-            ip = array[i]["host"].split(':')[0]
-            array[i]["ping"] = rtt_array[ip]
-        except:
-            pass
+    for entry in array:
+        ip = entry["host"].split(':')[0]
+        entry["ping"] = rtt_array[ip]
 
 
 def stat_master(game, game_table_slice, proxy=None):
@@ -143,23 +136,23 @@ def stat_master(game, game_table_slice, proxy=None):
             master_page_object = requests.get(master_page_uri)
             master_page = master_page_object.text
         except:
-            print(N_("Accessing URI {0} failed with error code {1}".format(master_page_uri, "unknown")))
+            print(i18n._(RIGSOFRODS_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {'uri': master_page_uri, 'code': "unknown"})
             continue
 
         for i in range(len(parser.replacements)):
-            master_page = master_page.replace(parser.replacements[i][0], parser.replacements[i][1])
+            master_page = master_page.replace(parser.replacements[i]['original'], parser.replacements[i]['replacement'])
 
         try:
             parser.feed(master_page)
         except:
-            print(N_("Error parsing URI {0}".format(master_page_uri)))
+            print(i18n._(RIGSOFRODS_MSG), i18n._("Error parsing URI %(uri)s.") % {'uri': master_page_uri})
             continue
 
         temp_table = parser.list1.copy()
         parser.list1.clear()
 
         temp_table = helpers.remove_all_occurences_from_list(temp_table, {})
-        add_game_name(temp_table, RIGSOFRODS_GAME_NAME)
+        add_game_name(temp_table, game)
         add_master_info(temp_table, master_uri)
         server_table.append(temp_table)
 

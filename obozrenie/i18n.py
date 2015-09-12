@@ -19,12 +19,12 @@
 import gettext
 import locale
 
-from .global_settings import *
+from obozrenie.global_settings import *
 
 current_locale, encoding = locale.getdefaultlocale()
 
-
-t = gettext.translation(APPLICATION_ID, LOCALE_DIR, [current_locale], fallback=True)
-
-
-def N_(msg): return t.lgettext(msg)
+# gettext.bindtextdomain(APPLICATION_ID, LOCALE_DIR)
+# gettext.textdomain(APPLICATION_ID)
+# _ = gettext.gettext
+t = gettext.translation(APPLICATION_ID, localedir=LOCALE_DIR, languages=[current_locale], codeset=encoding, fallback=True)
+_ = t.gettext

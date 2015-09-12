@@ -25,15 +25,16 @@ import os
 import shutil
 import threading
 
-from obozrenie import N_
-
 from gi.repository import GLib, Gio, Gtk
 
-from obozrenie import helpers
-from obozrenie import gtk_helpers
-from obozrenie.core import Core, Settings
-import obozrenie.gtk_templates as templates
 from obozrenie.global_settings import *
+from obozrenie.global_strings import *
+
+import obozrenie.i18n as i18n
+import obozrenie.helpers as helpers
+import obozrenie.gtk_helpers as gtk_helpers
+import obozrenie.core as core
+import obozrenie.gtk_templates as templates
 
 
 class GUIActions:
@@ -95,7 +96,7 @@ class GUIActions:
         try:
             country_db = self.core.geolocation.const.COUNTRY_CODES
             self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
-        except TypeError:
+        except TypeError and AttributeError:
             self.flag_icons = {}
         game_list = self.core.game_table.keys()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
@@ -353,7 +354,7 @@ class App(Gtk.Application):
 
     """App class."""
 
-    def __init__(self, Core):
+    def __init__(self, Core, Settings):
         Gtk.Application.__init__(self,
                                  application_id=APPLICATION_ID,
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
@@ -378,7 +379,7 @@ class App(Gtk.Application):
         """
 
         # Load settings
-        print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
+        print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
         self.status = "starting"
         self.guiactions.fill_game_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
@@ -415,11 +416,11 @@ class App(Gtk.Application):
         if self.status == "up":
             self.settings.save()
             self.status = "shutting down"
-            print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Shutting down"), "\n" + SEPARATOR_MSG)
+            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Shutting down"), "\n" + SEPARATOR_MSG)
         else:
             self.status = "start failed"
-            print(SEPARATOR_MSG + "\n" + GTK_MSG, N_("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
+            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
 
 if __name__ == "__main__":
-    app = App(Core)
+    app = App(core.Core, core.Settings)
     app.run(None)

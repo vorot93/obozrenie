@@ -20,7 +20,7 @@
 
 from gi.repository import Gtk
 
-from obozrenie import N_
+import obozrenie.i18n as i18n
 
 
 def get_checkbutton(label_text="", tooltip_text=""):
@@ -39,10 +39,10 @@ def get_entry_with_label(label_text="", tooltip_text=""):
     entry = Gtk.Entry()
     label = Gtk.Label()
 
-    label.set_text(N_(label_text))
+    label.set_text(i18n._(label_text))
     label.set_halign(Gtk.Align.START)
 
-    entry.set_tooltip_text(N_(tooltip_text))
+    entry.set_tooltip_text(i18n._(tooltip_text))
     entry.set_halign(Gtk.Align.END)
 
     grid.add(label)
@@ -62,10 +62,10 @@ def get_textview_with_label(label_text="Single entry per line", tooltip_text="")
     text_view = Gtk.TextView.new_with_buffer(text_buffer)
     label = Gtk.Label()
 
-    label.set_text(N_(label_text))
+    label.set_text(i18n._(label_text))
     label.set_halign(Gtk.Align.START)
 
-    text_view.set_tooltip_text(N_(tooltip_text))
+    text_view.set_tooltip_text(i18n._(tooltip_text))
     text_view.set_galign(Gtk.Align.END)
 
     grid.add(label)
@@ -90,7 +90,7 @@ def get_option_widget(option_dict):
     elif widget_type == "Multiline Entry with Label":
         widget = get_textview_with_label(label_text=name, tooltip_text=description)
     else:
-        print(N_("No widget generated for type {0}".format(widget_type)))
+        print(i18n._("No widget generated for type %(widget_type)s") % {'widget_type': widget_type})
         widget = None
 
     return widget

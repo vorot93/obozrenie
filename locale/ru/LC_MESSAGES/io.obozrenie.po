@@ -1,0 +1,201 @@
+# Russian translations for PROJECT.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+# Artem Vorotnikov <artem@vorotnikov.me>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-09-12 20:48+0300\n"
+"PO-Revision-Date: 2015-09-12 20:49+0300\n"
+"Last-Translator: Artem Vorotnikov <artem@vorotnikov.me>\n"
+"Language-Team: русский <>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.0\n"
+"X-Generator: Gtranslator 2.91.7\n"
+
+#: obozrenie/core.py:51
+#, python-format
+msgid "GeoIP data file %(geoip_data_file)s opened successfully."
+msgstr "Файл данных GeoIP %(geoip_data_file)s открыт успешно."
+
+#: obozrenie/core.py:54
+msgid "GeoIP data file not found. Disabling geolocation."
+msgstr "Файл с данными GeoIP не найден. Геолокация отключена."
+
+#: obozrenie/core.py:57
+msgid "PyGeoIP not found. Disabling geolocation."
+msgstr "PyGeoIP не найден. Геолокация отключена."
+
+#: obozrenie/core.py:104
+#, python-format
+msgid "Refreshing server list for %(game)s."
+msgstr "Обновление серверов для %(game)s."
+
+#: obozrenie/core.py:115
+#, python-format
+msgid "Internal backend error for %(game)s."
+msgstr "Внутренняя ошибка движка для %(game)s."
+
+#: obozrenie/core.py:232
+msgid ""
+"This is the core module of Obozrenie Game Server Browser.\n"
+"Please run an appropriate UI instead."
+msgstr ""
+"Это модуль ядра обозревателя игровых серверов «Обозрение».\n"
+"Пользуйтесь графическим интерфейсом."
+
+#: obozrenie/global_strings.py:21
+msgid "Obozrenie"
+msgstr "Обозрение"
+
+#: obozrenie/global_strings.py:22
+msgid "Game Server Browser"
+msgstr "Обозреватель игровых серверов"
+
+#: obozrenie/global_strings.py:25
+msgid "Â© 2015 Artem Vorotnikov"
+msgstr "Â© 2015 Артём Воротников"
+
+#: obozrenie/global_strings.py:26 obozrenie/global_strings.py:27
+msgid "Artem Vorotnikov"
+msgstr "Артём Воротников"
+
+#: obozrenie/global_strings.py:31
+msgid ""
+"\n"
+"This is an error. Please file a bug report at "
+msgstr ""
+"\n"
+"Это ошибка. Отправьте отчёт об ошибке "
+
+#: obozrenie/global_strings.py:32
+msgid "Core/"
+msgstr "Ядро/"
+
+#: obozrenie/global_strings.py:33
+msgid "UI/"
+msgstr "Интерфейс/"
+
+#: obozrenie/global_strings.py:34
+msgid "Backend/"
+msgstr "Движок/"
+
+#: obozrenie/global_strings.py:36
+msgid "Core:"
+msgstr "Ядро:"
+
+#: obozrenie/global_strings.py:37
+msgid "Settings:"
+msgstr "Настройки:"
+
+#: obozrenie/global_strings.py:38
+msgid "GTK+:"
+msgstr "GTK+:"
+
+#: obozrenie/global_strings.py:39
+msgid "Helpers:"
+msgstr "Помощники:"
+
+#: obozrenie/gtk.py:382
+msgid "Obozrenie is starting"
+msgstr "«Обозрение» запускается"
+
+#: obozrenie/gtk.py:419
+msgid "Shutting down"
+msgstr "Выход"
+
+#: obozrenie/gtk.py:422
+msgid "Initialization failed. Aborting."
+msgstr "Ошибка инициализации."
+
+#: obozrenie/gtk_templates.py:93
+#, python-format
+msgid "No widget generated for type %(widget_type)s"
+msgstr "Виджет не создан для типа %(widget_type)s"
+
+#: obozrenie/option_lists.py:42
+msgid "Game path"
+msgstr "Путь"
+
+#: obozrenie/option_lists.py:43
+msgid "Path to the game"
+msgstr "Путь к игре"
+
+#: obozrenie/option_lists.py:47
+msgid "Working directory"
+msgstr "Рабочий каталог"
+
+#: obozrenie/option_lists.py:48
+msgid "Working directory of the game"
+msgstr "Рабочий каталог игры"
+
+#: obozrenie/option_lists.py:52
+msgid "Master URI list"
+msgstr "Список мастер-серверов"
+
+#: obozrenie/option_lists.py:53
+msgid "List of master servers to query"
+msgstr "Опрашиваемые мастер-сервера"
+
+#: obozrenie/backends/qstat.py:32
+msgid "QStat:"
+msgstr "QStat:"
+
+#: obozrenie/backends/qstat.py:76
+#, python-format
+msgid "|%(game)s| Requesting server info."
+msgstr "|%(game)s| Запрашиваю информацию о серверах."
+
+#: obozrenie/backends/qstat.py:84
+#, python-format
+msgid "|%(game)s| Received server info. Elapsed time: %(stat_time)s s."
+msgstr "|%(game)s| Получена информация о серверах. Потрачено: %(stat_time)s с."
+
+#: obozrenie/backends/qstat.py:89
+#, python-format
+msgid ""
+"|%(game)s| No valid masters specified. Please check your master server "
+"settings."
+msgstr ""
+"|%(game)s| Действительные мастер-сервера не указаны. Проверьте настройки."
+
+#: obozrenie/backends/qstat.py:98
+#, python-format
+msgid ""
+"|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, server "
+"count: %(servers)s."
+msgstr ""
+"|%(game)s| Опрошен мастер-сервер. Адрес: %(address)s, состояние: %(status)s, "
+"количество серверов: %(servers)s."
+
+#: obozrenie/backends/qstat.py:100
+#, python-format
+msgid ""
+"|%(game)s| Master query failed. Address: %(address)s, status: %(status)s."
+msgstr ""
+"|%(game)s| Ошибка опроса мастер-сервера. Адрес: %(address)s, состояние: "
+"%(status)s."
+
+#: obozrenie/backends/rigsofrods.py:29
+msgid "Rigs of Rods:"
+msgstr "Rigs of Rods:"
+
+#: obozrenie/backends/rigsofrods.py:139
+#, python-format
+msgid "Accessing URI %(uri)s failed with error code %(code)s."
+msgstr "Попытка доступа к адресу %(uri)s завершилась ошибкой с кодом %(code)s."
+
+#: obozrenie/backends/rigsofrods.py:148
+#, python-format
+msgid "Error parsing URI %(uri)s."
+msgstr "Ошибка разбора страницы по адресу %(uri)s."
+
+#~ msgid "Error parsing URI {0}"
+#~ msgstr "Ошибка разбора адреса {0}"

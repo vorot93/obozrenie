@@ -13,7 +13,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
-
 import os
 import re
 
@@ -22,13 +21,15 @@ import subprocess
 import time
 import xmltodict
 
-from obozrenie import N_
+from obozrenie.global_settings import *
+from obozrenie.global_strings import *
 
+import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
 import obozrenie.ping as ping
-from obozrenie.global_settings import *
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
+QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
 
 
 def split_server_list_into_masters(orig_list, split_key, split_value):
@@ -72,7 +73,7 @@ def stat_master(game, game_table_slice, proxy=None):
         qstat_cmd.append("-" + backend_config_object['game'][game]['master_key'])
         qstat_cmd.append(entry)
 
-    print(QSTAT_MSG, N_("|{0}| Requesting server info".format(game_name)))
+    print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Requesting server info.") % {'game': game_name})
     stat_start_time = time.time()
     qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
     server_table_qstat_xml = qstat_output.decode()
@@ -80,12 +81,12 @@ def stat_master(game, game_table_slice, proxy=None):
     server_table_dict = xmltodict.parse(server_table_qstat_xml)
 
     stat_total_time = stat_end_time - stat_start_time
-    print(QSTAT_MSG, N_("|{0}| Received server info. Elapsed time: {1}s".format(game_name, round(stat_total_time, 2))))
+    print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Received server info. Elapsed time: %(stat_time)s s.") % {'game': game_name, 'stat_time': round(stat_total_time, 2)})
     color_code_pattern = '[\\^](.)'
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
             if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
-                print(QSTAT_MSG, N_("|{0}| No valid masters specified. Please check your master server settings.".format(game_name)))
+                print(i18n._(QSTAT_MSG), i18n._("|%(game)s| No valid masters specified. Please check your master server settings.") % {'game': game_name})
                 break
 
         except TypeError:
@@ -94,9 +95,9 @@ def stat_master(game, game_table_slice, proxy=None):
                 master_server_status = qstat_entry['@status']
                 if master_server_status == 'UP':
                     master_server_entry_count = qstat_entry['@servers']
-                    print(QSTAT_MSG, N_("|{0}| Queried Master. Address: {1}, status: {2}, server count: {3}".format(game_name, master_server_uri, master_server_status, master_server_entry_count)))
+                    print(QSTAT_MSG, i18n._("|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, server count: %(servers)s.") % {'game': game_name, 'address': master_server_uri, 'status': master_server_status, 'servers': master_server_entry_count})
                 else:
-                    print(QSTAT_MSG, N_("|{0}| Master query failed. Address: {1}, status: {2}".format(game_name, master_server_uri, master_server_status)))
+                    print(QSTAT_MSG, i18n._("|%(game)s| Master query failed. Address: %(address)s, status: %(status)s.") % {'game': game_name, 'address': master_server_uri, 'status': master_server_status})
 
             elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
                 server_table.append({})

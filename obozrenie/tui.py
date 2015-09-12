@@ -27,7 +27,10 @@ import threading
 import urwid
 from gi.repository import GLib
 
+from obozrenie.i18n import *
+from obozrenie.global_settings import *
+from obozrenie.global_strings import *
+
 from obozrenie import helpers
 from obozrenie.core import Core, Settings
 import obozrenie.gtk_templates as templates
-from obozrenie.global_settings import *

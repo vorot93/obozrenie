@@ -18,7 +18,6 @@
 
 
 def get_common_options():
-    def N_(msg): return msg
     option_list = {}
 
     option_list['common'] = {}
@@ -32,28 +31,27 @@ def get_common_options():
     option_list['common']['server-pass'] = {}
     option_list['common']['server-pass']['gtk_widget_name'] = "ServerPass_Entry"
 
-    del N_
     return option_list
 
 
 def get_game_options():
-    def N_(msg): return msg
+    def _(msg): return msg
     option_list = {}
 
     option_list['path'] = {}
-    option_list['path']['name'] = N_("Game path")
-    option_list['path']['description'] = N_("Path to the game")
+    option_list['path']['name'] = _("Game path")
+    option_list['path']['description'] = _("Path to the game")
     option_list['path']['gtk_type'] = "Entry with Label"
 
     option_list['workdir'] = {}
-    option_list['workdir']['name'] = N_("Working directory")
-    option_list['workdir']['description'] = N_("Working directory of the game")
+    option_list['workdir']['name'] = _("Working directory")
+    option_list['workdir']['description'] = _("Working directory of the game")
     option_list['workdir']['gtk_type'] = "Entry with Label"
 
     option_list['master_uri'] = {}
-    option_list['master_uri']['name'] = N_("Master URI list")
-    option_list['master_uri']['description'] = N_("List of master servers to query")
+    option_list['master_uri']['name'] = _("Master URI list")
+    option_list['master_uri']['description'] = _("List of master servers to query")
     option_list['master_uri']['gtk_type'] = "Entry with Label"
 
-    del N_
+    del _
     return option_list
