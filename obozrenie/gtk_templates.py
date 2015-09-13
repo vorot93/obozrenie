@@ -56,17 +56,17 @@ def get_entry_with_label(label_text="", tooltip_text=""):
     return widget_group
 
 
-def get_textview_with_label(label_text="Single entry per line", tooltip_text=""):
+def get_textview_with_label(label_text="", tooltip_text="Single entry per line", placeholder_text=""):
     grid = Gtk.Grid()
-    text_buffer = Gtk.TextBuffer()
-    text_view = Gtk.TextView.new_with_buffer(text_buffer)
+    text_view = Gtk.TextView()
+    text_buffer = text_view.get_buffer()
     label = Gtk.Label()
 
     label.set_text(i18n._(label_text))
     label.set_halign(Gtk.Align.START)
 
     text_view.set_tooltip_text(i18n._(tooltip_text))
-    text_view.set_galign(Gtk.Align.END)
+    text_view.set_halign(Gtk.Align.START)
 
     grid.add(label)
     grid.add(text_view)
@@ -88,7 +88,7 @@ def get_option_widget(option_dict):
     elif widget_type == "Entry with Label":
         widget = get_entry_with_label(label_text=name+":", tooltip_text=description)
     elif widget_type == "Multiline Entry with Label":
-        widget = get_textview_with_label(label_text=name, tooltip_text=description)
+        widget = get_textview_with_label(label_text=name+":", tooltip_text=description)
     else:
         print(i18n._("No widget generated for type %(widget_type)s") % {'widget_type': widget_type})
         widget = None
@@ -121,7 +121,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.set_title(i18n._("%(game)s preferences") % {'game': game_table[game]["info"]["name"]})
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
 
-        button = self.add_button("Save", Gtk.ResponseType.CLOSE)
+        button = self.add_button(i18n._("Save"), Gtk.ResponseType.CLOSE)
         button.connect("clicked", self.cb_close_button_clicked)
 
         self.show_all()

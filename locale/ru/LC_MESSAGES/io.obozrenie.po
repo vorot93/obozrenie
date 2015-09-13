@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-13 13:59+0300\n"
-"PO-Revision-Date: 2015-09-13 14:29+0300\n"
+"POT-Creation-Date: 2015-09-13 17:12+0300\n"
+"PO-Revision-Date: 2015-09-13 17:12+0300\n"
 "Last-Translator: Artem Vorotnikov <artem@vorotnikov.me>\n"
 "Language-Team: русский <>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
@@ -217,27 +217,31 @@ msgstr "Виджет не создан для типа %(widget_type)s"
 msgid "%(game)s preferences"
 msgstr "Настройки %(game)s"
 
-#: obozrenie/option_lists.py:43
+#: obozrenie/gtk_templates.py:124
+msgid "Save"
+msgstr "Сохранить"
+
+#: obozrenie/option_lists.py:37
 msgid "Game path"
 msgstr "Путь"
 
-#: obozrenie/option_lists.py:44
+#: obozrenie/option_lists.py:38
 msgid "Path to the game"
 msgstr "Путь к игре"
 
-#: obozrenie/option_lists.py:48
+#: obozrenie/option_lists.py:43
 msgid "Working directory"
 msgstr "Рабочий каталог"
 
-#: obozrenie/option_lists.py:49
+#: obozrenie/option_lists.py:44
 msgid "Working directory of the game"
 msgstr "Рабочий каталог игры"
 
-#: obozrenie/option_lists.py:53
+#: obozrenie/option_lists.py:49
 msgid "Master URI list"
 msgstr "Список мастер-серверов"
 
-#: obozrenie/option_lists.py:54
+#: obozrenie/option_lists.py:50
 msgid "List of master servers to query"
 msgstr "Опрашиваемые мастер-сервера"
 

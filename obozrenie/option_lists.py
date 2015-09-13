@@ -20,38 +20,36 @@ import obozrenie.i18n as i18n
 
 
 def get_common_options():
-    option_list = {}
-
-    option_list['common'] = {}
-
-    option_list['common']['selected-game'] = {}
-    option_list['common']['selected-game']['gtk_widget_name'] = "Game_TreeView"
-
-    option_list['common']['server-host'] = {}
-    option_list['common']['server-host']['gtk_widget_name'] = "ServerHost_Entry"
-
-    option_list['common']['server-pass'] = {}
-    option_list['common']['server-pass']['gtk_widget_name'] = "ServerPass_Entry"
+    option_list = {
+                   'common': {
+                              'selected-game': {'gtk_widget_name': "Game_TreeView"},
+                              'server-host':   {'gtk_widget_name': "ServerHost_Entry"},
+                              'server-pass':   {'gtk_widget_name': "ServerPass_Entry"}
+                             }
+                  }
 
     return option_list
 
 
 def get_game_options():
-    option_list = {}
+    option_list = {
+                   'path':       {
+                                 'name':        i18n._("Game path"),
+                                 'description': i18n._("Path to the game"),
+                                 'gtk_type':           "Entry with Label"
+                                 },
 
-    option_list['path'] = {}
-    option_list['path']['name'] = i18n._("Game path")
-    option_list['path']['description'] = i18n._("Path to the game")
-    option_list['path']['gtk_type'] = "Entry with Label"
+                   'workdir':    {
+                                 'name':        i18n._("Working directory"),
+                                 'description': i18n._("Working directory of the game"),
+                                 'gtk_type':    "Entry with Label"
+                                 },
 
-    option_list['workdir'] = {}
-    option_list['workdir']['name'] = i18n._("Working directory")
-    option_list['workdir']['description'] = i18n._("Working directory of the game")
-    option_list['workdir']['gtk_type'] = "Entry with Label"
-
-    option_list['master_uri'] = {}
-    option_list['master_uri']['name'] = i18n._("Master URI list")
-    option_list['master_uri']['description'] = i18n._("List of master servers to query")
-    option_list['master_uri']['gtk_type'] = "Entry with Label"
+                   'master_uri': {
+                                 'name':        i18n._("Master URI list"),
+                                 'description': i18n._("List of master servers to query"),
+                                 'gtk_type':    "Entry with Label"
+                                 }
+                  }
 
     return option_list

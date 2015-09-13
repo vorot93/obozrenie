@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Obozrenie 0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-13 13:59+0300\n"
+"POT-Creation-Date: 2015-09-13 17:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -206,27 +206,31 @@ msgstr ""
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/option_lists.py:43
+#: obozrenie/gtk_templates.py:124
+msgid "Save"
+msgstr ""
+
+#: obozrenie/option_lists.py:37
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/option_lists.py:44
+#: obozrenie/option_lists.py:38
 msgid "Path to the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:48
+#: obozrenie/option_lists.py:43
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/option_lists.py:49
+#: obozrenie/option_lists.py:44
 msgid "Working directory of the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:53
+#: obozrenie/option_lists.py:49
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/option_lists.py:54
+#: obozrenie/option_lists.py:50
 msgid "List of master servers to query"
 msgstr ""
 
