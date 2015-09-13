@@ -139,7 +139,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Refresh server list.</property>
+                    <property name="tooltip_text" translatable="yes">action-update-button</property>
                     <property name="vexpand">True</property>
                     <property name="image">refresh-icon</property>
                     <property name="always_show_image">True</property>
@@ -155,7 +155,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Server information is in development. Stay tuned!</property>
+                    <property name="tooltip_text" translatable="yes">action-info-button</property>
                     <property name="vexpand">True</property>
                     <property name="image">info-icon</property>
                     <property name="always_show_image">True</property>
@@ -171,7 +171,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Connect to the selected server.</property>
+                    <property name="tooltip_text" translatable="yes">action-connect-button</property>
                     <property name="vexpand">True</property>
                     <property name="image">connect-icon</property>
                     <property name="always_show_image">True</property>
@@ -192,12 +192,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               <object class="GtkEntry" id="ServerPass_Entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="tooltip_text" translatable="yes">The server password, if required.</property>
                 <property name="halign">end</property>
                 <property name="valign">center</property>
                 <property name="visibility">False</property>
                 <property name="width_chars">12</property>
-                <property name="placeholder_text" translatable="yes">Password</property>
+                <property name="placeholder_text" translatable="yes">serverpass-entry</property>
                 <property name="input_purpose">password</property>
               </object>
               <packing>
@@ -208,14 +207,14 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             <child>
               <object class="GtkEntry" id="ServerHost_Entry">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
-                <property name="tooltip_text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
                 <property name="halign">end</property>
                 <property name="valign">center</property>
                 <property name="max_length">22</property>
                 <property name="width_chars">22</property>
                 <property name="max_width_chars">22</property>
-                <property name="placeholder_text" translatable="yes">Host address</property>
+                <property name="placeholder_text" translatable="yes">serverhost-entry</property>
                 <property name="input_purpose">url</property>
                 <signal name="changed" handler="cb_server_host_entry_changed" swapped="no"/>
               </object>
@@ -230,7 +229,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Set up server filters.</property>
+                <property name="tooltip_text" translatable="yes">action-filters-button</property>
                 <property name="image">find-icon</property>
               </object>
               <packing>
@@ -291,7 +290,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="spacing">5</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">350</property>
-                        <property name="title" translatable="yes">Name</property>
+                        <property name="title" translatable="yes">serverlist-view-name-column</property>
                         <property name="sort_column_id">6</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="GameIcon_CellRenderer"/>
@@ -319,7 +318,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="spacing">5</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">200</property>
-                        <property name="title" translatable="yes">Host</property>
+                        <property name="title" translatable="yes">serverlist-view-host-column</property>
                         <property name="sort_column_id">0</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="CountryIcon_CellRenderer"/>
@@ -340,7 +339,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">50</property>
-                        <property name="title" translatable="yes">Ping</property>
+                        <property name="title" translatable="yes">serverlist-view-ping-column</property>
                         <property name="sort_column_id">4</property>
                         <child>
                           <object class="GtkCellRendererText" id="Ping_CellRenderer"/>
@@ -355,7 +354,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">70</property>
-                        <property name="title" translatable="yes">Players</property>
+                        <property name="title" translatable="yes">serverlist-view-players-column</property>
                         <property name="sort_column_id">2</property>
                         <child>
                           <object class="GtkCellRendererText" id="PlayerCount_CellRenderer">
@@ -381,11 +380,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                       </object>
                     </child>
                     <child>
-                      <object class="GtkTreeViewColumn" id="GameMod_Column">
+                      <object class="GtkTreeViewColumn" id="GameMod_ServerList_TreeViewColumn">
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
-                        <property name="title" translatable="yes">Game Mod</property>
+                        <property name="title" translatable="yes">serverlist-view-game_mod-column</property>
                         <property name="sort_column_id">8</property>
                         <child>
                           <object class="GtkCellRendererText" id="GameMod_CellRenderer"/>
@@ -400,7 +399,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
-                        <property name="title" translatable="yes">Game Type</property>
+                        <property name="title" translatable="yes">serverlist-view-game_type-column</property>
                         <property name="sort_column_id">9</property>
                         <child>
                           <object class="GtkCellRendererText" id="GameType_CellRenderer"/>
@@ -415,7 +414,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
-                        <property name="title" translatable="yes">Terrain</property>
+                        <property name="title" translatable="yes">serverlist-view-terrain-column</property>
                         <property name="sort_column_id">10</property>
                         <child>
                           <object class="GtkCellRendererText" id="Terrain_CellRenderer"/>
@@ -447,8 +446,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="valign">center</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
-                <property name="label" translatable="yes">Welcome to Obozrenie!
-Select a game or press refresh button below</property>
+                <property name="label" translatable="yes">serverlist-welcome-label</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="size" value="24000"/>
@@ -506,7 +504,7 @@ Select a game or press refresh button below</property>
                     <property name="valign">end</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
-                    <property name="label" translatable="yes">Oops. Something went wrong.</property>
+                    <property name="label" translatable="yes">error-message-label</property>
                     <attributes>
                       <attribute name="size" value="24000"/>
                     </attributes>
@@ -580,7 +578,7 @@ Select a game or press refresh button below</property>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="Game_TreeView_Column">
-                        <property name="title" translatable="yes">Available games</property>
+                        <property name="title" translatable="yes">game-treeview-column</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_TreeView_Icon_CellRenderer"/>
                           <attributes>
@@ -630,24 +628,10 @@ Select a game or press refresh button below</property>
                 <property name="row_spacing">10</property>
                 <property name="column_spacing">10</property>
                 <child>
-                  <object class="GtkButton" id="Game_Preferences_button">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Configure the selected game.</property>
-                    <property name="image">preferences_desktop_image</property>
-                    <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkToggleButton" id="Game_View_ToggleButton">
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Toggle game list view mode.</property>
+                    <property name="tooltip_text" translatable="yes">game-view-togglebutton</property>
                     <property name="image">list-icon</property>
                     <signal name="clicked" handler="cb_game_treeview_togglebutton_clicked" swapped="no"/>
                   </object>
@@ -666,7 +650,7 @@ Select a game or press refresh button below</property>
                       <object class="GtkComboBox" id="Game_ComboBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Select a game.</property>
+                        <property name="tooltip_text" translatable="yes">game-combobox</property>
                         <property name="model">Game_Store</property>
                         <property name="id_column">0</property>
                         <property name="active_id">0</property>
@@ -681,14 +665,13 @@ Select a game or press refresh button below</property>
                           <object class="GtkCellRendererText" id="Game_ComboBox_Name_CellRenderer">
                             <property name="xpad">5</property>
                             <property name="single_paragraph_mode">True</property>
-                            <property name="placeholder_text">Select a game</property>
                           </object>
                           <attributes>
                             <attribute name="text">1</attribute>
                           </attributes>
                         </child>
                         <child>
-                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer1"/>
+                          <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer"/>
                           <attributes>
                             <attribute name="icon-name">4</attribute>
                           </attributes>
@@ -698,6 +681,20 @@ Select a game or press refresh button below</property>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="Game_Preferences_Button">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">game-preferences-button</property>
+                    <property name="image">preferences_desktop_image</property>
+                    <signal name="clicked" handler="cb_game_preferences_button_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
                     <property name="top_attach">0</property>
                   </packing>
                 </child>

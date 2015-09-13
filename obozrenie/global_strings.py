@@ -37,3 +37,28 @@ CORE_MSG = CORECAT_MSG + i18n._("Core:")
 SETTINGS_MSG = CORECAT_MSG + i18n._("Settings:")
 GTK_MSG = UICAT_MSG + i18n._("GTK+:")
 HELPER_MSG = i18n._("Helpers:")
+
+
+GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
+                    "game-combobox":                    {"tooltip-text": i18n._("Select a game.")},
+                    "game-treeview-column":             {"title": i18n._("Available games")},
+                    "game-view-togglebutton":           {"tooltip-text": i18n._("Toggle game list view mode.")},
+                    "game-preferences-button":          {"tooltip-text": i18n._("Configure the selected game.")},
+                    "action-update-button":             {"tooltip-text": i18n._("Update server list.")},
+                    "action-info-button":               {"tooltip-text": i18n._("Show server information.")},
+                    "action-connect-button":            {"tooltip-text": i18n._("Connect to the selected server.")},
+                    "filters-button":                   {"tooltip-text": i18n._("Set up server filters.")},
+                    "serverlist-view-name-column":      {"title": i18n._("Name")},
+                    "serverlist-view-host-column":      {"title": i18n._("Host")},
+                    "serverlist-view-ping-column":      {"title": i18n._("Ping")},
+                    "serverlist-view-players-column":   {"title": i18n._("Players")},
+                    "serverlist-view-game_mod-column":  {"title": i18n._("Game Mod")},
+                    "serverlist-view-game_type-column": {"title": i18n._("Game Type")},
+                    "serverlist-view-terrain-column":   {"title": i18n._("Terrain")},
+                    "serverlist-welcome-label":         {"label": i18n._("Welcome to Obozrenie!\nSelect a game or press refresh button below.")},
+                    "error-message-label":              {"label": i18n._("Oops. Something went wrong.")},
+                    "serverhost-entry":                 {"placeholder-text": i18n._("Host address"),
+                                                         "tooltip-text":     i18n._("Server address to connect to. Automatically filled on changing server list selection.")},
+                    "serverpass-entry":                 {"placeholder-text": i18n._("Password"),
+                                                         "tooltip-text":     i18n._("The server password, if required.")}
+                    }

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Obozrenie 0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-12 20:48+0300\n"
+"POT-Creation-Date: 2015-09-13 13:59+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -96,15 +96,103 @@ msgstr ""
 msgid "Helpers:"
 msgstr ""
 
-#: obozrenie/gtk.py:382
+#: obozrenie/global_strings.py:43
+msgid "Select a game."
+msgstr ""
+
+#: obozrenie/global_strings.py:44
+msgid "Available games"
+msgstr ""
+
+#: obozrenie/global_strings.py:45
+msgid "Toggle game list view mode."
+msgstr ""
+
+#: obozrenie/global_strings.py:46
+msgid "Configure the selected game."
+msgstr ""
+
+#: obozrenie/global_strings.py:47
+msgid "Update server list."
+msgstr ""
+
+#: obozrenie/global_strings.py:48
+msgid "Show server information."
+msgstr ""
+
+#: obozrenie/global_strings.py:49
+msgid "Connect to the selected server."
+msgstr ""
+
+#: obozrenie/global_strings.py:50
+msgid "Set up server filters."
+msgstr ""
+
+#: obozrenie/global_strings.py:51
+msgid "Name"
+msgstr ""
+
+#: obozrenie/global_strings.py:52
+msgid "Host"
+msgstr ""
+
+#: obozrenie/global_strings.py:53
+msgid "Ping"
+msgstr ""
+
+#: obozrenie/global_strings.py:54
+msgid "Players"
+msgstr ""
+
+#: obozrenie/global_strings.py:55
+msgid "Game Mod"
+msgstr ""
+
+#: obozrenie/global_strings.py:56
+msgid "Game Type"
+msgstr ""
+
+#: obozrenie/global_strings.py:57
+msgid "Terrain"
+msgstr ""
+
+#: obozrenie/global_strings.py:58
+msgid ""
+"Welcome to Obozrenie!\n"
+"Select a game or press refresh button below."
+msgstr ""
+
+#: obozrenie/global_strings.py:59
+msgid "Oops. Something went wrong."
+msgstr ""
+
+#: obozrenie/global_strings.py:60
+msgid "Host address"
+msgstr ""
+
+#: obozrenie/global_strings.py:61
+msgid ""
+"Server address to connect to. Automatically filled on changing server "
+"list selection."
+msgstr ""
+
+#: obozrenie/global_strings.py:62
+msgid "Password"
+msgstr ""
+
+#: obozrenie/global_strings.py:63
+msgid "The server password, if required."
+msgstr ""
+
+#: obozrenie/gtk.py:394
 msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/gtk.py:419
+#: obozrenie/gtk.py:431
 msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/gtk.py:422
+#: obozrenie/gtk.py:434
 msgid "Initialization failed. Aborting."
 msgstr ""
 
@@ -113,27 +201,32 @@ msgstr ""
 msgid "No widget generated for type %(widget_type)s"
 msgstr ""
 
-#: obozrenie/option_lists.py:42
-msgid "Game path"
+#: obozrenie/gtk_templates.py:121
+#, python-format
+msgid "%(game)s preferences"
 msgstr ""
 
 #: obozrenie/option_lists.py:43
+msgid "Game path"
+msgstr ""
+
+#: obozrenie/option_lists.py:44
 msgid "Path to the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:47
+#: obozrenie/option_lists.py:48
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/option_lists.py:48
+#: obozrenie/option_lists.py:49
 msgid "Working directory of the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:52
+#: obozrenie/option_lists.py:53
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/option_lists.py:53
+#: obozrenie/option_lists.py:54
 msgid "List of master servers to query"
 msgstr ""
 

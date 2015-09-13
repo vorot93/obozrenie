@@ -51,6 +51,13 @@ def get_object_dict(builder, object_mapping):
     return object_dict
 
 
+def set_object_properties(object_dict, property_dict):
+    for entry in property_dict:
+        widget = object_dict[entry]
+        for property_entry in property_dict[entry]:
+            widget.set_property(property_entry, property_dict[entry][property_entry])
+
+
 def get_notebook_page_dict(notebook, widget_mapping):
     """Get mapping for notebook pages."""
     notebook_pages = {}

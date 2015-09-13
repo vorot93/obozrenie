@@ -26,8 +26,8 @@ import obozrenie.i18n as i18n
 def get_checkbutton(label_text="", tooltip_text=""):
     checkbutton = Gtk.CheckButton.new()
 
-    checkbutton.set_label(label_text)
-    checkbutton.set_tooltip_text(tooltip_text)
+    checkbutton.set_label(i18n._(label_text))
+    checkbutton.set_tooltip_text(i18n._(tooltip_text))
 
     widget_group = {"container": checkbutton, "substance": checkbutton}
 
@@ -118,7 +118,7 @@ class PreferencesDialog(Gtk.Dialog):
 
         self.set_resizable(False)
         self.set_border_width(10)
-        self.set_title(game_table[game]["info"]["name"] + " preferences")
+        self.set_title(i18n._("%(game)s preferences") % {'game': game_table[game]["info"]["name"]})
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
 
         button = self.add_button("Save", Gtk.ResponseType.CLOSE)

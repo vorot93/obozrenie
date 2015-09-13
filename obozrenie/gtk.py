@@ -48,24 +48,36 @@ class GUIActions:
 
         self.gtk_widgets = {}
 
-        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Main_Window":                "main-window",
-                                                                      "Game_ComboBox":              "game-combobox",
-                                                                      "Game_TreeView":              "game-treeview",
-                                                                      "Game_Store":                 "game-model",
-                                                                      "Game_ComboBox_Revealer":     "game-combobox-revealer",
-                                                                      "Game_View_Revealer":         "game-view-revealer",
-                                                                      "Game_View_ToggleButton":     "game-view-togglebutton",
-                                                                      "Update_Button":              "serverlist-update-button",
-                                                                      "Info_Button":                "serverlist-info-button",
-                                                                      "Connect_Button":             "serverlist-connect-button",
-                                                                      "ServerList_Store":           "serverlist-model",
-                                                                      "ServerList_View":            "serverlist-view",
-                                                                      "ServerList_Notebook":        "serverlist-notebook",
-                                                                      "ServerList_ScrolledWindow":  "serverlist-scrolledwindow",
-                                                                      "ServerList_Welcome_Label":   "serverlist-welcome-label",
-                                                                      "ServerList_Refresh_Spinner": "serverlist-refresh-spinner",
-                                                                      "Error_Grid":                 "error-grid",
-                                                                      "ServerHost_Entry":           "serverhost-entry"
+        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Main_Window":                        "main-window",
+                                                                      "Game_ComboBox":                      "game-combobox",
+                                                                      "Game_TreeView":                      "game-treeview",
+                                                                      "Game_TreeView_Column":               "game-treeview-column",
+                                                                      "Game_Store":                         "game-model",
+                                                                      "Game_ComboBox_Revealer":             "game-combobox-revealer",
+                                                                      "Game_View_Revealer":                 "game-view-revealer",
+                                                                      "Game_View_ToggleButton":             "game-view-togglebutton",
+                                                                      "Game_Preferences_Button":            "game-preferences-button",
+                                                                      "Update_Button":                      "action-update-button",
+                                                                      "Info_Button":                        "action-info-button",
+                                                                      "Connect_Button":                     "action-connect-button",
+                                                                      "Filters_Button":                     "filters-button",
+                                                                      "ServerList_Store":                   "serverlist-model",
+                                                                      "ServerList_View":                    "serverlist-view",
+                                                                      "Name_ServerList_TreeViewColumn":     "serverlist-view-name-column",
+                                                                      "Host_ServerList_TreeViewColumn":     "serverlist-view-host-column",
+                                                                      "Ping_ServerList_TreeViewColumn":     "serverlist-view-ping-column",
+                                                                      "Players_ServerList_TreeViewColumn":  "serverlist-view-players-column",
+                                                                      "GameMod_ServerList_TreeViewColumn":  "serverlist-view-game_mod-column",
+                                                                      "GameType_ServerList_TreeViewColumn": "serverlist-view-game_type-column",
+                                                                      "Terrain_ServerList_TreeViewColumn":  "serverlist-view-terrain-column",
+                                                                      "ServerList_Notebook":                "serverlist-notebook",
+                                                                      "ServerList_ScrolledWindow":          "serverlist-scrolledwindow",
+                                                                      "ServerList_Welcome_Label":           "serverlist-welcome-label",
+                                                                      "ServerList_Refresh_Spinner":         "serverlist-refresh-spinner",
+                                                                      "Error_Grid":                         "error-grid",
+                                                                      "Error_Message_Label":                "error-message-label",
+                                                                      "ServerHost_Entry":                   "serverhost-entry",
+                                                                      "ServerPass_Entry":                   "serverpass-entry"
                                                                       })
 
         self.server_list_model_format = ("host",
@@ -305,8 +317,8 @@ class GUIActions:
     def cb_server_host_entry_changed(self, *args):
         """Resets button sensitivity on Gtk.Entry change"""
         entry_field = self.gtk_widgets["serverhost-entry"]
-        info_button = self.gtk_widgets["serverlist-info-button"]
-        connect_button = self.gtk_widgets["serverlist-connect-button"]
+        info_button = self.gtk_widgets["action-info-button"]
+        connect_button = self.gtk_widgets["action-connect-button"]
 
         if entry_field.get_text() == '':
             info_button.set_sensitive(False)
@@ -390,11 +402,9 @@ class App(Gtk.Application):
 
         # Add main window
         main_window = self.builder.get_object("Main_Window")
-        main_window.set_title("Obozrenie")
         self.add_window(main_window)
 
         # Create menu actions
-        about_dialog = self.builder.get_object("About_Dialog")
         about_action = Gio.SimpleAction.new("about", None)
         quit_action = Gio.SimpleAction.new("quit", None)
 
@@ -405,6 +415,8 @@ class App(Gtk.Application):
         self.add_action(quit_action)
 
         self.set_app_menu(self.builder.get_object("app-menu"))
+
+        gtk_helpers.set_object_properties(self.guiactions.gtk_widgets, GTK_STRING_TABLE)
 
         self.status = "up"
 
