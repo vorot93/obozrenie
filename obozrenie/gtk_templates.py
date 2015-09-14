@@ -20,14 +20,15 @@
 
 from gi.repository import Gtk
 
+import obozrenie.gtk_helpers as gtk_helpers
 import obozrenie.i18n as i18n
 
 
 def get_checkbutton(label_text="", tooltip_text=""):
     checkbutton = Gtk.CheckButton.new()
 
-    checkbutton.set_label(i18n._(label_text))
-    checkbutton.set_tooltip_text(i18n._(tooltip_text))
+    checkbutton.set_property("label", i18n._(label_text))
+    checkbutton.set_property("tooltip-text", i18n._(tooltip_text))
 
     widget_group = {"container": checkbutton, "substance": checkbutton}
 
@@ -39,17 +40,15 @@ def get_entry_with_label(label_text="", tooltip_text=""):
     entry = Gtk.Entry()
     label = Gtk.Label()
 
-    label.set_text(i18n._(label_text))
-    label.set_halign(Gtk.Align.START)
+    widget_object_dict = {"grid": grid, "entry": entry, "label": label}
+    widget_property_dict = {"grid":  {"column-homogeneous": True,           "column-spacing": 5},
+                            "entry": {"tooltip-text": i18n._(tooltip_text), "halign": Gtk.Align.FILL, "hexpand-set": True, "hexpand": True},
+                            "label": {"label": i18n._(label_text),          "halign": Gtk.Align.END}}
 
-    entry.set_tooltip_text(i18n._(tooltip_text))
-    entry.set_halign(Gtk.Align.END)
+    gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
     grid.add(label)
     grid.add(entry)
-
-    grid.set_column_homogeneous(True)
-    grid.set_column_spacing(5)
 
     widget_group = {"container": grid, "substance": entry}
 
@@ -62,17 +61,15 @@ def get_textview_with_label(label_text="", tooltip_text="Single entry per line",
     text_buffer = text_view.get_buffer()
     label = Gtk.Label()
 
-    label.set_text(i18n._(label_text))
-    label.set_halign(Gtk.Align.START)
+    widget_object_dict = {"grid": grid, "text_view": text_view, "label": label}
+    widget_property_dict = {"grid":      {"column-homogeneous": True,           "column-spacing": 5},
+                            "text_view": {"tooltip-text": i18n._(tooltip_text), "halign": Gtk.Align.FILL, "hexpand-set": True, "hexpand": True, "left-margin": 8, "right-margin": 8},
+                            "label":     {"label": i18n._(label_text),          "halign": Gtk.Align.END,  "valign": Gtk.Align.START}}
 
-    text_view.set_tooltip_text(i18n._(tooltip_text))
-    text_view.set_halign(Gtk.Align.START)
+    gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
     grid.add(label)
     grid.add(text_view)
-
-    grid.set_column_homogeneous(True)
-    grid.set_column_spacing(5)
 
     widget_group = {"container": grid, "substance": text_buffer}
 
@@ -94,6 +91,27 @@ def get_option_widget(option_dict):
         widget = None
 
     return widget
+
+
+def get_preferences_grid(game, game_table, dynamic_settings_table):
+    grid = Gtk.Grid()
+
+    grid.set_orientation(Gtk.Orientation.VERTICAL)
+    grid.set_row_spacing(5)
+    grid.set_margin_bottom(10)
+
+    widget_option_mapping = {}
+
+    for option in game_table[game]["settings"]:
+        option_object = get_option_widget(dynamic_settings_table[option])
+
+        grid.add(option_object["container"])
+
+        widget_option_mapping[option] = option_object["substance"]
+
+    preferences_grid_info = {"widget": grid, "mapping": widget_option_mapping}
+
+    return preferences_grid_info
 
 
 class PreferencesDialog(Gtk.Dialog):
@@ -147,24 +165,3 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_logo_icon_name(icon)
 
         self.show_all()
-
-
-def get_preferences_grid(game, game_table, dynamic_settings_table):
-    grid = Gtk.Grid()
-
-    grid.set_orientation(Gtk.Orientation.VERTICAL)
-    grid.set_row_spacing(5)
-    grid.set_margin_bottom(10)
-
-    widget_option_mapping = {}
-
-    for option in game_table[game]["settings"]:
-        option_object = get_option_widget(dynamic_settings_table[option])
-
-        grid.add(option_object["container"])
-
-        widget_option_mapping[option] = option_object["substance"]
-
-    preferences_grid_info = {"widget": grid, "mapping": widget_option_mapping}
-
-    return preferences_grid_info

@@ -59,7 +59,7 @@ def stat_master(game, game_table_slice, proxy=None):
 
     game_name = game_table_slice["info"]["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
-    hosts_temp_array = game_table_slice["settings"]["master_uri"].split(',')
+    hosts_temp_array = list(game_table_slice["settings"]["master_uri"])
 
     for entry in hosts_temp_array:
         hosts_array.append(entry.strip())

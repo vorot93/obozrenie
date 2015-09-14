@@ -18,6 +18,7 @@
 
 """Useful functions for GTK+ UI"""
 
+import ast
 import os
 
 from gi.repository import GdkPixbuf, GLib, Gtk
@@ -81,41 +82,41 @@ def set_widget_value(widget, value, treeview_colnum=0):
     if value == 'None':
         value = None
     if isinstance(widget, Gtk.Adjustment):
-        widget.set_value(int(value))
+        widget.set_property("value", int(value))
     elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
         try:
             value = ast.literal_eval(value)
         except ValueError:
             value = False
-        widget.set_active(value)
-
+        widget.set_property("active", bool(value))
     elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-        widget.set_active_id(str(value))
-
+        widget.set_property("active-id", str(value))
     elif isinstance(widget, Gtk.Entry):
         if value is None:
             value = ""
-        widget.set_text(str(value))
-        if value is "":
+        widget.set_property("text", str(value))
+        if value == "":
             widget.emit("changed")
     elif isinstance(widget, Gtk.TreeView):
         model = widget.get_model()
         rownum = search_model(model, treeview_colnum, value)
         if rownum is not None:
             widget.get_selection().select_path(rownum)
+    elif isinstance(widget, Gtk.TextBuffer):
+        widget.set_property("text", value)
 
 
 def get_widget_value(widget, treeview_colnum=0):
     """Fetches widget setting."""
     value = None
     if isinstance(widget, Gtk.Adjustment):
-        value = widget.get_value()
+        value = widget.get_property("value")
     elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
-        value = widget.get_active()
+        value = widget.get_property("active")
     elif isinstance(widget, Gtk.ComboBox) or isinstance(widget, Gtk.ComboBoxText):
-        value = widget.get_active_id()
+        value = widget.get_property("active-id")
     elif isinstance(widget, Gtk.Entry):
-        value = widget.get_text()
+        value = widget.get_property("text")
     elif isinstance(widget, Gtk.TreeView):
         selection = None
         if isinstance(widget, Gtk.TreeSelection):
@@ -125,6 +126,8 @@ def get_widget_value(widget, treeview_colnum=0):
         model, treeiter = selection.get_selected()
         if treeview_colnum is not None and treeiter is not None:
             value = model[treeiter][treeview_colnum]
+    elif isinstance(widget, Gtk.TextBuffer):
+        value = widget.get_property("text")
 
     return value
 

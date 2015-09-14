@@ -1,72 +1,72 @@
 [rigsofrods]
 path = "RoR"
-master_uri = "http://api.rigsofrods.com/serverlist/"
+master_uri = ["http://api.rigsofrods.com/serverlist/"]
 
 [doom3]
 workdir = ""
 path = "doom3"
-master_uri = "idnet.ua-corp.com:27650"
+master_uri = ["idnet.ua-corp.com:27650"]
 
 [q2]
 workdir = ""
 path = "quake2"
-master_uri = "netdome.biz:27900"
+master_uri = ["netdome.biz:27900"]
 
 [q3a]
 workdir = ""
 path = "quake3"
-master_uri = "master3.idsoftware.com:27950, master.quake3arena.com:27950, master.ioquake3.org:27950, dpmaster.deathmask.net:27950, master.maverickservers.com:27950"
+master_uri = ["master3.idsoftware.com:27950", "master.quake3arena.com:27950", "master.ioquake3.org:27950", "dpmaster.deathmask.net:27950", "master.maverickservers.com:27950"]
 
 [q4]
 workdir = ""
 path = "quake4"
-master_uri = "q4master.idsoftware.com:27650"
+master_uri = ["q4master.idsoftware.com:27650"]
 
 [qw]
 workdir = ""
 path = "qwcl"
-master_uri = "qwmaster.ocrana.de:27000"
+master_uri = ["qwmaster.ocrana.de:27000"]
 
 [rtcw]
 workdir = ""
 path = "rtcwmp"
-master_uri = "107.161.23.68:27950"
+master_uri = ["107.161.23.68:27950"]
 
 [et]
 workdir = ""
 path = "et"
-master_uri = "etmaster.idsoftware.com:27950"
+master_uri = ["etmaster.idsoftware.com:27950"]
 
 [openarena]
 workdir = ""
 path = "openarena"
-master_uri = "master.ioquake3.org:27950, dpmaster.deathmask.net:27950"
+master_uri = ["master.ioquake3.org:27950", "dpmaster.deathmask.net:27950"]
 
 [openttd]
 path = "openttd"
-master_uri = "master.openttd.org:3978"
+master_uri = ["master.openttd.org:3978"]
 
 [turtlearena]
 workdir = ""
 path = "turtle_arena"
-master_uri = "master.ioquake3.org:27950, dpmaster.deathmask.net:27950"
+master_uri = ["master.ioquake3.org:27950", "dpmaster.deathmask.net:27950"]
 
 [unvanquished]
 workdir = ""
 path = "unvanquished"
-master_uri = "unvanquished.net:27950"
+master_uri = ["unvanquished.net:27950"]
 
 [wop]
 workdir = ""
 path = "wop"
-master_uri = "master.worldofpadman.com:27955"
+master_uri = ["master.worldofpadman.com:27955"]
 
 [urbanterror]
 workdir = ""
 path = "urbanterror"
-master_uri = "master.urbanterror.info:27900, master2.urbanterror.info:27900"
+master_uri = ["master.urbanterror.info:27900", "master2.urbanterror.info:27900"]
 
 [xonotic]
 workdir = ""
 path = "xonotic-sdl"
-master_uri = "ghdigital.com:27950, dpmaster.deathmask.net:27950, dpmaster.tchr.no:27950"
+master_uri = ["ghdigital.com:27950", "dpmaster.deathmask.net:27950", "dpmaster.tchr.no:27950"]

@@ -160,7 +160,7 @@ class GUIActions:
 
     def cb_game_treeview_togglebutton_clicked(self, *args):
         """Switches between TreeView and ComboBox game selection."""
-        if self.gtk_widgets["game-view-togglebutton"].get_active() is True:
+        if gtk_helpers.get_widget_value(self.gtk_widgets["game-view-togglebutton"]) is True:
             self.gtk_widgets["game-combobox-revealer"].set_reveal_child(False)
             self.gtk_widgets["game-view-revealer"].set_reveal_child(True)
         else:
@@ -293,7 +293,7 @@ class GUIActions:
         server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
-        a = self.gtk_widgets["serverhost-entry"].get_text()
+        a = gtk_helpers.get_widget_value(self.gtk_widgets["serverhost-entry"])
         model.clear()
         self.gtk_widgets["serverhost-entry"].set_text(a)
 
@@ -320,7 +320,7 @@ class GUIActions:
         info_button = self.gtk_widgets["action-info-button"]
         connect_button = self.gtk_widgets["action-connect-button"]
 
-        if entry_field.get_text() == '':
+        if gtk_helpers.get_widget_value(entry_field) == '':
             info_button.set_sensitive(False)
             connect_button.set_sensitive(False)
         else:
@@ -334,7 +334,7 @@ class GUIActions:
         for option in widget_option_mapping:
             value = self.core.game_table[game]["settings"][option]
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
-                value.join("\n")
+                value = "\n".join(value)
             gtk_helpers.set_widget_value(widget_option_mapping[option], value)
 
     def update_settings_table(self, *args):
@@ -343,14 +343,13 @@ class GUIActions:
                 # Define variables
                 widget_name = self.widget_table[group][option]["gtk_widget_name"]
                 widget = self.builder.get_object(widget_name)
-
                 self.app.settings.settings_table[group][option] = str(gtk_helpers.get_widget_value(widget))
 
     def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
         for option in widget_option_mapping:
             value = gtk_helpers.get_widget_value(widget_option_mapping[option])
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
-                value.split("\n")
+                value = value.split("\n")
             self.core.game_table[game]["settings"][option] = value
 
     def cb_post_settings_genload(self, widget_table, group, option, value):
@@ -399,9 +398,10 @@ class App(Gtk.Application):
 
         # Connect signals
         self.builder.connect_signals(self.guiactions)
+        self.guiactions.cb_game_treeview_togglebutton_clicked()
 
         # Add main window
-        main_window = self.builder.get_object("Main_Window")
+        main_window = self.guiactions.gtk_widgets["main-window"]
         self.add_window(main_window)
 
         # Create menu actions
@@ -421,7 +421,7 @@ class App(Gtk.Application):
         self.status = "up"
 
     def on_activate(self, app):
-        window = self.builder.get_object("Main_Window")
+        window = self.guiactions.gtk_widgets["main-window"]
         window.show_all()
 
     def on_shutdown(self, app):

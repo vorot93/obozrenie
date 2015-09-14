@@ -124,7 +124,7 @@ def stat_master(game, game_table_slice, proxy=None):
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-    master_uri_list = game_table_slice["settings"]["master_uri"].split(',')
+    master_uri_list = list(game_table_slice["settings"]["master_uri"])
 
     parser = ServerListParser()
 

@@ -2,5 +2,5 @@
 nickname = ""
 server-pass = ""
 server-host = "127.0.0.1"
-pinging-enable = false
 selected-game = ""
+game-listview = true

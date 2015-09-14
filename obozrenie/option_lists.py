@@ -24,7 +24,8 @@ def get_common_options():
                    'common': {
                               'selected-game': {'gtk_widget_name': "Game_TreeView"},
                               'server-host':   {'gtk_widget_name': "ServerHost_Entry"},
-                              'server-pass':   {'gtk_widget_name': "ServerPass_Entry"}
+                              'server-pass':   {'gtk_widget_name': "ServerPass_Entry"},
+                              'game-listview': {'gtk_widget_name': "Game_View_ToggleButton"}
                              }
                   }
 
@@ -48,7 +49,7 @@ def get_game_options():
                    'master_uri': {
                                  'name':        i18n._("Master URI list"),
                                  'description': i18n._("List of master servers to query"),
-                                 'gtk_type':    "Entry with Label"
+                                 'gtk_type':    "Multiline Entry with Label"
                                  }
                   }
 
