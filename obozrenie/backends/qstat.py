@@ -17,6 +17,7 @@ import os
 import re
 
 import ast
+import json
 import subprocess
 import time
 import xmltodict
@@ -78,7 +79,7 @@ def stat_master(game, game_table_slice, proxy=None):
     qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
     server_table_qstat_xml = qstat_output.decode()
     stat_end_time = time.time()
-    server_table_dict = xmltodict.parse(server_table_qstat_xml)
+    server_table_dict = json.loads(json.dumps(xmltodict.parse(server_table_qstat_xml)))
 
     stat_total_time = stat_end_time - stat_start_time
     print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Received server info. Elapsed time: %(stat_time)s s.") % {'game': game_name, 'stat_time': round(stat_total_time, 2)})
@@ -121,20 +122,34 @@ def stat_master(game, game_table_slice, proxy=None):
                         server_table[-1]['name'] = None
                     else:
                         server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
-                    server_table[-1]['game_type'] = qstat_entry['gametype']
-                    server_table[-1]['terrain'] = qstat_entry['map']
+                    server_table[-1]['game_type'] = str(qstat_entry['gametype'])
+                    server_table[-1]['terrain'] = str(qstat_entry['map'])
                     server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
                     server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
                     server_table[-1]['ping'] = int(qstat_entry['ping'])
+                    server_table[-1]['players'] = []
 
                     for rule in qstat_entry['rules']['rule']:
                         try:
                             if rule['@name'] == 'game':
-                                server_table[-1]['game_mod'] = rule['#text']
-                            if rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
+                                server_table[-1]['game_mod'] = str(rule['#text'])
+                            elif rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
                                 server_table[-1]['password'] = bool(int(rule['#text']))
                         except TypeError:
                             pass
+                    if qstat_entry['players'] is not None:
+                        if isinstance(qstat_entry['players']['player'], dict):
+                            player = qstat_entry['players']['player']
+                            qstat_entry['players']['player'] = [player]
+
+                        for player in qstat_entry['players']['player']:
+                            server_table[-1]['players'].append({})
+                            server_table[-1]['players'][-1]['name'] = player['name']
+                            server_table[-1]['players'][-1]['score'] = player['score']
+                            server_table[-1]['players'][-1]['ping'] = player['ping']
+                    else:
+                        server_table[-1]['players'] = None
+
 
     if proxy is not None:
         for entry in server_table:
