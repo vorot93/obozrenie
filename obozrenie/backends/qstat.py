@@ -144,9 +144,9 @@ def stat_master(game, game_table_slice, proxy=None):
 
                         for player in qstat_entry['players']['player']:
                             server_table[-1]['players'].append({})
-                            server_table[-1]['players'][-1]['name'] = player['name']
-                            server_table[-1]['players'][-1]['score'] = player['score']
-                            server_table[-1]['players'][-1]['ping'] = player['ping']
+                            server_table[-1]['players'][-1]['name'] = re.sub(color_code_pattern, '', str(player['name']))
+                            server_table[-1]['players'][-1]['score'] = int(player['score'])
+                            server_table[-1]['players'][-1]['ping'] = int(player['ping'])
                     else:
                         server_table[-1]['players'] = None
 
