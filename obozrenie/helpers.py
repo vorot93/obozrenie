@@ -56,10 +56,12 @@ def search_table(table, level, value):
 
 
 def search_dict_table(table, key, value):
-        for i in range(len(table)):
-            if table[i][key] == value:
-                return i
-        return None
+    result = None
+    for i in range(len(table)):
+        if table[i][key] == value:
+            result = i
+            break
+    return result
 
 
 def flatten_dict_table(dict_table, leading_key_spec):

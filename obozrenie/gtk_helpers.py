@@ -97,6 +97,8 @@ def set_widget_value(widget, value, treeview_colnum=0):
         widget.set_property("text", str(value))
         if value == "":
             widget.emit("changed")
+    elif isinstance(widget, Gtk.Label):
+        widget.set_property("label", str(value))
     elif isinstance(widget, Gtk.TreeView):
         model = widget.get_model()
         rownum = search_model(model, treeview_colnum, value)
@@ -106,7 +108,7 @@ def set_widget_value(widget, value, treeview_colnum=0):
         widget.set_property("text", value)
 
 
-def get_widget_value(widget, treeview_colnum=0):
+def get_widget_value(widget):
     """Fetches widget setting."""
     value = None
     if isinstance(widget, Gtk.Adjustment):
@@ -117,6 +119,8 @@ def get_widget_value(widget, treeview_colnum=0):
         value = widget.get_property("active-id")
     elif isinstance(widget, Gtk.Entry):
         value = widget.get_property("text")
+    elif isinstance(widget, Gtk.Label):
+        value = widget.get_property("label")
     elif isinstance(widget, Gtk.TreeView):
         selection = None
         if isinstance(widget, Gtk.TreeSelection):
@@ -124,8 +128,8 @@ def get_widget_value(widget, treeview_colnum=0):
         else:
             selection = widget.get_selection()
         model, treeiter = selection.get_selected()
-        if treeview_colnum is not None and treeiter is not None:
-            value = model[treeiter][treeview_colnum]
+        if treeiter is not None:
+            value = tuple(model[treeiter])
     elif isinstance(widget, Gtk.TextBuffer):
         value = widget.get_property("text")
 

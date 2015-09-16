@@ -21,6 +21,7 @@
 
 import argparse
 import ast
+import copy
 import os
 import shutil
 import threading
@@ -48,36 +49,59 @@ class GUIActions:
 
         self.gtk_widgets = {}
 
-        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Main_Window":                        "main-window",
-                                                                      "Game_ComboBox":                      "game-combobox",
-                                                                      "Game_TreeView":                      "game-treeview",
-                                                                      "Game_TreeView_Column":               "game-treeview-column",
-                                                                      "Game_Store":                         "game-model",
-                                                                      "Game_ComboBox_Revealer":             "game-combobox-revealer",
-                                                                      "Game_View_Revealer":                 "game-view-revealer",
-                                                                      "Game_View_ToggleButton":             "game-view-togglebutton",
-                                                                      "Game_Preferences_Button":            "game-preferences-button",
-                                                                      "Update_Button":                      "action-update-button",
-                                                                      "Info_Button":                        "action-info-button",
-                                                                      "Connect_Button":                     "action-connect-button",
-                                                                      "Filters_Button":                     "filters-button",
-                                                                      "ServerList_Store":                   "serverlist-model",
-                                                                      "ServerList_View":                    "serverlist-view",
-                                                                      "Name_ServerList_TreeViewColumn":     "serverlist-view-name-column",
-                                                                      "Host_ServerList_TreeViewColumn":     "serverlist-view-host-column",
-                                                                      "Ping_ServerList_TreeViewColumn":     "serverlist-view-ping-column",
-                                                                      "Players_ServerList_TreeViewColumn":  "serverlist-view-players-column",
-                                                                      "GameMod_ServerList_TreeViewColumn":  "serverlist-view-game_mod-column",
-                                                                      "GameType_ServerList_TreeViewColumn": "serverlist-view-game_type-column",
-                                                                      "Terrain_ServerList_TreeViewColumn":  "serverlist-view-terrain-column",
-                                                                      "ServerList_Notebook":                "serverlist-notebook",
-                                                                      "ServerList_ScrolledWindow":          "serverlist-scrolledwindow",
-                                                                      "ServerList_Welcome_Label":           "serverlist-welcome-label",
-                                                                      "ServerList_Refresh_Spinner":         "serverlist-refresh-spinner",
-                                                                      "Error_Grid":                         "error-grid",
-                                                                      "Error_Message_Label":                "error-message-label",
-                                                                      "ServerHost_Entry":                   "serverhost-entry",
-                                                                      "ServerPass_Entry":                   "serverpass-entry"
+        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Game_Store":                             "game-model",
+                                                                      "ServerList_Store":                       "serverlist-model",
+                                                                      "playerlist-store":                       "playerlist-model",
+                                                                      "Main_Window":                            "main-window",
+                                                                      "Game_ComboBox":                          "game-combobox",
+                                                                      "Game_TreeView":                          "game-treeview",
+                                                                      "Game_TreeView_Column":                   "game-treeview-column",
+                                                                      "Game_Store":                             "game-model",
+                                                                      "Game_ComboBox_Revealer":                 "game-combobox-revealer",
+                                                                      "Game_View_Revealer":                     "game-view-revealer",
+                                                                      "Game_View_ToggleButton":                 "game-view-togglebutton",
+                                                                      "Game_Preferences_Button":                "game-preferences-button",
+                                                                      "Update_Button":                          "action-update-button",
+                                                                      "Info_Button":                            "action-info-button",
+                                                                      "Connect_Button":                         "action-connect-button",
+                                                                      "Filters_Button":                         "filters-button",
+                                                                      "ServerList_Store":                       "serverlist-model",
+                                                                      "ServerList_View":                        "serverlist-view",
+                                                                      "Name_ServerList_TreeViewColumn":         "serverlist-view-name-column",
+                                                                      "Host_ServerList_TreeViewColumn":         "serverlist-view-host-column",
+                                                                      "Ping_ServerList_TreeViewColumn":         "serverlist-view-ping-column",
+                                                                      "Players_ServerList_TreeViewColumn":      "serverlist-view-players-column",
+                                                                      "GameMod_ServerList_TreeViewColumn":      "serverlist-view-game_mod-column",
+                                                                      "GameType_ServerList_TreeViewColumn":     "serverlist-view-game_type-column",
+                                                                      "Terrain_ServerList_TreeViewColumn":      "serverlist-view-terrain-column",
+                                                                      "ServerList_Notebook":                    "serverlist-notebook",
+                                                                      "ServerList_ScrolledWindow":              "serverlist-scrolledwindow",
+                                                                      "ServerList_Welcome_Label":               "serverlist-welcome-label",
+                                                                      "ServerList_Refresh_Spinner":             "serverlist-refresh-spinner",
+                                                                      "Error_Grid":                             "error-grid",
+                                                                      "Error_Message_Label":                    "error-message-label",
+                                                                      "ServerHost_Entry":                       "serverhost-entry",
+                                                                      "ServerPass_Entry":                       "serverpass-entry",
+                                                                      "serverinfo-dialog":                      "serverinfo-dialog",
+                                                                      "serverinfo-name-label":                  "serverinfo-name-label",
+                                                                      "serverinfo-name-data":                   "serverinfo-name",
+                                                                      "serverinfo-host-label":                  "serverinfo-host-label",
+                                                                      "serverinfo-host-data":                   "serverinfo-host",
+                                                                      "serverinfo-game-label":                  "serverinfo-game-label",
+                                                                      "serverinfo-game-data":                   "serverinfo-game",
+                                                                      "serverinfo-terrain-label":               "serverinfo-terrain-label",
+                                                                      "serverinfo-terrain-data":                "serverinfo-terrain",
+                                                                      "serverinfo-players-label":               "serverinfo-players-label",
+                                                                      "serverinfo-players-data":                "serverinfo-players",
+                                                                      "serverinfo-ping-label":                  "serverinfo-ping-label",
+                                                                      "serverinfo-ping-data":                   "serverinfo-ping",
+                                                                      "serverinfo-connect-button":              "serverinfo-connect-button",
+                                                                      "serverinfo-close-button":                "serverinfo-close-button",
+                                                                      "serverinfo-players-scrolledview":        "serverinfo-players-scrolledview",
+                                                                      "serverinfo-players-treeview":            "serverinfo-players-view",
+                                                                      "serverinfo-players-name-treeviewcolumn": "serverinfo-players-name-column",
+                                                                      "serverinfo-players-score-treeviewcolumn":"serverinfo-players-score-column",
+                                                                      "serverinfo-players-ping-treeviewcolumn": "serverinfo-players-ping-column"
                                                                       })
 
         self.server_list_model_format = ("host",
@@ -95,6 +119,10 @@ class GUIActions:
                                          "password_icon",
                                          "country_icon")
 
+        self.player_list_model_format = ("name",
+                                         "score",
+                                         "ping")
+
         self.serverlist_notebook_pages = gtk_helpers.get_notebook_page_dict(self.gtk_widgets["serverlist-notebook"], {"servers": self.gtk_widgets["serverlist-scrolledwindow"],
                                                                                                                       "welcome": self.gtk_widgets["serverlist-welcome-label"],
                                                                                                                       "loading": self.gtk_widgets["serverlist-refresh-spinner"],
@@ -110,7 +138,8 @@ class GUIActions:
             self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
         except TypeError and AttributeError:
             self.flag_icons = {}
-        game_list = self.core.game_table.keys()
+        game_table = self.core.game_table.copy()
+        game_list = game_table.keys()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
     def cb_game_preferences_button_clicked(self, *args):
@@ -126,11 +155,38 @@ class GUIActions:
 
     def cb_info_button_clicked(self, *args):
         """Shows server information window."""
-        pass
+        dialog = self.gtk_widgets["serverinfo-dialog"]
+
+        game_table = copy.deepcopy(self.core.game_table)
+        game = self.app.settings.settings_table["common"]["selected-game"]
+        server_list_table = game_table[game]["servers"]
+        host = self.app.settings.settings_table["common"]["server-host"]
+        server_entry = server_list_table[helpers.search_dict_table(server_list_table, "host", host)]
+        player_model = self.gtk_widgets["playerlist-model"]
+        player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
+
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], server_entry["game_id"])
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], str(server_entry["player_count"]) + " / " + str(server_entry["player_limit"]))
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
+
+        player_model.clear()
+        try:
+            player_table = helpers.dict_to_list(server_entry["players"], self.player_list_model_format)
+            for entry in player_table:
+                player_model.append(entry)
+            player_scrolledview.set_property("visible", True)
+        except:
+            player_scrolledview.set_property("visible", False)
+
+        dialog.run()
+        dialog.hide()
 
     def cb_connect_button_clicked(self, *args):
         """Starts the game."""
-        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"], treeview_colnum=self.server_list_model_format.index("game_id"))
+        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"])[self.server_list_model_format.index("game_id")]
         if game is None:
             game = self.app.settings.settings_table["common"]["selected-game"]
         server = self.app.settings.settings_table["common"]["server-host"]
@@ -144,6 +200,10 @@ class GUIActions:
         about_dialog = templates.AboutDialog(parent, PROJECT, DESCRIPTION, WEBSITE, VERSION, AUTHORS, ARTISTS, COPYRIGHT, Gtk.License.GPL_3_0, None)
         about_dialog.run()
         about_dialog.destroy()
+
+    @staticmethod
+    def cb_hide(widget, *args):
+        widget.hide()
 
     def cb_quit(self, *args):
         """Exits the program."""
@@ -264,7 +324,7 @@ class GUIActions:
     def fill_server_list_model(self, server_table):
         """Fill the server view"""
 
-        view_table = server_table.copy()
+        view_table = copy.deepcopy(server_table)
 
         model = self.gtk_widgets["serverlist-model"]
         model_append = model.append
@@ -305,9 +365,12 @@ class GUIActions:
         entry_field = self.gtk_widgets["serverhost-entry"]
         treeview = self.gtk_widgets["serverlist-view"]
 
-        text = gtk_helpers.get_widget_value(treeview, treeview_colnum=self.server_list_model_format.index("host"))
+        try:
+            text = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("host")]
 
-        gtk_helpers.set_widget_value(entry_field, text)
+            gtk_helpers.set_widget_value(entry_field, text)
+        except:
+            pass
 
     def cb_server_list_view_row_activated(self, widget, path, column, *data):
         """Launches the game"""
@@ -343,7 +406,10 @@ class GUIActions:
                 # Define variables
                 widget_name = self.widget_table[group][option]["gtk_widget_name"]
                 widget = self.builder.get_object(widget_name)
-                self.app.settings.settings_table[group][option] = str(gtk_helpers.get_widget_value(widget))
+                value = gtk_helpers.get_widget_value(widget)
+                if isinstance(widget, Gtk.TreeView) and "gtk_widget_colnum" in self.widget_table[group][option].keys():
+                    value = value[self.widget_table[group][option]["gtk_widget_colnum"]]
+                self.app.settings.settings_table[group][option] = str(value)
 
     def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
         for option in widget_option_mapping:

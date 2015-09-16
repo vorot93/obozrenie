@@ -60,5 +60,17 @@ GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
                     "serverhost-entry":                 {"placeholder-text": i18n._("Host address"),
                                                          "tooltip-text":     i18n._("Server address to connect to. Automatically filled on changing server list selection.")},
                     "serverpass-entry":                 {"placeholder-text": i18n._("Password"),
-                                                         "tooltip-text":     i18n._("The server password, if required.")}
+                                                         "tooltip-text":     i18n._("The server password, if required.")},
+                    "serverinfo-dialog":                {"title": i18n._("Server information")},
+                    "serverinfo-name-label":            {"label": i18n._("Name:")},
+                    "serverinfo-host-label":            {"label": i18n._("Host:")},
+                    "serverinfo-game-label":            {"label": i18n._("Game:")},
+                    "serverinfo-terrain-label":         {"label": i18n._("Terrain:")},
+                    "serverinfo-players-label":         {"label": i18n._("Players:")},
+                    "serverinfo-ping-label":            {"label": i18n._("Ping:")},
+                    "serverinfo-connect-button":        {"label": i18n._("Connect")},
+                    "serverinfo-close-button":          {"label": i18n._("Close")},
+                    "serverinfo-players-name-column":   {"title": i18n._("Name")},
+                    "serverinfo-players-score-column":  {"title": i18n._("Score")},
+                    "serverinfo-players-ping-column":   {"title": i18n._("Ping")}
                     }

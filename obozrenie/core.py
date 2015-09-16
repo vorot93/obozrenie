@@ -19,6 +19,7 @@
 """Core functions for Obozrenie Game Server Browser."""
 
 from collections import OrderedDict
+import copy
 import os
 import multiprocessing
 import threading
@@ -107,7 +108,7 @@ class Core:
             try:
                 mgr = multiprocessing.Manager()
                 server_list_proxy = mgr.list()
-                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, table[game].copy(), server_list_proxy))
+                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, copy.deepcopy(table[game]), server_list_proxy))
                 backend_process.daemon=True
                 backend_process.start()
                 backend_process.join()
@@ -137,7 +138,7 @@ class Core:
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:
-            GLib.idle_add(callback, game, table.copy())
+            GLib.idle_add(callback, game, copy.deepcopy(table))
 
     def start_game(self, game, server, password):
         """Start game"""

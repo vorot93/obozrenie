@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Obozrenie 0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-13 17:12+0300\n"
+"POT-Creation-Date: 2015-09-17 01:25+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,30 +17,30 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.0\n"
 
-#: obozrenie/core.py:51
+#: obozrenie/core.py:52
 #, python-format
 msgid "GeoIP data file %(geoip_data_file)s opened successfully."
 msgstr ""
 
-#: obozrenie/core.py:54
+#: obozrenie/core.py:55
 msgid "GeoIP data file not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:57
+#: obozrenie/core.py:58
 msgid "PyGeoIP not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:104
+#: obozrenie/core.py:105
 #, python-format
 msgid "Refreshing server list for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:115
+#: obozrenie/core.py:116
 #, python-format
 msgid "Internal backend error for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:232
+#: obozrenie/core.py:233
 msgid ""
 "This is the core module of Obozrenie Game Server Browser.\n"
 "Please run an appropriate UI instead."
@@ -128,7 +128,7 @@ msgstr ""
 msgid "Set up server filters."
 msgstr ""
 
-#: obozrenie/global_strings.py:51
+#: obozrenie/global_strings.py:51 obozrenie/global_strings.py:73
 msgid "Name"
 msgstr ""
 
@@ -136,7 +136,7 @@ msgstr ""
 msgid "Host"
 msgstr ""
 
-#: obozrenie/global_strings.py:53
+#: obozrenie/global_strings.py:53 obozrenie/global_strings.py:75
 msgid "Ping"
 msgstr ""
 
@@ -184,85 +184,125 @@ msgstr ""
 msgid "The server password, if required."
 msgstr ""
 
-#: obozrenie/gtk.py:394
+#: obozrenie/global_strings.py:64
+msgid "Server information"
+msgstr ""
+
+#: obozrenie/global_strings.py:65
+msgid "Name:"
+msgstr ""
+
+#: obozrenie/global_strings.py:66
+msgid "Host:"
+msgstr ""
+
+#: obozrenie/global_strings.py:67
+msgid "Game:"
+msgstr ""
+
+#: obozrenie/global_strings.py:68
+msgid "Terrain:"
+msgstr ""
+
+#: obozrenie/global_strings.py:69
+msgid "Players:"
+msgstr ""
+
+#: obozrenie/global_strings.py:70
+msgid "Ping:"
+msgstr ""
+
+#: obozrenie/global_strings.py:71
+msgid "Connect"
+msgstr ""
+
+#: obozrenie/global_strings.py:72
+msgid "Close"
+msgstr ""
+
+#: obozrenie/global_strings.py:74
+msgid "Score"
+msgstr ""
+
+#: obozrenie/gtk.py:459
 msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/gtk.py:431
+#: obozrenie/gtk.py:497
 msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/gtk.py:434
+#: obozrenie/gtk.py:500
 msgid "Initialization failed. Aborting."
 msgstr ""
 
-#: obozrenie/gtk_templates.py:93
+#: obozrenie/gtk_templates.py:90
 #, python-format
 msgid "No widget generated for type %(widget_type)s"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:121
+#: obozrenie/gtk_templates.py:139
 #, python-format
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:124
+#: obozrenie/gtk_templates.py:142
 msgid "Save"
 msgstr ""
 
-#: obozrenie/option_lists.py:37
+#: obozrenie/option_lists.py:38
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/option_lists.py:38
+#: obozrenie/option_lists.py:39
 msgid "Path to the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:43
+#: obozrenie/option_lists.py:44
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/option_lists.py:44
+#: obozrenie/option_lists.py:45
 msgid "Working directory of the game"
 msgstr ""
 
-#: obozrenie/option_lists.py:49
+#: obozrenie/option_lists.py:50
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/option_lists.py:50
+#: obozrenie/option_lists.py:51
 msgid "List of master servers to query"
 msgstr ""
 
-#: obozrenie/backends/qstat.py:32
+#: obozrenie/backends/qstat.py:33
 msgid "QStat:"
 msgstr ""
 
-#: obozrenie/backends/qstat.py:76
+#: obozrenie/backends/qstat.py:77
 #, python-format
 msgid "|%(game)s| Requesting server info."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:84
+#: obozrenie/backends/qstat.py:85
 #, python-format
 msgid "|%(game)s| Received server info. Elapsed time: %(stat_time)s s."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:89
+#: obozrenie/backends/qstat.py:90
 #, python-format
 msgid ""
 "|%(game)s| No valid masters specified. Please check your master server "
 "settings."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:98
+#: obozrenie/backends/qstat.py:99
 #, python-format
 msgid ""
 "|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, "
 "server count: %(servers)s."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:100
+#: obozrenie/backends/qstat.py:101
 #, python-format
 msgid "|%(game)s| Master query failed. Address: %(address)s, status: %(status)s."
 msgstr ""
