@@ -10,6 +10,12 @@ master_type = "WOETM"
 server_key = "woets"
 server_type = "WOETS"
 
+[game.jediacademy]
+master_key = "jk3m"
+master_type = "JK3M"
+server_key = "jk3s"
+server_type = "JK3S"
+
 [game.jedioutcast]
 master_key = "jk2m"
 master_type = "JK2M"

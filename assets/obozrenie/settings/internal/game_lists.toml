@@ -10,6 +10,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[jediacademy]
+name = "Star Wars Jedi Knight II: Jedi Academy"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [jedioutcast]
 name = "Star Wars Jedi Knight II: Jedi Outcast"
 backend = "qstat"
