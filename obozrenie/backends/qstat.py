@@ -127,8 +127,8 @@ def stat_master(game, game_table_slice, proxy=None):
                         if qstat_entry['name'] is None:
                             server_table[-1]['name'] = None
                         else:
-                            server_table[-1]['name'] = re.sub(color_code_pattern, '', qstat_entry['name'])
-                        server_table[-1]['game_type'] = str(qstat_entry['gametype'])
+                            server_table[-1]['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
+                        server_table[-1]['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
                         server_table[-1]['terrain'] = str(qstat_entry['map'])
                         server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
                         server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
