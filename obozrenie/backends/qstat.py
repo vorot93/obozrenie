@@ -142,17 +142,15 @@ def stat_master(game, game_table_slice, proxy=None):
                                 qstat_entry['rules']['rule'] = [rule]
 
                             for rule in qstat_entry['rules']['rule']:
-                                try:
+                                if '#text' in rule.keys():
                                     server_table[-1]['rules'][rule['@name']] = rule['#text']
-                                except:
-                                    pass
-                                try:
-                                    if rule['@name'] == 'game':
-                                        server_table[-1]['game_mod'] = str(rule['#text'])
-                                    elif rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
-                                        server_table[-1]['password'] = bool(int(rule['#text']))
-                                except TypeError:
-                                    pass
+                                else:
+                                    server_table[-1]['rules'][rule['@name']] = None
+
+                                if rule['@name'] == 'game':
+                                    server_table[-1]['game_mod'] = str(rule['#text'])
+                                elif rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
+                                    server_table[-1]['password'] = bool(int(rule['#text']))
                         if qstat_entry['players'] is not None:
                             if isinstance(qstat_entry['players']['player'], dict):
                                 player = qstat_entry['players']['player']
