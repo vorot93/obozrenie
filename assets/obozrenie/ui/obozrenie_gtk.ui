@@ -20,7 +20,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
 <interface>
-  <requires lib="gtk+" version="3.12"/>
+  <requires lib="gtk+" version="3.10"/>
   <!-- interface-license-type gplv3 -->
   <!-- interface-name Obozrenie -->
   <!-- interface-description Game Server Browser -->
