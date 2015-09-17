@@ -142,7 +142,10 @@ def stat_master(game, game_table_slice, proxy=None):
                                 qstat_entry['rules']['rule'] = [rule]
 
                             for rule in qstat_entry['rules']['rule']:
-                                server_table[-1]['rules'][rule['@name']] = rule['#text']
+                                try:
+                                    server_table[-1]['rules'][rule['@name']] = rule['#text']
+                                except:
+                                    pass
                                 try:
                                     if rule['@name'] == 'game':
                                         server_table[-1]['game_mod'] = str(rule['#text'])
