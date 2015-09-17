@@ -46,6 +46,11 @@ master_uri = ["master.ioquake3.org:27950", "dpmaster.deathmask.net:27950"]
 path = "openttd"
 master_uri = ["master.openttd.org:3978"]
 
+[stef1]
+workdir = ""
+path = "iostvoyHM"
+master_uri = ["master.stef1.ravensoft.com:27953"]
+
 [turtlearena]
 workdir = ""
 path = "turtle_arena"

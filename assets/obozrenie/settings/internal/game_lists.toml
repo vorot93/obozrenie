@@ -58,6 +58,12 @@ backend = "qstat"
 launch_pattern = "openttd"
 settings = ["path", "master_uri"]
 
+[stef1]
+name = "Star Trek: Voyager - Elite Force"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [turtlearena]
 name = "Turtle Arena"
 backend = "qstat"

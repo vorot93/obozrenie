@@ -52,6 +52,12 @@ master_type = "OTTDM"
 server_key = "ottds"
 server_type = "OTTDS"
 
+[game.stef1]
+master_key = "efm"
+master_type = "EFM"
+server_key = "efs"
+server_type = "EFS"
+
 [game.turtlearena]
 master_key = "turtlearenam"
 master_type = "TURTLEARENAM"
