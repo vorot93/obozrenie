@@ -30,12 +30,12 @@ def get_icon_dict(key_list, icon_type, icon_format, icon_dir, width, height, err
     for entry in key_list:
         try:
             icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, entry.lower() + "." + icon_format), width, height)
-        except GLib.Error:
+        except:
             if error_msg is not None:
                 error_msg(entry)
             try:
                 icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, 'unknown' + "." + icon_format), width, height)
-            except GLib.Error:
+            except:
                 icon_dict[entry] = None
 
     return icon_dict
