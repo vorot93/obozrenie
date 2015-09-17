@@ -7,6 +7,11 @@ workdir = ""
 path = "doom3"
 master_uri = ["idnet.ua-corp.com:27650"]
 
+[jedioutcast]
+workdir = ""
+path = "jk2mp"
+master_uri = ["masterjk2.ravensoft.com:28060", "master.ouned.de:28060"]
+
 [q2]
 workdir = ""
 path = "quake2"

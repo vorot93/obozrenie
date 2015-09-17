@@ -10,6 +10,12 @@ master_type = "WOETM"
 server_key = "woets"
 server_type = "WOETS"
 
+[game.jedioutcast]
+master_key = "jk2m"
+master_type = "JK2M"
+server_key = "jk2s"
+server_type = "JK2S"
+
 [game.openarena]
 master_key = "openarenam"
 master_type = "OPENARENAM"
