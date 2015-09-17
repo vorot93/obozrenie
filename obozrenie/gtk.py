@@ -167,7 +167,7 @@ class GUIActions:
 
         gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
         gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], server_entry["game_id"])
+        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
         gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
         gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], str(server_entry["player_count"]) + " / " + str(server_entry["player_limit"]))
         gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
@@ -185,13 +185,19 @@ class GUIActions:
         dialog.hide()
 
     def cb_connect_button_clicked(self, *args):
-        """Starts the game."""
         game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"])[self.server_list_model_format.index("game_id")]
-        if game is None:
-            game = self.app.settings.settings_table["common"]["selected-game"]
         server = self.app.settings.settings_table["common"]["server-host"]
         password = self.app.settings.settings_table["common"]["server-pass"]
+        self.cb_server_connect(game, server, password)
 
+    def cb_serverinfo_connect_button_clicked(self, *args):
+        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-game"])
+        server = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-host"])
+        password = self.app.settings.settings_table["common"]["server-pass"]
+        self.cb_server_connect(game, server, password)
+
+    def cb_server_connect(self, game, server, password):
+        """Starts the game."""
         self.core.start_game(game, server, password)
 
     @staticmethod
