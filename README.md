@@ -15,6 +15,21 @@ Obozrenie is a game server browser that can be used to access information about 
 ## Screenshot
 ![](screenshot.png)
 
+## Dependencies
+### Required:
+- [Python 3.2+](https://python.org)
+- [PythonGI with GTK+ 3.10+ and higher](https://wiki.gnome.org/Projects/PyGObject)
+- [BeautifulSoup4](http://crummy.com/software/BeautifulSoup)
+- [PyXDG](http://freedesktop.org/Software/pyxdg)
+- [python-pytoml](https://github.com/avakar/pytoml)
+- [python-xmltodict](https://github.com/martinblech/xmltodict)
+- [python-setuptools](http://pypi.python.org/pypi/setuptools)
+
+### Optional:
+- [QStat](https://github.com/multiplay/qstat) - for QStat backend support
+- [Babel](http://babel.pocoo.org) - for translation support
+- [PyGeoIP](https://github.com/appliedsec/pygeoip) with GeoIP database - for geolocation support
+
 ## Get it
     git clone https://github.com/obozrenie/obozrenie.git
     cd obozrenie
