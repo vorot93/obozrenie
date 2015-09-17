@@ -466,10 +466,10 @@ class App(Gtk.Application):
         self.status = "starting"
         self.guiactions.fill_game_store()
         self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
-        gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], gtk_helpers.get_widget_value(self.guiactions.gtk_widgets["game-treeview"]))
 
         # Connect signals
         self.builder.connect_signals(self.guiactions)
+        gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game"])
         self.guiactions.cb_game_treeview_togglebutton_clicked()
 
         # Add main window
