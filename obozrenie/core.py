@@ -112,29 +112,32 @@ class Core:
                 backend_process.daemon=True
                 backend_process.start()
                 backend_process.join()
-            except KeyError:
-                print(CORE_MSG + i18n._("Internal backend error for %(game)s.") % {'game': table[game]["info"]["name"]}, ERROR_MSG)
+                if len(server_list_proxy) > 0 and server_list_proxy[0] is Exception:
+                    raise Exception
+            except Exception as e:
+                print(CORE_MSG, e)
+                print(CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': table[game]["info"]["name"]}, ERROR_MSG)
                 table[game]["query-status"] = "error"
-                exit(1)
 
             # ListProxy -> list
-            table[game]["servers"] = []
-            server_table = table[game]["servers"]
-            for entry in server_list_proxy:
-                server_table.append(entry)
+            if table[game]["query-status"] != "error":
+                table[game]["servers"] = []
+                server_table = table[game]["servers"]
+                for entry in server_list_proxy:
+                    server_table.append(entry)
 
-            for entry in table[game]["servers"]:
-                entry['country'] = "unknown"
-                if self.geolocation is not None:
-                    host = entry["host"].split(':')[0]
-                    try:
-                        entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
-                    except OSError:
-                        entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
-                    except:
-                        pass
+                for entry in table[game]["servers"]:
+                    entry['country'] = "unknown"
+                    if self.geolocation is not None:
+                        host = entry["host"].split(':')[0]
+                        try:
+                            entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
+                        except OSError:
+                            entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                        except:
+                            pass
 
-            table[game]["query-status"] = "ready"
+                table[game]["query-status"] = "ready"
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:
