@@ -33,20 +33,6 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
 
 
-def split_server_list_into_masters(orig_list, split_key, split_value):
-    master_server_uri = None
-    split_dict = {}
-
-    for server_entry in orig_list['qstat']['server']:
-        if server_entry[split_key] == split_value:
-            master_server_uri = server_entry['@address'].strip()
-            split_dict[master_server_uri] = {'server': []}
-
-        split_dict[master_server_uri]['server'].append(server_entry)
-
-    return split_dict
-
-
 def stat_master(game, game_table_slice, proxy=None):
     hosts_array = []
     server_table = []
@@ -63,7 +49,13 @@ def stat_master(game, game_table_slice, proxy=None):
     hosts_temp_array = list(game_table_slice["settings"]["master_uri"])
 
     for entry in hosts_temp_array:
-        hosts_array.append(entry.strip())
+        entry = entry.strip()
+        if '://' in entry:
+            entry_protocol, entry_host = entry.split('://')
+        else:
+            entry_protocol = 'master'
+            entry_host = entry
+        hosts_array.append(entry_host)
 
     hosts_array = list(set(hosts_array))
 
