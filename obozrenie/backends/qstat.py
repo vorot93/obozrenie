@@ -143,9 +143,9 @@ def stat_master(game, game_table_slice, proxy=None):
 
                                 if rule_name in ['gamename']:
                                     server_table[-1]['game_name'] = str(rule_text)
-                                if rule_name in ['game']:
+                                elif rule_name in ['game']:
                                     server_table[-1]['game_mod'] = str(rule_text)
-                                elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd']:
+                                elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password', 'sv_password']:
                                     server_table[-1]['password'] = bool(int(rule_text))
                         if qstat_entry['players'] is not None:
                             if isinstance(qstat_entry['players']['player'], dict):
