@@ -133,17 +133,20 @@ def stat_master(game, game_table_slice, proxy=None):
                                 qstat_entry['rules']['rule'] = [rule]
 
                             for rule in qstat_entry['rules']['rule']:
+                                rule_name = rule['@name']
                                 if '#text' in rule.keys():
-                                    server_table[-1]['rules'][rule['@name']] = rule['#text']
+                                    server_table[-1]['rules'][rule_name] = rule['#text']
                                 else:
-                                    server_table[-1]['rules'][rule['@name']] = None
+                                    server_table[-1]['rules'][rule_name] = None
 
-                                if rule['@name'] == 'gamename':
-                                    server_table[-1]['game_name'] = str(rule['#text'])
-                                if rule['@name'] == 'game':
-                                    server_table[-1]['game_mod'] = str(rule['#text'])
-                                elif rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
-                                    server_table[-1]['password'] = bool(int(rule['#text']))
+                                rule_text = server_table[-1]['rules'][rule_name]
+
+                                if rule_name in ['gamename']:
+                                    server_table[-1]['game_name'] = str(rule_text)
+                                if rule_name in ['game']:
+                                    server_table[-1]['game_mod'] = str(rule_text)
+                                elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd']:
+                                    server_table[-1]['password'] = bool(int(rule_text))
                         if qstat_entry['players'] is not None:
                             if isinstance(qstat_entry['players']['player'], dict):
                                 player = qstat_entry['players']['player']
