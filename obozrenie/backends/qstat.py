@@ -46,6 +46,10 @@ def stat_master(game, game_table_slice, proxy=None):
 
     game_name = game_table_slice["info"]["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
+
+    if "server_gamename" not in backend_config_object['game'][game].keys():
+        backend_config_object['game'][game]['server_gamename'] = None
+
     hosts_temp_array = list(game_table_slice["settings"]["master_uri"])
 
     for entry in hosts_temp_array:
@@ -89,6 +93,7 @@ def stat_master(game, game_table_slice, proxy=None):
 
         except TypeError:
             try:
+                game_name = backend_config_object['game'][game]['server_gamename']
                 if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
                     master_server_uri = qstat_entry['@address']
                     master_server_status = qstat_entry['@status']
@@ -99,23 +104,14 @@ def stat_master(game, game_table_slice, proxy=None):
                         print(QSTAT_MSG, i18n._("|%(game)s| Master query failed. Address: %(address)s, status: %(status)s.") % {'game': game_name, 'address': master_server_uri, 'status': master_server_status})
 
                 elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
-                    server_table.append({})
-                    server_table[-1]['host'] = qstat_entry['hostname']
-                    server_table[-1]['password'] = False
-                    server_table[-1]['game_id'] = game
-                    server_table[-1]['game_mod'] = None
-
                     server_status = qstat_entry['@status']
-
-                    if server_status == 'TIMEOUT' or server_status == 'DOWN' or server_status == 'ERROR':
-                        server_table[-1]['name'] = None
+                    if server_status == 'UP':
+                        server_table.append({})
+                        server_table[-1]['host'] = qstat_entry['hostname']
+                        server_table[-1]['password'] = False
+                        server_table[-1]['game_id'] = game
                         server_table[-1]['game_mod'] = None
-                        server_table[-1]['game_type'] = None
-                        server_table[-1]['terrain'] = None
-                        server_table[-1]['player_count'] = 0
-                        server_table[-1]['player_limit'] = 0
-                        server_table[-1]['ping'] = 9999
-                    else:
+
                         if qstat_entry['name'] is None:
                             server_table[-1]['name'] = None
                         else:
@@ -139,6 +135,8 @@ def stat_master(game, game_table_slice, proxy=None):
                                 else:
                                     server_table[-1]['rules'][rule['@name']] = None
 
+                                if rule['@name'] == 'gamename':
+                                    server_table[-1]['game_name'] = str(rule['#text'])
                                 if rule['@name'] == 'game':
                                     server_table[-1]['game_mod'] = str(rule['#text'])
                                 elif rule['@name'] == 'g_needpass' or rule['@name'] == 'needpass' or rule['@name'] == 'si_usepass' or rule['@name'] == 'pswrd':
@@ -155,6 +153,13 @@ def stat_master(game, game_table_slice, proxy=None):
                                 server_table[-1]['players'][-1]['ping'] = int(player['ping'])
                         else:
                             server_table[-1]['players'] = None
+                        if game_name is not None:
+                            if "game_name" not in server_table[-1].keys():
+                                del server_table[-1]
+                            else:
+                                if server_table[-1]["game_name"] != game_name:
+                                    del server_table[-1]
+
             except Exception as e:
                 print(QSTAT_MSG, e)
                 proxy.append(Exception)
