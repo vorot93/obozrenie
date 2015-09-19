@@ -120,7 +120,10 @@ def stat_master(game, game_table_slice, proxy=None):
                         server_table[-1]['terrain'] = str(qstat_entry['map'])
                         server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
                         server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
-                        server_table[-1]['ping'] = int(qstat_entry['ping'])
+                        try:
+                            server_table[-1]['ping'] = int(qstat_entry['ping'])
+                        except KeyError:
+                            server_table[-1]['ping'] = 9999
                         server_table[-1]['rules'] = {}
                         server_table[-1]['players'] = []
 
@@ -150,7 +153,10 @@ def stat_master(game, game_table_slice, proxy=None):
                                 server_table[-1]['players'].append({})
                                 server_table[-1]['players'][-1]['name'] = re.sub(color_code_pattern, '', str(player['name']))
                                 server_table[-1]['players'][-1]['score'] = int(player['score'])
-                                server_table[-1]['players'][-1]['ping'] = int(player['ping'])
+                                try:
+                                    server_table[-1]['players'][-1]['ping'] = int(player['ping'])
+                                except:
+                                    server_table[-1]['players'][-1]['ping'] = 9999
                         else:
                             server_table[-1]['players'] = None
                         if game_name is not None:
