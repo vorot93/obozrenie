@@ -47,10 +47,9 @@ def get_entry_with_label(label_text="", tooltip_text=""):
 
     gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
-    grid.add(label)
     grid.add(entry)
 
-    widget_group = {"container": grid, "substance": entry}
+    widget_group = {"container": grid, "label": label, "substance": entry}
 
     return widget_group
 
@@ -68,10 +67,9 @@ def get_textview_with_label(label_text="", tooltip_text="Single entry per line",
 
     gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
-    grid.add(label)
     grid.add(text_view)
 
-    widget_group = {"container": grid, "substance": text_buffer}
+    widget_group = {"container": grid, "label": label, "substance": text_buffer}
 
     return widget_group
 
@@ -96,19 +94,28 @@ def get_option_widget(option_dict):
 def get_preferences_grid(game, game_table, dynamic_settings_table):
     grid = Gtk.Grid()
 
+    grid.insert_column(0)
+
     grid.set_orientation(Gtk.Orientation.VERTICAL)
-    grid.set_row_spacing(5)
-    grid.set_margin_bottom(10)
+    grid.set_property("row-spacing", 5)
+    grid.set_property("column-spacing", 5)
+    grid.set_property("margin-bottom", 10)
 
     widget_option_mapping = {}
 
+    i = 0
     for option in game_table[game]["settings"]:
         option_object = get_option_widget(dynamic_settings_table[option])
 
-        grid.add(option_object["container"])
+        try:
+            grid.attach(option_object["label"], 0, i, 1, 1)
+        except KeyError:
+            grid.attach(Gtk.Label(), 0, i, 1, 1)
+        grid.attach(option_object["container"], 1, i, 1, 1)
 
         widget_option_mapping[option] = option_object["substance"]
-
+        i += 1
+    del i
     preferences_grid_info = {"widget": grid, "mapping": widget_option_mapping}
 
     return preferences_grid_info
