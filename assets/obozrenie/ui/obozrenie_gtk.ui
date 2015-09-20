@@ -180,6 +180,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <child>
                   <object class="GtkButton" id="Connect_Button">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">action-connect-button</property>
