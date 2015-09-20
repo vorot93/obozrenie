@@ -50,6 +50,14 @@ def stat_master(game, game_table_slice, proxy=None):
     if "server_gamename" not in backend_config_object['game'][game].keys():
         backend_config_object['game'][game]['server_gamename'] = None
 
+    server_game_name = backend_config_object['game'][game]['server_gamename']
+    if "server_gamename" in backend_config_object['game'][game].keys():
+        server_game_name = backend_config_object['game'][game]['server_gamename']
+
+    server_game_type = None
+    if "server_gametype" in backend_config_object['game'][game].keys():
+        server_game_type = backend_config_object['game'][game]['server_gametype']
+
     hosts_temp_array = list(game_table_slice["settings"]["master_uri"])
 
     for entry in hosts_temp_array:
@@ -66,8 +74,12 @@ def stat_master(game, game_table_slice, proxy=None):
     qstat_opts = []
     qstat_cmd = ["qstat", "-xml", "-utf8", "-R", "-P"]
 
+    qstat_cmd_descriptor = "-" + backend_config_object['game'][game]['master_key']
+    if server_game_type is not None:
+        qstat_cmd_descriptor = qstat_cmd_descriptor + ",game=" + server_game_type
+
     for entry in hosts_array:
-        qstat_cmd.append("-" + backend_config_object['game'][game]['master_key'])
+        qstat_cmd.append(qstat_cmd_descriptor)
         qstat_cmd.append(entry)
 
     print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Requesting server info.") % {'game': game_name})
@@ -93,7 +105,6 @@ def stat_master(game, game_table_slice, proxy=None):
 
         except TypeError:
             try:
-                game_name = backend_config_object['game'][game]['server_gamename']
                 if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
                     master_server_uri = qstat_entry['@address']
                     master_server_status = qstat_entry['@status']
@@ -146,7 +157,10 @@ def stat_master(game, game_table_slice, proxy=None):
                                 elif rule_name in ['game']:
                                     server_table[-1]['game_mod'] = str(rule_text)
                                 elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password', 'sv_password']:
-                                    server_table[-1]['password'] = bool(int(rule_text))
+                                    try:
+                                        server_table[-1]['password'] = bool(int(rule_text))
+                                    except TypeError:
+                                        server_table[-1]['password'] = False
                         if qstat_entry['players'] is not None:
                             if isinstance(qstat_entry['players']['player'], dict):
                                 player = qstat_entry['players']['player']
@@ -155,19 +169,27 @@ def stat_master(game, game_table_slice, proxy=None):
                             for player in qstat_entry['players']['player']:
                                 server_table[-1]['players'].append({})
                                 server_table[-1]['players'][-1]['name'] = re.sub(color_code_pattern, '', str(player['name']))
-                                server_table[-1]['players'][-1]['score'] = int(player['score'])
+                                try:
+                                    server_table[-1]['players'][-1]['score'] = int(player['score'])
+                                except:
+                                    server_table[-1]['players'][-1]['score'] = None
                                 try:
                                     server_table[-1]['players'][-1]['ping'] = int(player['ping'])
                                 except:
                                     server_table[-1]['players'][-1]['ping'] = 9999
                         else:
                             server_table[-1]['players'] = None
-                        if game_name is not None:
-                            if "game_name" not in server_table[-1].keys():
-                                del server_table[-1]
-                            else:
-                                if server_table[-1]["game_name"] != game_name:
+
+                        for filter_rule in ((server_game_name, "game_name"), (server_game_type, "game_type")):
+                            if filter_rule[0] is not None:
+                                if filter_rule[1] not in server_table[-1].keys():
                                     del server_table[-1]
+                                    continue
+                                else:
+                                    if server_table[-1][filter_rule[1]] != filter_rule[0]:
+                                        del server_table[-1]
+                                        continue
+
 
             except Exception as e:
                 print(QSTAT_MSG, e)
