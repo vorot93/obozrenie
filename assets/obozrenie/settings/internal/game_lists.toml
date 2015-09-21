@@ -45,6 +45,13 @@ launch_pattern = "hl2"
 steam_app_id = "320"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
+[left4dead2]
+name = "Left 4 Dead 2"
+backend = "qstat"
+launch_pattern = "hl2"
+steam_app_id = "550"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
+
 [portal2]
 name = "Portal 2"
 backend = "qstat"

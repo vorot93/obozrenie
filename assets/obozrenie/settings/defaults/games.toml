@@ -42,6 +42,13 @@ master_uri = ["master://hl2master.steampowered.com:27011"]
 steam_launch = true
 steam_path = "steam"
 
+[left4dead2]
+path = "~/.local/share/Steam/steamapps/common/Left 4 Dead 2/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Left 4 Dead 2"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
 [portal2]
 path = "~/.local/share/Steam/steamapps/common/Portal 2/portal2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Portal 2"

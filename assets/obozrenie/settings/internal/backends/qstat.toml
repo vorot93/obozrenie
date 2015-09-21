@@ -40,6 +40,13 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "hl2mp"
 
+[game.left4dead2]
+master_key = "stm"
+master_type = "STM"
+server_key = "a2s"
+server_type = "A2S"
+server_gametype = "left4dead2"
+
 [game.portal2]
 master_key = "stm"
 master_type = "STM"
