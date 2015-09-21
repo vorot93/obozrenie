@@ -2,6 +2,11 @@
 path = "RoR"
 master_uri = ["http://api.rigsofrods.com/serverlist/"]
 
+[csgo]
+path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/csgo_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+
 [doom3]
 workdir = ""
 path = "doom3"
