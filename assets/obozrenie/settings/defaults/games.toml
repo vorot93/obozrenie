@@ -27,6 +27,11 @@ path = "~/.local/share/Steam/steamapps/common/Portal 2/portal2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Portal 2"
 master_uri = ["master://hl2master.steampowered.com:27011"]
 
+[alienarena]
+workdir = ""
+path = "alienarena"
+master_uri = ["master://master.corservers.com:27900", "master://master2.corservers.com:27900"]
+
 [doom3]
 workdir = ""
 path = "doom3"

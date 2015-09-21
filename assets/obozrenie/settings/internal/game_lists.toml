@@ -34,6 +34,12 @@ backend = "qstat"
 launch_pattern = "hl2"
 settings = ["path", "workdir", "master_uri"]
 
+[alienarena]
+name = "Alien Arena"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [doom3]
 name = "Doom 3"
 backend = "qstat"

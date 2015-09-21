@@ -33,6 +33,12 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "portal2"
 
+[game.alienarena]
+master_key = "alienarenam"
+master_type = "ALIENARENAM"
+server_key = "alienarenas"
+server_type = "ALIENARENAS"
+
 [game.doom3]
 master_key = "dm3m"
 master_type = "DM3M"
