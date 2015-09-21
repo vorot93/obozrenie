@@ -27,8 +27,10 @@ import obozrenie.i18n as i18n
 def get_checkbutton(label_text="", tooltip_text=""):
     checkbutton = Gtk.CheckButton.new()
 
-    checkbutton.set_property("label", i18n._(label_text))
-    checkbutton.set_property("tooltip-text", i18n._(tooltip_text))
+    widget_object_dict = {"checkbutton": checkbutton}
+    widget_property_dict = {"checkbutton": {"label": i18n._(label_text), "tooltip-text": i18n._(tooltip_text)}}
+
+    gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
     widget_group = {"container": checkbutton, "substance": checkbutton}
 
@@ -79,7 +81,7 @@ def get_option_widget(option_dict):
     description = option_dict["description"]
     widget_type = option_dict["gtk_type"]
     if widget_type == "CheckButton":
-        widget = get_checkbutton(label_text=name+":", tooltip_text=description)
+        widget = get_checkbutton(label_text=name, tooltip_text=description)
     elif widget_type == "Entry with Label":
         widget = get_entry_with_label(label_text=name+":", tooltip_text=description)
     elif widget_type == "Multiline Entry with Label":
