@@ -34,23 +34,35 @@ def get_common_options():
 
 def get_game_options():
     option_list = {
-                   'path':       {
-                                 'name':        i18n._("Game path"),
-                                 'description': i18n._("Path to the game"),
-                                 'gtk_type':           "Entry with Label"
-                                 },
+                   'path':         {
+                                   'name':        i18n._("Game path"),
+                                   'description': i18n._("Path to the game."),
+                                   'gtk_type':    "Entry with Label"
+                                   },
 
-                   'workdir':    {
-                                 'name':        i18n._("Working directory"),
-                                 'description': i18n._("Working directory of the game"),
-                                 'gtk_type':    "Entry with Label"
-                                 },
+                   'workdir':      {
+                                   'name':        i18n._("Working directory"),
+                                   'description': i18n._("Working directory of the game."),
+                                   'gtk_type':    "Entry with Label"
+                                   },
 
-                   'master_uri': {
-                                 'name':        i18n._("Master URI list"),
-                                 'description': i18n._("List of master servers to query"),
-                                 'gtk_type':    "Multiline Entry with Label"
-                                 }
+                   'master_uri':   {
+                                   'name':        i18n._("Master URI list"),
+                                   'description': i18n._("List of master servers to query."),
+                                   'gtk_type':    "Multiline Entry with Label"
+                                   },
+
+                   'steam_launch': {
+                                   'name':        i18n._("Launch via Steam"),
+                                   'description': i18n._("Enables launching via Steam client. Required for VAC-enabled servers."),
+                                   'gtk_type':    "CheckButton"
+                                   },
+
+                   'steam_path':   {
+                                   'name':        i18n._("Steam path"),
+                                   'description': i18n._("Steam client path."),
+                                   'gtk_type':    "Entry with Label"
+                                   }
                   }
 
     return option_list

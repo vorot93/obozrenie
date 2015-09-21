@@ -8,13 +8,15 @@ settings = ["path", "master_uri"]
 name = "Counter-Strike: Global Offensive"
 backend = "qstat"
 launch_pattern = "hl2"
-settings = ["path", "workdir", "master_uri"]
+steam_app_id = "730"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [cstrike]
 name = "Counter-Strike: Source"
 backend = "qstat"
 launch_pattern = "hl2"
-settings = ["path", "workdir", "master_uri"]
+steam_app_id = "240"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [gesource]
 name = "GoldenEye: Source"
@@ -26,13 +28,15 @@ settings = ["path", "master_uri"]
 name = "Half-Life 2: Deathmatch"
 backend = "qstat"
 launch_pattern = "hl2"
-settings = ["path", "workdir", "master_uri"]
+steam_app_id = "320"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [portal2]
 name = "Portal 2"
 backend = "qstat"
 launch_pattern = "hl2"
-settings = ["path", "workdir", "master_uri"]
+steam_app_id = "620"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [alienarena]
 name = "Alien Arena"

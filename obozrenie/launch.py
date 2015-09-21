@@ -23,7 +23,7 @@ from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
 
-def launch_game(game, launch_pattern, game_settings, server, password):
+def launch_game(game, launch_pattern, game_settings, server, password, steam_app_id=None):
     """Launches the game based on specified launch pattern"""
     try:
         launch_cmd = []
@@ -32,7 +32,13 @@ def launch_game(game, launch_pattern, game_settings, server, password):
         path = os.path.expanduser(game_settings["path"])
 
         # Pre-launch
-        if launch_pattern == "rigsofrods":
+        if launch_pattern == "steam":
+            steam_path = game_settings["steam_path"]
+            launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", server]
+            if password != '':
+                launch_cmd.append("+password", password)
+
+        elif launch_pattern == "rigsofrods":
             host, port = server.split(":")
             host = host
             port = port

@@ -6,11 +6,15 @@ master_uri = ["http://api.rigsofrods.com/serverlist/"]
 path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/csgo_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"
 master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
 
 [cstrike]
 path = "~/.local/share/Steam/steamapps/common/Counter-Strike Source/hl2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Source"
 master_uri = ["master://hl2master.steampowered.com:27011", "master://46.165.194.16:27011", "master://46.4.71.67:27011", "master://46.165.194.14:27011"]
+steam_launch = true
+steam_path = "steam"
 
 [gesource]
 path = ""
@@ -21,11 +25,15 @@ master_uri = ["master://hl2master.steampowered.com:27011"]
 path = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch/hl2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch"
 master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
 
 [portal2]
 path = "~/.local/share/Steam/steamapps/common/Portal 2/portal2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Portal 2"
 master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
 
 [alienarena]
 workdir = ""

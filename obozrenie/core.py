@@ -70,6 +70,10 @@ class Core:
             name = self.gameconfig_object[game_id]["name"]
             backend = self.gameconfig_object[game_id]["backend"]
             launch_pattern = self.gameconfig_object[game_id]["launch_pattern"]
+            try:
+                steam_app_id = self.gameconfig_object[game_id]["steam_app_id"]
+            except KeyError:
+                pass
 
             # Create dict groups
             game_table[game_id]["info"] = {}
@@ -84,6 +88,10 @@ class Core:
             game_table[game_id]["info"]["name"] = name
             game_table[game_id]["info"]["backend"] = backend
             game_table[game_id]["info"]["launch_pattern"] = launch_pattern
+            try:
+                game_table[game_id]["info"]["steam_app_id"] = steam_app_id
+            except NameError:
+                pass
             game_table[game_id]["query-status"] = None
 
         return game_table
@@ -146,7 +154,19 @@ class Core:
 
     def start_game(self, game, server, password):
         """Start game"""
-        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
+        launch_pattern = self.game_table[game]["info"]["launch_pattern"]
+        steam_app_id = None
+        try:
+            if self.game_table[game]["settings"]["steam_launch"] is True:
+                try:
+                    steam_app_id = self.game_table[game]["info"]["steam_app_id"]
+                    launch_pattern = "steam"
+                except KeyError:
+                    pass
+        except:
+            pass
+
+        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, launch_pattern, self.game_table[game]["settings"], server, password, steam_app_id))
         launch_process.daemon = True
         launch_process.start()
 
