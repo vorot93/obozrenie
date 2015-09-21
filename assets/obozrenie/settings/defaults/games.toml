@@ -16,6 +16,13 @@ master_uri = ["master://hl2master.steampowered.com:27011", "master://46.165.194.
 steam_launch = true
 steam_path = "steam"
 
+[dod]
+path = "~/.local/share/Steam/steamapps/common/Day of Defeat Source/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Day of Defeat Source"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
 [gesource]
 path = ""
 workdir = ""
