@@ -85,7 +85,7 @@ def set_widget_value(widget, value, treeview_colnum=0):
         widget.set_property("value", int(value))
     elif isinstance(widget, Gtk.CheckButton) or isinstance(widget, Gtk.ToggleButton):
         try:
-            value = ast.literal_eval(value)
+            value = ast.literal_eval(str(value))
         except ValueError:
             value = False
         widget.set_property("active", bool(value))
