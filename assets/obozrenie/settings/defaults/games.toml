@@ -7,6 +7,11 @@ path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/cs
 workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"
 master_uri = ["master://hl2master.steampowered.com:27011"]
 
+[cstrike]
+path = "~/.local/share/Steam/steamapps/common/Counter-Strike Source/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Source"
+master_uri = ["master://hl2master.steampowered.com:27011", "master://46.165.194.16:27011", "master://46.4.71.67:27011", "master://46.165.194.14:27011"]
+
 [doom3]
 workdir = ""
 path = "doom3"
