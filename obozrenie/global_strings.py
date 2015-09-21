@@ -37,6 +37,7 @@ CORE_MSG = CORECAT_MSG + i18n._("Core:")
 SETTINGS_MSG = CORECAT_MSG + i18n._("Settings:")
 GTK_MSG = UICAT_MSG + i18n._("GTK+:")
 HELPER_MSG = i18n._("Helpers:")
+LAUNCHER_MSG = i18n._("Launcher:")
 
 
 GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},

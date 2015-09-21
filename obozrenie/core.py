@@ -33,6 +33,7 @@ from obozrenie.option_lists import *
 import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
 import obozrenie.backends as backends
+import obozrenie.launch as launch
 
 
 class Core:
@@ -145,7 +146,7 @@ class Core:
 
     def start_game(self, game, server, password):
         """Start game"""
-        launch_thread = threading.Thread(target=helpers.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
+        launch_thread = threading.Thread(target=launch.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
         launch_thread.daemon = True
         launch_thread.start()
 
