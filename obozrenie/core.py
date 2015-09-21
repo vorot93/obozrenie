@@ -146,9 +146,9 @@ class Core:
 
     def start_game(self, game, server, password):
         """Start game"""
-        launch_thread = threading.Thread(target=launch.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
-        launch_thread.daemon = True
-        launch_thread.start()
+        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, self.game_table[game]["info"]["launch_pattern"], self.game_table[game]["settings"], server, password))
+        launch_process.daemon = True
+        launch_process.start()
 
 
 class Settings:
