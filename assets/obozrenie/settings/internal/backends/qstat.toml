@@ -26,6 +26,13 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "hl2mp"
 
+[game.portal2]
+master_key = "stm"
+master_type = "STM"
+server_key = "a2s"
+server_type = "A2S"
+server_gametype = "portal2"
+
 [game.doom3]
 master_key = "dm3m"
 master_type = "DM3M"
