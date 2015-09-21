@@ -109,6 +109,11 @@ workdir = ""
 path = "unvanquished"
 master_uri = ["master://unvanquished.net:27950"]
 
+[warsow]
+workdir = ""
+path = "warsow"
+master_uri = ["master://eu.master.warsow.net:27950", "master://ghdigital.com:27950", "master://dpmaster.deathmask.net:27950"]
+
 [wop]
 workdir = ""
 path = "wop"

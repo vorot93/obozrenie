@@ -129,6 +129,12 @@ master_type = "IOURTM"
 server_key = "iourts"
 server_type = "IOURTS"
 
+[game.warsow]
+master_key = "warsowm"
+master_type = "WARSOWM"
+server_key = "warsows"
+server_type = "WARSOWS"
+
 [game.wop]
 master_key = "wopm"
 master_type = "WOPM"

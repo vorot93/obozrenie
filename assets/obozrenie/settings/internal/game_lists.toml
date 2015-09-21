@@ -134,6 +134,12 @@ backend = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
+[warsow]
+name = "Warsow"
+backend = "qstat"
+launch_pattern = "quake"
+settings = ["path", "workdir", "master_uri"]
+
 [wop]
 name = "World of Padman"
 backend = "qstat"
