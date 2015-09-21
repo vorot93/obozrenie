@@ -19,6 +19,13 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "gesource"
 
+[game.hl1mp]
+master_key = "stm"
+master_type = "STM"
+server_key = "a2s"
+server_type = "A2S"
+server_gametype = "hl1mp"
+
 [game.hl2mp]
 master_key = "stm"
 master_type = "STM"

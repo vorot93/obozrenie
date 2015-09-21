@@ -24,6 +24,13 @@ backend = "qstat"
 launch_pattern = "hl2"
 settings = ["path", "master_uri"]
 
+[hl1mp]
+name = "Half-Life Deathmatch: Source"
+backend = "qstat"
+launch_pattern = "hl2"
+steam_app_id = "360"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
+
 [hl2mp]
 name = "Half-Life 2: Deathmatch"
 backend = "qstat"

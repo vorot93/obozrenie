@@ -21,6 +21,13 @@ path = ""
 workdir = ""
 master_uri = ["master://hl2master.steampowered.com:27011"]
 
+[hl1mp]
+path = "~/.local/share/Steam/steamapps/common/Half-Life 1 Source Deathmatch/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Half-Life 1 Source Deathmatch"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
 [hl2mp]
 path = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch/hl2_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch"
