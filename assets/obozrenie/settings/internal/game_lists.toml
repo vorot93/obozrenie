@@ -25,6 +25,13 @@ launch_pattern = "hl2"
 steam_app_id = "300"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
+[garrysmod]
+name = "Garry's Mod"
+backend = "qstat"
+launch_pattern = "hl2"
+steam_app_id = "400"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
+
 [gesource]
 name = "GoldenEye: Source"
 backend = "qstat"

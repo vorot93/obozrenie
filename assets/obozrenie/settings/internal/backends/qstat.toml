@@ -19,6 +19,13 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "dod"
 
+[game.garrysmod]
+master_key = "stm"
+master_type = "STM"
+server_key = "a2s"
+server_type = "A2S"
+server_gametype = "garrysmod"
+
 [game.gesource]
 master_key = "stm"
 master_type = "STM"
