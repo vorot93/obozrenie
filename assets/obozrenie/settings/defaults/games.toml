@@ -17,6 +17,11 @@ path = ""
 workdir = ""
 master_uri = ["master://hl2master.steampowered.com:27011"]
 
+[hl2mp]
+path = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+
 [doom3]
 workdir = ""
 path = "doom3"
