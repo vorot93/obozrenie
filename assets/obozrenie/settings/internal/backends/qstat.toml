@@ -12,6 +12,13 @@ server_key = "a2s"
 server_type = "A2S"
 server_gametype = "cstrike"
 
+[game.gesource]
+master_key = "stm"
+master_type = "STM"
+server_key = "a2s"
+server_type = "A2S"
+server_gametype = "gesource"
+
 [game.doom3]
 master_key = "dm3m"
 master_type = "DM3M"

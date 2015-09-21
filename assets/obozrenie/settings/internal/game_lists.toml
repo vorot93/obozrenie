@@ -16,6 +16,12 @@ backend = "qstat"
 launch_pattern = "hl2"
 settings = ["path", "workdir", "master_uri"]
 
+[gesource]
+name = "GoldenEye: Source"
+backend = "qstat"
+launch_pattern = "hl2"
+settings = ["path", "master_uri"]
+
 [doom3]
 name = "Doom 3"
 backend = "qstat"
