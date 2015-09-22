@@ -40,6 +40,8 @@ def stat_master(game, game_table_slice, proxy=None):
     server_table_xmltodict = []
     server_table_dict = []
 
+    qstat_stdin_object = ""
+
     master_server_uri = None
     stat_start_time = None
     stat_end_time = None
@@ -72,20 +74,19 @@ def stat_master(game, game_table_slice, proxy=None):
     hosts_array = list(set(hosts_array))
 
     qstat_opts = []
-    qstat_cmd = ["qstat", "-xml", "-utf8", "-R", "-P"]
+    qstat_cmd = ["qstat", "-xml", "-utf8", "-R", "-P", "-f", "-"]
 
-    qstat_cmd_descriptor = "-" + backend_config_object['game'][game]['master_key']
+    qstat_stdin_descriptor = backend_config_object['game'][game]['master_type']
     if server_game_type is not None:
-        qstat_cmd_descriptor = qstat_cmd_descriptor + ",game=" + server_game_type
+        qstat_stdin_descriptor = qstat_stdin_descriptor + ",game=" + server_game_type
 
     for entry in hosts_array:
-        qstat_cmd.append(qstat_cmd_descriptor)
-        qstat_cmd.append(entry)
+        qstat_stdin_object = qstat_stdin_object + qstat_stdin_descriptor + " " + entry + "\n"
 
     print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Requesting server info.") % {'game': game_name})
     stat_start_time = time.time()
     try:
-        qstat_output, _ = subprocess.Popen(qstat_cmd, stdout=subprocess.PIPE).communicate()
+        qstat_output, _ = subprocess.Popen(qstat_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(input=qstat_stdin_object.strip().encode())
         server_table_qstat_xml = qstat_output.decode()
         server_table_dict = json.loads(json.dumps(xmltodict.parse(server_table_qstat_xml)))
     except Exception as e:

@@ -1,176 +1,120 @@
 [game.csgo]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "csgo"
 
 [game.cstrike]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "cstrike"
 
 [game.dod]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "dod"
 
 [game.garrysmod]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "garrysmod"
 
 [game.gesource]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "gesource"
 
 [game.hl1mp]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "hl1mp"
 
 [game.hl2mp]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "hl2mp"
 
 [game.left4dead2]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "left4dead2"
 
 [game.portal2]
-master_key = "stm"
 master_type = "STM"
-server_key = "a2s"
 server_type = "A2S"
 server_gametype = "portal2"
 
 [game.alienarena]
-master_key = "alienarenam"
 master_type = "ALIENARENAM"
-server_key = "alienarenas"
 server_type = "ALIENARENAS"
 
 [game.doom3]
-master_key = "dm3m"
 master_type = "DM3M"
-server_key = "dm3s"
 server_type = "DM3S"
 
 [game.et]
-master_key = "woetm"
 master_type = "WOETM"
-server_key = "woets"
 server_type = "WOETS"
 
 [game.jediacademy]
-master_key = "jk3m"
 master_type = "JK3M"
-server_key = "jk3s"
 server_type = "JK3S"
 
 [game.jedioutcast]
-master_key = "jk2m"
 master_type = "JK2M"
-server_key = "jk2s"
 server_type = "JK2S"
 
 [game.openarena]
-master_key = "openarenam"
 master_type = "OPENARENAM"
-server_key = "openarenas"
 server_type = "OPENARENAS"
 
 [game.q2]
-master_key = "q2m"
 master_type = "Q2M"
-server_key = "q2s"
 server_type = "Q2S"
 
 [game.q3a]
-master_key = "q3m"
 master_type = "Q3M"
-server_key = "q3s"
 server_type = "Q3S"
 
 [game.q4]
-master_key = "q4m"
 master_type = "Q4M"
-server_key = "q4s"
 server_type = "Q4S"
 
 [game.qw]
-master_key = "qwm"
 master_type = "QWM"
-server_key = "qws"
 server_type = "QWS"
 
 [game.rtcw]
-master_key = "rwm"
 master_type = "RWM"
-server_key = "rws"
 server_type = "RWS"
 
 [game.openttd]
-master_key = "ottdm"
 master_type = "OTTDM"
-server_key = "ottds"
 server_type = "OTTDS"
 
 [game.stef1]
-master_key = "efm"
 master_type = "EFM"
-server_key = "efs"
 server_type = "EFS"
 
 [game.turtlearena]
-master_key = "turtlearenam"
 master_type = "TURTLEARENAM"
-server_key = "turtlearenas"
 server_type = "TURTLEARENAS"
 
 [game.unvanquished]
-master_key = "unvanquishedm"
 master_type = "UNVANQUISHEDM"
-server_key = "unvanquisheds"
 server_type = "UNVANQUISHEDS"
 
 [game.urbanterror]
-master_key = "iourtm"
 master_type = "IOURTM"
-server_key = "iourts"
 server_type = "IOURTS"
 
 [game.warsow]
-master_key = "warsowm"
 master_type = "WARSOWM"
-server_key = "warsows"
 server_type = "WARSOWS"
 
 [game.wop]
-master_key = "wopm"
 master_type = "WOPM"
-server_key = "wops"
 server_type = "WOPS"
 
 [game.xonotic]
-master_key = "xonoticm"
 master_type = "XONOTICM"
-server_key = "xonotics"
 server_type = "XONOTICS"
