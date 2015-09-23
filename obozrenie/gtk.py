@@ -293,6 +293,7 @@ class GUIActions:
         self.set_game_state(game, query_status)  # Display game status in GUI
         if selected_game == game:  # Is callback for the game that is currently viewed?
             if query_status == "ready":
+                self.set_loading_state("filling list")
                 self.fill_server_list_model(server_table)
                 self.set_loading_state("ready")
             elif query_status == "error":
@@ -321,7 +322,7 @@ class GUIActions:
 
         if state == "working":
             notebook.set_property("page", self.serverlist_notebook_pages["loading"])
-        elif state == "ready":
+        elif state == "filling list" or state == "ready":
             notebook.set_property("page", self.serverlist_notebook_pages["servers"])
         elif state == "error":
             notebook.set_property("page", self.serverlist_notebook_pages["error"])
@@ -338,6 +339,14 @@ class GUIActions:
 
         game_icons = self.game_icons
         flag_icons = self.flag_icons
+
+        # Clears the model
+
+        # UGLY HACK!
+        # Workaround for chaotic TreeViewSelection on ListModel erase
+        a = gtk_helpers.get_widget_value(self.gtk_widgets["serverhost-entry"])
+        model.clear()
+        self.gtk_widgets["serverhost-entry"].set_text(a)
 
         # Goodies for GUI
         for entry in view_table:
@@ -357,11 +366,6 @@ class GUIActions:
 
         view_table = helpers.sort_dict_table(view_table, "ping")
         server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
-        # UGLY HACK!
-        # Workaround for chaotic TreeViewSelection on ListModel erase
-        a = gtk_helpers.get_widget_value(self.gtk_widgets["serverhost-entry"])
-        model.clear()
-        self.gtk_widgets["serverhost-entry"].set_text(a)
 
         for entry in server_list:
             treeiter = model_append(entry)
