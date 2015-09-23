@@ -290,11 +290,16 @@ class GUIActions:
         server_table = game_table[game]["servers"]
         selected_game = self.app.settings.settings_table["common"]["selected-game"]
 
+        model = self.gtk_widgets["serverlist-model"]
+        view = self.gtk_widgets["serverlist-view"]
+
         self.set_game_state(game, query_status)  # Display game status in GUI
         if selected_game == game:  # Is callback for the game that is currently viewed?
             if query_status == "ready":
                 self.set_loading_state("filling list")
+                view.set_model(None)  # Speed hack
                 self.fill_server_list_model(server_table)
+                view.set_model(model)
                 self.set_loading_state("ready")
             elif query_status == "error":
                 self.set_loading_state("error")
@@ -368,7 +373,7 @@ class GUIActions:
         server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
 
         for entry in server_list:
-            treeiter = model_append(entry)
+            model_append(entry)
 
     def cb_server_list_selection_changed(self, *args):
         """Updates text in Entry on TreeView selection change."""
