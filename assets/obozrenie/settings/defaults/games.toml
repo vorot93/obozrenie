@@ -63,6 +63,13 @@ master_uri = ["master://hl2master.steampowered.com:27011"]
 steam_launch = true
 steam_path = "steam"
 
+[tf]
+path = "~/.local/share/Steam/steamapps/common/Team Fortress 2/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Team Fortress 2"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
 [alienarena]
 workdir = ""
 path = "alienarena"

@@ -66,6 +66,13 @@ launch_pattern = "hl2"
 steam_app_id = "620"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
+[tf]
+name = "Team Fortress 2"
+backend = "qstat"
+launch_pattern = "hl2"
+steam_app_id = "440"
+settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
+
 [alienarena]
 name = "Alien Arena"
 backend = "qstat"

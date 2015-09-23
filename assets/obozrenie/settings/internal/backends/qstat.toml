@@ -43,6 +43,11 @@ master_type = "STM"
 server_type = "A2S"
 server_gametype = "portal2"
 
+[game.tf]
+master_type = "STM"
+server_type = "A2S"
+server_gametype = "tf"
+
 [game.alienarena]
 master_type = "ALIENARENAM"
 server_type = "ALIENARENAS"
