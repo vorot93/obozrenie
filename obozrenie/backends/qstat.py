@@ -74,7 +74,7 @@ def stat_master(game, game_table_slice, proxy=None):
     hosts_array = list(set(hosts_array))
 
     qstat_opts = []
-    qstat_cmd = ["qstat", "-xml", "-utf8", "-R", "-P", "-f", "-"]
+    qstat_cmd = ["qstat", "-xml", "-utf8", "-maxsim", "9999", "-sendinterval", "1", "-R", "-P", "-f", "-"]
 
     qstat_stdin_descriptor = backend_config_object['game'][game]['master_type']
     if server_game_type is not None:
