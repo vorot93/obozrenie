@@ -138,12 +138,26 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             <property name="row_spacing">10</property>
             <property name="column_spacing">10</property>
             <child>
-              <object class="GtkGrid" id="Action_Grid">
+              <object class="GtkGrid" id="server-view-group">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
-                <property name="row_spacing">10</property>
-                <property name="column_spacing">10</property>
+                <property name="halign">start</property>
+                <property name="hexpand">True</property>
+                <property name="column_spacing">5</property>
+                <child>
+                  <object class="GtkToggleButton" id="Filters_Button">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">action-filters-button</property>
+                    <property name="image">find-icon</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkButton" id="Update_Button">
                     <property name="visible">True</property>
@@ -156,93 +170,10 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <signal name="clicked" handler="cb_update_button_clicked" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="Info_Button">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">action-info-button</property>
-                    <property name="vexpand">True</property>
-                    <property name="image">info-icon</property>
-                    <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_info_button_clicked" swapped="no"/>
-                  </object>
-                  <packing>
                     <property name="left_attach">1</property>
                     <property name="top_attach">0</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkButton" id="Connect_Button">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">action-connect-button</property>
-                    <property name="vexpand">True</property>
-                    <property name="image">connect-icon</property>
-                    <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="cb_connect_button_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="left_attach">2</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="left_attach">4</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="ServerPass_Entry">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="halign">end</property>
-                <property name="valign">center</property>
-                <property name="visibility">False</property>
-                <property name="width_chars">12</property>
-                <property name="placeholder_text" translatable="yes">serverpass-entry</property>
-                <property name="input_purpose">password</property>
-              </object>
-              <packing>
-                <property name="left_attach">3</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="ServerHost_Entry">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">True</property>
-                <property name="halign">end</property>
-                <property name="valign">center</property>
-                <property name="max_length">22</property>
-                <property name="width_chars">22</property>
-                <property name="max_width_chars">22</property>
-                <property name="placeholder_text" translatable="yes">serverhost-entry</property>
-                <property name="input_purpose">url</property>
-                <signal name="changed" handler="cb_server_host_entry_changed" swapped="no"/>
-              </object>
-              <packing>
-                <property name="left_attach">2</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToggleButton" id="Filters_Button">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">action-filters-button</property>
-                <property name="image">find-icon</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -250,11 +181,132 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="Filters_Label">
+              <object class="GtkGrid" id="server-connect-group">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">start</property>
+                <property name="halign">end</property>
                 <property name="hexpand">True</property>
+                <property name="column_spacing">10</property>
+                <child>
+                  <object class="GtkGrid" id="server-action-group">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">end</property>
+                    <property name="row_spacing">10</property>
+                    <property name="column_spacing">5</property>
+                    <child>
+                      <object class="GtkButton" id="Info_Button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">action-info-button</property>
+                        <property name="vexpand">True</property>
+                        <property name="image">info-icon</property>
+                        <property name="always_show_image">True</property>
+                        <signal name="clicked" handler="cb_info_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="Connect_Button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">action-connect-button</property>
+                        <property name="vexpand">True</property>
+                        <property name="image">connect-icon</property>
+                        <property name="always_show_image">True</property>
+                        <signal name="clicked" handler="cb_connect_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkGrid" id="server-data-group">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="column_spacing">5</property>
+                    <child>
+                      <object class="GtkEntry" id="server-connect-pass">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="halign">end</property>
+                        <property name="valign">center</property>
+                        <property name="visibility">False</property>
+                        <property name="width_chars">12</property>
+                        <property name="placeholder_text" translatable="yes">server-connect-pass</property>
+                        <property name="input_purpose">password</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="server-connect-host">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="halign">end</property>
+                        <property name="valign">center</property>
+                        <property name="max_length">22</property>
+                        <property name="width_chars">22</property>
+                        <property name="max_width_chars">22</property>
+                        <property name="placeholder_text" translatable="yes">server-connect-host</property>
+                        <property name="input_purpose">url</property>
+                        <signal name="changed" handler="cb_server_connect_data_changed" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="server-connect-game">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">server-connect-game</property>
+                        <property name="model">Game_Store</property>
+                        <property name="id_column">0</property>
+                        <signal name="changed" handler="cb_server_connect_data_changed" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="server-connect-game-icon"/>
+                          <attributes>
+                            <attribute name="pixbuf">3</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererText" id="server-connect-game-name">
+                            <property name="xpad">5</property>
+                          </object>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">1</property>

@@ -80,8 +80,9 @@ class GUIActions:
                                                                       "ServerList_Refresh_Spinner":             "serverlist-refresh-spinner",
                                                                       "Error_Grid":                             "error-grid",
                                                                       "Error_Message_Label":                    "error-message-label",
-                                                                      "ServerHost_Entry":                       "serverhost-entry",
-                                                                      "ServerPass_Entry":                       "serverpass-entry",
+                                                                      "server-connect-game":                    "server-connect-game",
+                                                                      "server-connect-host":                    "server-connect-host",
+                                                                      "server-connect-pass":                    "server-connect-pass",
                                                                       "serverinfo-dialog":                      "serverinfo-dialog",
                                                                       "serverinfo-name-label":                  "serverinfo-name-label",
                                                                       "serverinfo-name-data":                   "serverinfo-name",
@@ -103,6 +104,11 @@ class GUIActions:
                                                                       "serverinfo-players-score-treeviewcolumn":"serverinfo-players-score-column",
                                                                       "serverinfo-players-ping-treeviewcolumn": "serverinfo-players-ping-column"
                                                                       })
+        self.game_view_format = ("game_id",
+                                 "name",
+                                 "backend",
+                                 "game_icon",
+                                 "status_icon")
 
         self.server_list_model_format = ("host",
                                          "password",
@@ -143,7 +149,7 @@ class GUIActions:
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
     def cb_game_preferences_button_clicked(self, *args):
-        game = self.app.settings.settings_table["common"]["selected-game"]
+        game = self.app.settings.settings_table["common"]["selected-game-browser"]
         prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
                                                    self.core.game_table,
@@ -158,31 +164,33 @@ class GUIActions:
         dialog = self.gtk_widgets["serverinfo-dialog"]
 
         game_table = copy.deepcopy(self.core.game_table)
-        game = self.app.settings.settings_table["common"]["selected-game"]
+        game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server_list_table = game_table[game]["servers"]
         host = self.app.settings.settings_table["common"]["server-host"]
-        server_entry = server_list_table[helpers.search_dict_table(server_list_table, "host", host)]
-        player_model = self.gtk_widgets["playerlist-model"]
-        player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
+        server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
+        if server_entry_index is not None:
+            server_entry = server_list_table[server_entry_index]
+            player_model = self.gtk_widgets["playerlist-model"]
+            player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
 
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], str(server_entry["player_count"]) + " / " + str(server_entry["player_limit"]))
-        gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], str(server_entry["player_count"]) + " / " + str(server_entry["player_limit"]))
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
 
-        player_model.clear()
-        try:
-            player_table = helpers.dict_to_list(server_entry["players"], self.player_list_model_format)
-            for entry in player_table:
-                player_model.append(entry)
-            player_scrolledview.set_property("visible", True)
-        except:
-            player_scrolledview.set_property("visible", False)
+            player_model.clear()
+            try:
+                player_table = helpers.dict_to_list(server_entry["players"], self.player_list_model_format)
+                for entry in player_table:
+                    player_model.append(entry)
+                player_scrolledview.set_property("visible", True)
+            except:
+                player_scrolledview.set_property("visible", False)
 
-        dialog.run()
-        dialog.hide()
+            dialog.run()
+            dialog.hide()
 
     def cb_connect_button_clicked(self, *args):
         game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"])[self.server_list_model_format.index("game_id")]
@@ -234,7 +242,7 @@ class GUIActions:
             self.gtk_widgets["game-view-revealer"].set_reveal_child(False)
 
     def cb_game_treeview_selection_changed(self, *args):
-        game_id = self.app.settings.settings_table["common"]["selected-game"]
+        game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
         if self.core.game_table[game_id]["query-status"] is None:  # Refresh server list on first access
@@ -246,7 +254,7 @@ class GUIActions:
 
     def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
-        game = self.app.settings.settings_table["common"]["selected-game"]
+        game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         self.set_loading_state("working")
         self.set_game_state(game, "working")
@@ -257,11 +265,6 @@ class GUIActions:
         """
         Loads game list into a list store
         """
-        self.game_view_format = ("game_id",
-                                 "name",
-                                 "backend",
-                                 "game_icon",
-                                 "status_icon")
 
         game_table = self.core.game_table.copy()
         game_icons = self.game_icons
@@ -288,7 +291,7 @@ class GUIActions:
         """Set of actions to do after query is complete."""
         query_status = game_table[game]["query-status"]
         server_table = game_table[game]["servers"]
-        selected_game = self.app.settings.settings_table["common"]["selected-game"]
+        selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         model = self.gtk_widgets["serverlist-model"]
         view = self.gtk_widgets["serverlist-view"]
@@ -303,6 +306,8 @@ class GUIActions:
                 self.set_loading_state("ready")
             elif query_status == "error":
                 self.set_loading_state("error")
+
+        self.cb_server_connect_data_changed()  # In case selected server's existence is altered
 
     def set_game_state(self, game, state):
         icon = ""
@@ -349,9 +354,11 @@ class GUIActions:
 
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
-        a = gtk_helpers.get_widget_value(self.gtk_widgets["serverhost-entry"])
+        host_selection = gtk_helpers.get_widget_value(self.gtk_widgets["server-connect-host"])
+        game_selection = gtk_helpers.get_widget_value(self.gtk_widgets["server-connect-game"])
         model.clear()
-        self.gtk_widgets["serverhost-entry"].set_text(a)
+        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-host"], host_selection)
+        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-game"], game_selection, treeview_colnum=self.game_view_format.index("game_id"))
 
         # Goodies for GUI
         for entry in view_table:
@@ -377,13 +384,16 @@ class GUIActions:
 
     def cb_server_list_selection_changed(self, *args):
         """Updates text in Entry on TreeView selection change."""
-        entry_field = self.gtk_widgets["serverhost-entry"]
+        entry_field = self.gtk_widgets["server-connect-host"]
+        game_selection = self.gtk_widgets["server-connect-game"]
         treeview = self.gtk_widgets["serverlist-view"]
 
         try:
             text = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("host")]
+            game = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("game_id")]
 
             gtk_helpers.set_widget_value(entry_field, text)
+            gtk_helpers.set_widget_value(game_selection, game, treeview_colnum=self.game_view_format.index("game_id"))
         except:
             pass
 
@@ -392,18 +402,26 @@ class GUIActions:
         self.cb_server_list_selection_changed()
         self.cb_connect_button_clicked()
 
-    def cb_server_host_entry_changed(self, *args):
-        """Resets button sensitivity on Gtk.Entry change"""
-        entry_field = self.gtk_widgets["serverhost-entry"]
+    def cb_server_connect_data_changed(self, *args):
+        """Resets button sensitivity on server connect data change"""
+        game = self.app.settings.settings_table["common"]["selected-game-connect"]
+        server_list_table = copy.deepcopy(self.core.game_table[game]["servers"])
+        host = self.app.settings.settings_table["common"]["server-host"]
+        server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
+
+        entry_field = self.gtk_widgets["server-connect-host"]
         info_button = self.gtk_widgets["action-info-button"]
         connect_button = self.gtk_widgets["action-connect-button"]
 
-        if gtk_helpers.get_widget_value(entry_field) == '':
-            info_button.set_sensitive(False)
-            connect_button.set_sensitive(False)
+        if server_entry_index is None:
+            info_button.set_property("sensitive", False)
+            if gtk_helpers.get_widget_value(entry_field) == '':
+                connect_button.set_property("sensitive", False)
+            else:
+                connect_button.set_property("sensitive", True)
         else:
-            info_button.set_sensitive(True)
-            connect_button.set_sensitive(True)
+            info_button.set_property("sensitive", True)
+            connect_button.set_property("sensitive", True)
 
     def cb_listed_widget_changed(self, *args):
         self.update_settings_table()
@@ -470,36 +488,41 @@ class App(Gtk.Application):
         Loads the GtkBuilder resources, settings and start the main loop.
         """
 
-        # Load settings
-        print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
-        self.status = "starting"
-        self.guiactions.fill_game_store()
-        self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
+        try:
+            # Load settings
+            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
+            self.status = "starting"
+            self.guiactions.fill_game_store()
+            self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
 
-        # Connect signals
-        self.builder.connect_signals(self.guiactions)
-        gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game"])
-        self.guiactions.cb_game_treeview_togglebutton_clicked()
+            # Connect signals
+            self.builder.connect_signals(self.guiactions)
+            gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
+            self.guiactions.cb_game_treeview_togglebutton_clicked()
+            self.guiactions.cb_server_connect_data_changed()
 
-        # Add main window
-        main_window = self.guiactions.gtk_widgets["main-window"]
-        self.add_window(main_window)
+            # Add main window
+            main_window = self.guiactions.gtk_widgets["main-window"]
+            self.add_window(main_window)
 
-        # Create menu actions
-        about_action = Gio.SimpleAction.new("about", None)
-        quit_action = Gio.SimpleAction.new("quit", None)
+            # Create menu actions
+            about_action = Gio.SimpleAction.new("about", None)
+            quit_action = Gio.SimpleAction.new("quit", None)
 
-        about_action.connect("activate", self.guiactions.cb_about, main_window)
-        quit_action.connect("activate", self.guiactions.cb_quit, self)
+            about_action.connect("activate", self.guiactions.cb_about, main_window)
+            quit_action.connect("activate", self.guiactions.cb_quit, self)
 
-        self.add_action(about_action)
-        self.add_action(quit_action)
+            self.add_action(about_action)
+            self.add_action(quit_action)
 
-        self.set_app_menu(self.builder.get_object("app-menu"))
+            self.set_app_menu(self.builder.get_object("app-menu"))
 
-        gtk_helpers.set_object_properties(self.guiactions.gtk_widgets, GTK_STRING_TABLE)
+            gtk_helpers.set_object_properties(self.guiactions.gtk_widgets, GTK_STRING_TABLE)
 
-        self.status = "up"
+            self.status = "up"
+        except Exception as e:
+            print(e)
+            app.quit()
 
     def on_activate(self, app):
         window = self.guiactions.gtk_widgets["main-window"]

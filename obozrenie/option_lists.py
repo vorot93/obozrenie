@@ -22,9 +22,10 @@ import obozrenie.i18n as i18n
 def get_common_options():
     option_list = {
                    'common': {
-                              'selected-game': {'gtk_widget_name': "Game_TreeView", 'gtk_widget_colnum': 0},
-                              'server-host':   {'gtk_widget_name': "ServerHost_Entry"},
-                              'server-pass':   {'gtk_widget_name': "ServerPass_Entry"},
+                              'selected-game-connect': {'gtk_widget_name': "server-connect-game", 'gtk_widget_colnum': 0},
+                              'selected-game-browser': {'gtk_widget_name': "Game_TreeView", 'gtk_widget_colnum': 0},
+                              'server-host':   {'gtk_widget_name': "server-connect-host"},
+                              'server-pass':   {'gtk_widget_name': "server-connect-pass"},
                               'game-listview': {'gtk_widget_name': "Game_View_ToggleButton"}
                              }
                   }

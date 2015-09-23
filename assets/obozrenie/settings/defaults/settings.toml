@@ -2,5 +2,6 @@
 nickname = ""
 server-pass = ""
 server-host = "127.0.0.1"
-selected-game = ""
+selected-game-browser = ""
+selected-game-connect = ""
 game-listview = true
