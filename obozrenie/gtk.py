@@ -247,10 +247,10 @@ class GUIActions:
         query_status = self.core.get_query_status(game_id)
 
         gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
-        if query_status is None:  # Refresh server list on first access
+        if query_status == self.core.QUERY_STATUS.EMPTY:  # Refresh server list on first access
             self.cb_update_button_clicked()
         else:
-            if query_status == "working":
+            if query_status == self.core.QUERY_STATUS.WORKING:
                 self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id)
 
@@ -259,7 +259,7 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         self.set_loading_state("working")
-        self.set_game_state(game, "working")
+        self.set_game_state(game, self.core.QUERY_STATUS.WORKING)
 
         self.core.update_server_list(game, self.show_game_page)
 
@@ -292,6 +292,7 @@ class GUIActions:
     def show_game_page(self, game):
         """Set of actions to do after query is complete."""
         query_status = self.app.core.get_query_status(game)
+        query_status_enum = self.core.QUERY_STATUS
         server_table = self.app.core.get_servers_data(game)
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
@@ -300,25 +301,26 @@ class GUIActions:
 
         self.set_game_state(game, query_status)  # Display game status in GUI
         if selected_game == game:  # Is callback for the game that is currently viewed?
-            if query_status == "ready":
+            if query_status == query_status_enum.READY:
                 self.set_loading_state("filling list")
                 view.set_model(None)  # Speed hack
                 self.fill_server_list_model(server_table)
                 view.set_model(model)
                 self.set_loading_state("ready")
-            elif query_status == "error":
+            elif query_status == query_status_enum.ERROR:
                 self.set_loading_state("error")
 
         self.cb_server_connect_data_changed()  # In case selected server's existence is altered
 
     def set_game_state(self, game, state):
         icon = ""
+        query_status_enum = self.core.QUERY_STATUS
 
-        if state == "working":
+        if state == query_status_enum.WORKING:
             icon = "emblem-synchronizing-symbolic"
-        elif state == "ready":
+        elif state == query_status_enum.READY:
             icon = "emblem-ok-symbolic"
-        elif state == "error":
+        elif state == query_status_enum.ERROR:
             icon = "error"
         else:
             return

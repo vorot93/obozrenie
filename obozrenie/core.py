@@ -18,8 +18,6 @@
 
 """Core functions for Obozrenie Game Server Browser."""
 
-from collections import OrderedDict
-import copy
 import os
 import multiprocessing
 import threading
@@ -34,13 +32,6 @@ import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
 import obozrenie.backends as backends
 import obozrenie.launch as launch
-
-
-def deepcopy(foo):
-    try:
-        return foo.__deepcopy__()
-    except AttributeError:
-        return copy.deepcopy(foo)
 
 
 class GameTable():
@@ -96,6 +87,7 @@ class GameTable():
     Please bear in mind that all read accessor methods return deep copies, therefore cleaning up the result is programmer's responsibility.
     """
     def __init__(self, gameconfig_object):
+        self.QUERY_STATUS = helpers.enum('EMPTY', 'WORKING', 'READY', 'ERROR')
         self.__game_table = self.create_game_table(gameconfig_object)
 
     def create_game_table(self, gameconfig_object):
@@ -135,7 +127,7 @@ class GameTable():
                             game_table_entry_temp["info"]["steam_app_id"] = steam_app_id
                         except NameError:
                             pass
-                    game_table_entry_temp["query-status"] = None
+                    game_table_entry_temp["query-status"] = self.QUERY_STATUS.EMPTY
 
         return game_table
 
@@ -145,7 +137,7 @@ class GameTable():
         It is the slowest accessor method. Please try to query for specific information.
         """
         with self.__game_table as game_table:
-            game_table_copy = deepcopy(game_table)
+            game_table_copy = helpers.deepcopy(game_table)
         return game_table_copy
 
     def get_game_set(self):
@@ -161,7 +153,7 @@ class GameTable():
         Returns information about the specified game.
         """
         with self.__game_table as game_table:
-            game_info = deepcopy(game_table[game]["info"])
+            game_info = helpers.deepcopy(game_table[game]["info"])
         return game_info
 
     def get_game_settings(self, game):
@@ -169,7 +161,7 @@ class GameTable():
         Returns settings for the specified game.
         """
         with self.__game_table as game_table:
-            game_settings = deepcopy(game_table[game]["settings"])
+            game_settings = helpers.deepcopy(game_table[game]["settings"])
         return game_settings
 
     def set_game_setting(self, game, option, value):
@@ -178,7 +170,7 @@ class GameTable():
 
     def get_query_status(self, game):
         with self.__game_table as game_table:
-            query_status = deepcopy(game_table[game]["query-status"])
+            query_status = helpers.deepcopy(game_table[game]["query-status"])
         return query_status
 
     def set_query_status(self, game, status):
@@ -187,13 +179,13 @@ class GameTable():
 
     def get_server_info(self, game, host):
         with self.__game_table as game_table:
-            server_table = deepcopy(self.__game_table[game]["servers"])
+            server_table = helpers.deepcopy(self.__game_table[game]["servers"])
         server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
         return server_entry
 
     def set_server_info(self, game, host, data):
         with self.__game_table as game_table:
-            server_entry_index = game_table[helpers.search_dict_table(deepcopy(game_table), "host", host)]
+            server_entry_index = game_table[helpers.search_dict_table(helpers.deepcopy(game_table), "host", host)]
             if server_entry_index is None:
                 self.append_server_info(game, data)
             else:
@@ -201,7 +193,7 @@ class GameTable():
 
     def get_servers_data(self, game):
         with self.__game_table as game_table:
-            servers_data = deepcopy(game_table[game]["servers"])
+            servers_data = helpers.deepcopy(game_table[game]["servers"])
         return servers_data
 
     def set_servers_data(self, game, servers_data):
@@ -251,8 +243,8 @@ class Core(GameTable):
         backend = game_info["backend"]
 
         # Start query if it's not up already
-        if self.get_query_status(game) != "working":
-            self.set_query_status(game, "working")
+        if self.get_query_status(game) != self.QUERY_STATUS.WORKING:
+            self.set_query_status(game, self.QUERY_STATUS.WORKING)
             print(CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name})
             server_list_proxy = None
             stat_master_cmd = backends.backend_table[backend].stat_master
@@ -268,10 +260,10 @@ class Core(GameTable):
             except Exception as e:
                 print(CORE_MSG, e)
                 print(CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG)
-                self.set_query_status(game, "error")
+                self.set_query_status(game, self.QUERY_STATUS.ERROR)
 
             # ListProxy -> list
-            if self.get_query_status(game) != "error":
+            if self.get_query_status(game) != self.QUERY_STATUS.ERROR:
                 self.set_servers_data(game, server_list_proxy)
                 temp_list = []
                 for entry in server_list_proxy:
@@ -290,7 +282,7 @@ class Core(GameTable):
 
                 self.set_servers_data(game, temp_list)
 
-                self.set_query_status(game, "ready")
+                self.set_query_status(game, self.QUERY_STATUS.READY)
 
         # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
         if callback is not None:

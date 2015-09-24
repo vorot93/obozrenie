@@ -18,6 +18,7 @@
 
 """Helper functions for processing data."""
 
+import copy
 import json
 import os
 import pytoml
@@ -57,6 +58,18 @@ class ThreadSafeList(list):
 
     def __deepcopy__(self, *args):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
+
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    return type('Enum', (), enums)
+
+
+def deepcopy(foo):
+    try:
+        return foo.__deepcopy__()
+    except AttributeError:
+        return copy.deepcopy(foo)
 
 
 def search_table(table, level, value):
