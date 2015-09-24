@@ -21,7 +21,7 @@
 import ast
 import os
 
-from gi.repository import GdkPixbuf, GLib, Gtk
+from gi.repository import GdkPixbuf, Gtk
 
 
 def get_icon_dict(key_list, icon_type, icon_format, icon_dir, width, height, error_msg=None):

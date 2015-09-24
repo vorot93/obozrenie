@@ -16,7 +16,6 @@
 import os
 import re
 
-import ast
 import json
 import subprocess
 import time
@@ -36,7 +35,6 @@ def stat_master(game, game_info, game_settings, proxy=None):
     hosts_array = []
     server_table = []
     server_table_qstat_xml = []
-    server_table_xmltodict = []
     server_table_dict = []
 
     qstat_stdin_object = ""
@@ -72,7 +70,6 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
     hosts_array = list(set(hosts_array))
 
-    qstat_opts = []
     qstat_cmd = ["qstat", "-xml", "-utf8", "-maxsim", "9999", "-sendinterval", "1", "-R", "-P", "-f", "-"]
 
     qstat_stdin_descriptor = backend_config_object['game'][game]['master_type']

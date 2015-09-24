@@ -19,12 +19,8 @@
 """Simple and easy to use game server browser."""
 
 
-import argparse
-import ast
 import os
-import shutil
 import signal
-import threading
 
 from gi.repository import GLib, Gio, Gtk
 
@@ -104,11 +100,11 @@ class GUIActions:
                                                                       "serverinfo-players-score-treeviewcolumn":"serverinfo-players-score-column",
                                                                       "serverinfo-players-ping-treeviewcolumn": "serverinfo-players-ping-column"
                                                                       })
-        self.game_view_format = ("game_id",
-                                 "name",
-                                 "backend",
-                                 "game_icon",
-                                 "status_icon")
+        self.game_list_model_format = ("game_id",
+                                       "name",
+                                       "backend",
+                                       "game_icon",
+                                       "status_icon")
 
         self.server_list_model_format = ("host",
                                          "password",
@@ -228,7 +224,7 @@ class GUIActions:
         combobox = self.gtk_widgets["game-combobox"]
         treeview = self.gtk_widgets["game-treeview"]
         game_id = gtk_helpers.get_widget_value(combobox)
-        game_id_colnum = self.game_view_format.index("game_id")
+        game_id_colnum = self.game_list_model_format.index("game_id")
 
         gtk_helpers.set_widget_value(treeview, game_id, treeview_colnum=game_id_colnum)
 
@@ -273,8 +269,6 @@ class GUIActions:
 
         game_store_table = []
         for entry in game_table:
-            icon = entry + '.png'
-
             game_store_table.append({})
             game_store_table[-1]["game_id"] = entry
             game_store_table[-1]["name"] = game_table[entry]["info"]["name"]
@@ -283,7 +277,7 @@ class GUIActions:
             game_store_table[-1]["game_icon"] = game_icons[entry]
 
         game_store_table = helpers.sort_dict_table(game_store_table, "name")
-        game_store_list = helpers.dict_to_list(game_store_table, self.game_view_format)
+        game_store_list = helpers.dict_to_list(game_store_table, self.game_list_model_format)
 
         for list_entry in game_store_list:
             game_model.append(list_entry)
@@ -325,10 +319,10 @@ class GUIActions:
             return
 
         model = self.gtk_widgets["game-model"]
-        column = self.game_view_format.index("game_id")
+        column = self.game_list_model_format.index("game_id")
         game_index = gtk_helpers.search_model(model, column, game)
 
-        model[game_index][self.game_view_format.index("status_icon")] = icon
+        model[game_index][self.game_list_model_format.index("status_icon")] = icon
 
     def set_loading_state(self, state):
         notebook = self.gtk_widgets["serverlist-notebook"]
@@ -361,7 +355,7 @@ class GUIActions:
         game_selection = gtk_helpers.get_widget_value(self.gtk_widgets["server-connect-game"])
         model.clear()
         gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-host"], host_selection)
-        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-game"], game_selection, treeview_colnum=self.game_view_format.index("game_id"))
+        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-game"], game_selection, treeview_colnum=self.game_list_model_format.index("game_id"))
 
         # Goodies for GUI
         for entry in view_table:
@@ -380,7 +374,7 @@ class GUIActions:
             entry["country_icon"] = flag_icons.get(country)
 
         view_table = helpers.sort_dict_table(view_table, "ping")
-        server_list = helpers.dict_to_list(view_table, self.server_list_model_format)
+        server_list = helpers.dict_to_list(view_table, model_format)
 
         for entry in server_list:
             model_append(entry)
@@ -396,7 +390,7 @@ class GUIActions:
             game = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("game_id")]
 
             gtk_helpers.set_widget_value(entry_field, text)
-            gtk_helpers.set_widget_value(game_selection, game, treeview_colnum=self.game_view_format.index("game_id"))
+            gtk_helpers.set_widget_value(game_selection, game, treeview_colnum=self.game_list_model_format.index("game_id"))
         except:
             pass
 

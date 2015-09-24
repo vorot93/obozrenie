@@ -117,14 +117,14 @@ class GameTable():
                         # Create setting groups
                         for j in range(len(gameconfig_object[game_id]["settings"])):
                             option_name = gameconfig_object[game_id]["settings"][j]
-                            game_table_entry_temp["settings"][option_name] = ""
+                            game_table_entry_settings_temp[option_name] = ""
 
                     with game_table_entry_temp["info"] as game_table_entry_info_temp:
-                        game_table_entry_temp["info"]["name"] = name
-                        game_table_entry_temp["info"]["backend"] = backend
-                        game_table_entry_temp["info"]["launch_pattern"] = launch_pattern
+                        game_table_entry_info_temp["name"] = name
+                        game_table_entry_info_temp["backend"] = backend
+                        game_table_entry_info_temp["launch_pattern"] = launch_pattern
                         try:
-                            game_table_entry_temp["info"]["steam_app_id"] = steam_app_id
+                            game_table_entry_info_temp["steam_app_id"] = steam_app_id
                         except NameError:
                             pass
                     game_table_entry_temp["query-status"] = self.QUERY_STATUS.EMPTY
@@ -179,7 +179,7 @@ class GameTable():
 
     def get_server_info(self, game, host):
         with self.__game_table as game_table:
-            server_table = helpers.deepcopy(self.__game_table[game]["servers"])
+            server_table = helpers.deepcopy(game_table[game]["servers"])
         server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
         return server_entry
 
@@ -204,7 +204,7 @@ class GameTable():
 
     def clear_servers_data(self, game):
         with self.__game_table as game_table:
-            with self.__game_table[game]["servers"] as server_list:
+            with game_table[game]["servers"] as server_list:
                 server_list.clear()
 
 
