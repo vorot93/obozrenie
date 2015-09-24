@@ -27,7 +27,6 @@ from obozrenie.global_strings import *
 
 import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
-import obozrenie.ping as ping
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
