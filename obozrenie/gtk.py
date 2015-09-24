@@ -178,7 +178,7 @@ class GUIActions:
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], str(server_entry["player_count"]) + " / " + str(server_entry["player_limit"]))
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], i18n._("%(player_count)s / %(player_limit)s") % {'player_count': str(server_entry["player_count"]), 'player_limit': str(server_entry["player_limit"])})
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
 
             player_model.clear()
