@@ -546,5 +546,7 @@ if __name__ == "__main__":
         settings_instance = core.Settings(core_instance, os.path.expanduser(PROFILE_PATH))
         app_instance = App(core_instance, settings_instance)
         app_instance.run(None)
+    except Exception as e:
+        print(e)
     finally:
         os.killpg(0, signal.SIGTERM)  # kill all processes in my group
