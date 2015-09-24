@@ -261,7 +261,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="can_focus">True</property>
                         <property name="halign">end</property>
                         <property name="valign">center</property>
-                        <property name="max_length">22</property>
                         <property name="width_chars">22</property>
                         <property name="max_width_chars">22</property>
                         <property name="placeholder_text" translatable="yes">server-connect-host</property>
