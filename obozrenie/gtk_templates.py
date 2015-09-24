@@ -93,7 +93,7 @@ def get_option_widget(option_dict):
     return widget
 
 
-def get_preferences_grid(game, game_table, dynamic_settings_table):
+def get_preferences_grid(game, game_settings, dynamic_settings_table):
     grid = Gtk.Grid()
 
     grid.insert_column(0)
@@ -106,7 +106,7 @@ def get_preferences_grid(game, game_table, dynamic_settings_table):
     widget_option_mapping = {}
 
     i = 0
-    for option in game_table[game]["settings"]:
+    for option in game_settings:
         option_object = get_option_widget(dynamic_settings_table[option])
 
         try:
@@ -124,7 +124,7 @@ def get_preferences_grid(game, game_table, dynamic_settings_table):
 
 
 class PreferencesDialog(Gtk.Dialog):
-    def __init__(self, parent, game, game_table, dynamic_settings_table, callback_start=None, callback_close=None):
+    def __init__(self, parent, game, game_info, game_settings, dynamic_settings_table, callback_start=None, callback_close=None):
         Gtk.Dialog.__init__(self, None, parent)
 
         self.callback_close = None
@@ -135,7 +135,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.game = game
         self.dynamic_settings_table = dynamic_settings_table
 
-        preferences_grid_info = get_preferences_grid(game, game_table, dynamic_settings_table)
+        preferences_grid_info = get_preferences_grid(game, game_settings, dynamic_settings_table)
 
         preferences_grid = preferences_grid_info["widget"]
         self.widget_option_mapping = preferences_grid_info["mapping"]
@@ -145,7 +145,7 @@ class PreferencesDialog(Gtk.Dialog):
 
         self.set_resizable(False)
         self.set_border_width(10)
-        self.set_title(i18n._("%(game)s preferences") % {'game': game_table[game]["info"]["name"]})
+        self.set_title(i18n._("%(game)s preferences") % {'game': game_info["name"]})
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
 
         button = self.add_button(i18n._("Save"), Gtk.ResponseType.CLOSE)

@@ -24,6 +24,7 @@ import ast
 import copy
 import os
 import shutil
+import signal
 import threading
 
 from gi.repository import GLib, Gio, Gtk
@@ -144,15 +145,15 @@ class GUIActions:
             self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
         except TypeError and AttributeError:
             self.flag_icons = {}
-        game_table = self.core.game_table.copy()
-        game_list = game_table.keys()
+        game_list = self.core.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
 
     def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
         prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
-                                                   self.core.game_table,
+                                                   self.core.get_game_info(game),
+                                                   self.core.get_game_settings(game),
                                                    self.app.settings.dynamic_widget_table,
                                                    callback_start=self.apply_settings_to_preferences_dialog,
                                                    callback_close=self.update_game_settings_table)
@@ -163,7 +164,7 @@ class GUIActions:
         """Shows server information window."""
         dialog = self.gtk_widgets["serverinfo-dialog"]
 
-        game_table = copy.deepcopy(self.core.game_table)
+        game_table = self.core.get_game_table_copy()
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server_list_table = game_table[game]["servers"]
         host = self.app.settings.settings_table["common"]["server-host"]
@@ -243,14 +244,15 @@ class GUIActions:
 
     def cb_game_treeview_selection_changed(self, *args):
         game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
+        query_status = self.core.get_query_status(game_id)
 
         gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
-        if self.core.game_table[game_id]["query-status"] is None:  # Refresh server list on first access
+        if query_status is None:  # Refresh server list on first access
             self.cb_update_button_clicked()
         else:
-            if self.core.game_table[game_id]["query-status"] == "working":
+            if query_status == "working":
                 self.set_loading_state("working")
-            GLib.idle_add(self.show_game_page, game_id, self.core.game_table.copy())
+            GLib.idle_add(self.show_game_page, game_id)
 
     def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
@@ -266,7 +268,7 @@ class GUIActions:
         Loads game list into a list store
         """
 
-        game_table = self.core.game_table.copy()
+        game_table = self.core.get_game_table_copy()
         game_icons = self.game_icons
         game_model = self.gtk_widgets["game-model"]
 
@@ -287,10 +289,10 @@ class GUIActions:
         for list_entry in game_store_list:
             game_model.append(list_entry)
 
-    def show_game_page(self, game, game_table):
+    def show_game_page(self, game):
         """Set of actions to do after query is complete."""
-        query_status = game_table[game]["query-status"]
-        server_table = game_table[game]["servers"]
+        query_status = self.app.core.get_query_status(game)
+        server_table = self.app.core.get_servers_data(game)
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         model = self.gtk_widgets["serverlist-model"]
@@ -405,7 +407,7 @@ class GUIActions:
     def cb_server_connect_data_changed(self, *args):
         """Resets button sensitivity on server connect data change"""
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
-        server_list_table = copy.deepcopy(self.core.game_table[game]["servers"])
+        server_list_table = self.core.get_servers_data(game)
         host = self.app.settings.settings_table["common"]["server-host"]
         server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
 
@@ -428,7 +430,7 @@ class GUIActions:
 
     def apply_settings_to_preferences_dialog(self, game, widget_option_mapping, dynamic_settings_table):
         for option in widget_option_mapping:
-            value = self.core.game_table[game]["settings"][option]
+            value = self.core.get_game_settings(game)[option]
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value = "\n".join(value)
             gtk_helpers.set_widget_value(widget_option_mapping[option], value)
@@ -449,7 +451,7 @@ class GUIActions:
             value = gtk_helpers.get_widget_value(widget_option_mapping[option])
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value = value.split("\n")
-            self.core.game_table[game]["settings"][option] = value
+            self.core.set_game_setting(game, option, value)
 
     def cb_post_settings_genload(self, widget_table, group, option, value):
         self.widget_table = widget_table
@@ -464,7 +466,7 @@ class App(Gtk.Application):
 
     """App class."""
 
-    def __init__(self, Core, Settings):
+    def __init__(self, core_instance, settings_instance):
         Gtk.Application.__init__(self,
                                  application_id=APPLICATION_ID,
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
@@ -477,8 +479,8 @@ class App(Gtk.Application):
         self.builder.add_from_file(GTK_UI_FILE)
         self.builder.add_from_file(GTK_APPMENU_FILE)
 
-        self.core = Core()
-        self.settings = Settings(self.core, os.path.expanduser(PROFILE_PATH))
+        self.core = core_instance
+        self.settings = settings_instance
 
         self.guiactions = GUIActions(self, self.builder, self.core)
 
@@ -538,5 +540,11 @@ class App(Gtk.Application):
             print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
 
 if __name__ == "__main__":
-    app = App(core.Core, core.Settings)
-    app.run(None)
+    os.setpgrp()  # create new process group, become its leader
+    try:
+        core_instance = core.Core()
+        settings_instance = core.Settings(core_instance, os.path.expanduser(PROFILE_PATH))
+        app_instance = App(core_instance, settings_instance)
+        app_instance.run(None)
+    finally:
+        os.killpg(0, signal.SIGTERM)  # kill all processes in my group

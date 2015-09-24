@@ -33,7 +33,7 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
 
 
-def stat_master(game, game_table_slice, proxy=None):
+def stat_master(game, game_info, game_settings, proxy=None):
     hosts_array = []
     server_table = []
     server_table_qstat_xml = []
@@ -46,7 +46,7 @@ def stat_master(game, game_table_slice, proxy=None):
     stat_start_time = None
     stat_end_time = None
 
-    game_name = game_table_slice["info"]["name"]
+    game_name = game_info["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     if "server_gamename" not in backend_config_object['game'][game].keys():
@@ -60,7 +60,7 @@ def stat_master(game, game_table_slice, proxy=None):
     if "server_gametype" in backend_config_object['game'][game].keys():
         server_game_type = backend_config_object['game'][game]['server_gametype']
 
-    hosts_temp_array = list(game_table_slice["settings"]["master_uri"])
+    hosts_temp_array = list(game_settings["master_uri"])
 
     for entry in hosts_temp_array:
         entry = entry.strip()

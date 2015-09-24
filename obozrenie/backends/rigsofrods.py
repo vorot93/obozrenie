@@ -118,13 +118,13 @@ def add_rtt_info(array):
         entry["ping"] = rtt_array[ip]
 
 
-def stat_master(game, game_table_slice, proxy=None):
+def stat_master(game, game_info, game_settings, proxy=None):
     """Stats the master server"""
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-    master_uri_list = list(game_table_slice["settings"]["master_uri"])
+    master_uri_list = list(game_settings["master_uri"])
 
     parser = ServerListParser()
 
