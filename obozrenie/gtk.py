@@ -21,7 +21,6 @@
 
 import argparse
 import ast
-import copy
 import os
 import shutil
 import signal
@@ -345,7 +344,7 @@ class GUIActions:
     def fill_server_list_model(self, server_table):
         """Fill the server view"""
 
-        view_table = copy.deepcopy(server_table)
+        view_table = helpers.deepcopy(server_table)
 
         model = self.gtk_widgets["serverlist-model"]
         model_append = model.append
