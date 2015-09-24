@@ -18,11 +18,46 @@
 
 """Helper functions for processing data."""
 
+import json
 import os
 import pytoml
+import threading
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
+
+
+class ThreadSafeDict(dict):
+    def __init__(self, * p_arg, ** n_arg):
+        super().__init__(* p_arg, ** n_arg)
+        self.__lock = threading.RLock()
+
+    def __enter__(self):
+        self.__lock.acquire()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.__lock.release()
+
+    def __deepcopy__(self, *args):
+        return ThreadSafeDict(json.loads(json.dumps(dict(self))))
+
+
+class ThreadSafeList(list):
+    def __init__(self, * p_arg, ** n_arg):
+        super().__init__(* p_arg, ** n_arg)
+        self.__lock = threading.RLock()
+
+    def __enter__(self):
+        self.__lock.acquire()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.__lock.release()
+
+    def __deepcopy__(self, *args):
+        return ThreadSafeList(json.loads(json.dumps(list(self))))
+
 
 def search_table(table, level, value):
         if level == 0:

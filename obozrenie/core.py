@@ -36,13 +36,193 @@ import obozrenie.backends as backends
 import obozrenie.launch as launch
 
 
-class Core:
+def deepcopy(foo):
+    try:
+        return foo.__deepcopy__()
+    except AttributeError:
+        return copy.deepcopy(foo)
+
+
+class GameTable():
+    """
+    The Game Table is the persistent game information storage that is used through out Obozrenie.
+
+    Game Table internal structure:
+    ------------------------------
+
+        game_table - gameA - info     - name
+                                      - backend
+                                      ....
+
+                           - settings - path
+                                      - master_server_uri
+                                      ....
+
+                           - servers  - server_entry1     - host
+                                                          - name
+                                                          - ping
+                                                          ....
+
+                                      - server_entry2     - host
+                                                          - name
+                                                          - ping
+                                                          ....
+                     gameB - info     - name
+                                      - backend
+                                      ....
+
+                           - settings - path
+                                      - master_server_uri
+                                      ....
+
+                           - servers  - server_entry1     - host
+                                                          - name
+                                                          - ping
+                                                          ....
+
+                                      - server_entry2     - host
+                                                          - name
+                                                          - ping
+                                                          ....
+                     gameC - ....
+                     ....
+
+    ------------------------------
+
+    Please mind, however, that the storage itself is not available for direct access. This helps us keep interface stable and game table internal structure agile.
+
+    Instead this class holds the Game Table and provides read and write accessor methods.
+
+    Please bear in mind that all read accessor methods return deep copies, therefore cleaning up the result is programmer's responsibility.
+    """
+    def __init__(self, gameconfig_object):
+        self.__game_table = self.create_game_table(gameconfig_object)
+
+    def create_game_table(self, gameconfig_object):
+        """
+        Loads game list into a table.
+        """
+        game_table = helpers.ThreadSafeDict()
+        with game_table as game_table_temp:
+            for game_id in gameconfig_object:
+                game_table_temp[game_id] = helpers.ThreadSafeDict()
+
+                name = str(gameconfig_object[game_id]["name"])
+                backend = str(gameconfig_object[game_id]["backend"])
+                launch_pattern = str(gameconfig_object[game_id]["launch_pattern"])
+                try:
+                    steam_app_id = str(gameconfig_object[game_id]["steam_app_id"])
+                except KeyError:
+                    pass
+
+                # Create dict groups
+                with game_table_temp[game_id] as game_table_entry_temp:
+                    game_table_entry_temp["info"] = helpers.ThreadSafeDict()
+                    game_table_entry_temp["settings"] = helpers.ThreadSafeDict()
+                    game_table_entry_temp["servers"] = helpers.ThreadSafeList()
+
+                    with game_table_entry_temp["settings"] as game_table_entry_settings_temp:
+                        # Create setting groups
+                        for j in range(len(gameconfig_object[game_id]["settings"])):
+                            option_name = gameconfig_object[game_id]["settings"][j]
+                            game_table_entry_temp["settings"][option_name] = ""
+
+                    with game_table_entry_temp["info"] as game_table_entry_info_temp:
+                        game_table_entry_temp["info"]["name"] = name
+                        game_table_entry_temp["info"]["backend"] = backend
+                        game_table_entry_temp["info"]["launch_pattern"] = launch_pattern
+                        try:
+                            game_table_entry_temp["info"]["steam_app_id"] = steam_app_id
+                        except NameError:
+                            pass
+                    game_table_entry_temp["query-status"] = None
+
+        return game_table
+
+    def get_game_table_copy(self):
+        """
+        Returns a deep copy of the Game Table.
+        It is the slowest accessor method. Please try to query for specific information.
+        """
+        with self.__game_table as game_table:
+            game_table_copy = deepcopy(game_table)
+        return game_table_copy
+
+    def get_game_set(self):
+        """
+        Returns the set of games held by Game Table.
+        """
+        with self.__game_table as game_table:
+            game_set = set(game_table.keys())
+        return game_set
+
+    def get_game_info(self, game):
+        """
+        Returns information about the specified game.
+        """
+        with self.__game_table as game_table:
+            game_info = deepcopy(game_table[game]["info"])
+        return game_info
+
+    def get_game_settings(self, game):
+        """
+        Returns settings for the specified game.
+        """
+        with self.__game_table as game_table:
+            game_settings = deepcopy(game_table[game]["settings"])
+        return game_settings
+
+    def set_game_setting(self, game, option, value):
+        with self.__game_table as game_table:
+            game_table[game]["settings"][option] = value
+
+    def get_query_status(self, game):
+        with self.__game_table as game_table:
+            query_status = deepcopy(game_table[game]["query-status"])
+        return query_status
+
+    def set_query_status(self, game, status):
+        with self.__game_table as game_table:
+            game_table[game]["query-status"] = status
+
+    def get_server_info(self, game, host):
+        with self.__game_table as game_table:
+            server_table = deepcopy(self.__game_table[game]["servers"])
+        server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
+        return server_entry
+
+    def set_server_info(self, game, host, data):
+        with self.__game_table as game_table:
+            server_entry_index = game_table[helpers.search_dict_table(deepcopy(game_table), "host", host)]
+            if server_entry_index is None:
+                self.append_server_info(game, data)
+            else:
+                self.game_table[server_entry_index] = data
+
+    def get_servers_data(self, game):
+        with self.__game_table as game_table:
+            servers_data = deepcopy(game_table[game]["servers"])
+        return servers_data
+
+    def set_servers_data(self, game, servers_data):
+        with self.__game_table as game_table:
+            self.clear_servers_data(game)
+            for entry in servers_data:
+                game_table[game]["servers"].append(entry)
+
+    def clear_servers_data(self, game):
+        with self.__game_table as game_table:
+            with self.__game_table[game]["servers"] as server_list:
+                server_list.clear()
+
+
+class Core(GameTable):
     """
     Contains core logic and game table of Obozrenie server browser.
     """
 
     def __init__(self):
-        self.__game_table = self.create_game_table(helpers.load_table(GAME_CONFIG_FILE))
+        super().__init__(helpers.load_table(GAME_CONFIG_FILE))
 
         try:
             import pygeoip
@@ -56,81 +236,6 @@ class Core:
         except ImportError:
             print(CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation."))
             self.geolocation = None
-
-    def create_game_table(self, gameconfig_object):
-        """
-        Loads game list into a table
-        """
-        game_table = {}
-        for game_id in gameconfig_object:
-            game_table[game_id] = {}
-
-            name = gameconfig_object[game_id]["name"]
-            backend = gameconfig_object[game_id]["backend"]
-            launch_pattern = gameconfig_object[game_id]["launch_pattern"]
-            try:
-                steam_app_id = gameconfig_object[game_id]["steam_app_id"]
-            except KeyError:
-                pass
-
-            # Create dict groups
-            game_table[game_id]["info"] = {}
-            game_table[game_id]["settings"] = OrderedDict()
-            game_table[game_id]["servers"] = []
-
-            # Create setting groups
-            for j in range(len(gameconfig_object[game_id]["settings"])):
-                option_name = gameconfig_object[game_id]["settings"][j]
-                game_table[game_id]["settings"][option_name] = ""
-
-            game_table[game_id]["info"]["name"] = name
-            game_table[game_id]["info"]["backend"] = backend
-            game_table[game_id]["info"]["launch_pattern"] = launch_pattern
-            try:
-                game_table[game_id]["info"]["steam_app_id"] = steam_app_id
-            except NameError:
-                pass
-            game_table[game_id]["query-status"] = None
-
-        return game_table
-
-    def get_game_table_copy(self):
-        game_table_copy = copy.deepcopy(self.__game_table)
-        return game_table_copy
-
-    def get_game_set(self):
-        game_set = set(self.__game_table.keys())
-        return game_set
-
-    def get_game_info(self, game):
-        game_info = copy.deepcopy(self.__game_table[game]["info"])
-        return game_info
-
-    def get_game_settings(self, game):
-        game_settings = copy.deepcopy(self.__game_table[game]["settings"])
-        return game_settings
-
-    def set_game_setting(self, game, option, value):
-        self.__game_table[game]["settings"][option] = value
-
-    def get_query_status(self, game):
-        query_status = copy.deepcopy(self.__game_table[game]["query-status"])
-        return query_status
-
-    def set_query_status(self, game, status):
-        self.__game_table[game]["query-status"] = status
-
-    def get_servers_data(self, game):
-        servers_data = copy.deepcopy(self.__game_table[game]["servers"])
-        return servers_data
-
-    def set_servers_data(self, game, servers_data):
-        self.clear_servers_data(game)
-        for entry in servers_data:
-            self.__game_table[game]["servers"].append(entry)
-
-    def clear_servers_data(self, game):
-        self.__game_table[game]["servers"] = []
 
     def update_server_list(self, game, stat_callback=None):
         """Updates server lists."""
