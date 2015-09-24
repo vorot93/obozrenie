@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Obozrenie 0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-17 01:25+0300\n"
+"POT-Creation-Date: 2015-09-24 21:44+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,30 +17,30 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.0\n"
 
-#: obozrenie/core.py:52
+#: obozrenie/core.py:231
 #, python-format
 msgid "GeoIP data file %(geoip_data_file)s opened successfully."
 msgstr ""
 
-#: obozrenie/core.py:55
+#: obozrenie/core.py:234
 msgid "GeoIP data file not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:58
+#: obozrenie/core.py:237
 msgid "PyGeoIP not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:105
+#: obozrenie/core.py:256
 #, python-format
 msgid "Refreshing server list for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:116
+#: obozrenie/core.py:270
 #, python-format
 msgid "Internal backend error for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:233
+#: obozrenie/core.py:403
 msgid ""
 "This is the core module of Obozrenie Game Server Browser.\n"
 "Please run an appropriate UI instead."
@@ -96,143 +96,152 @@ msgstr ""
 msgid "Helpers:"
 msgstr ""
 
-#: obozrenie/global_strings.py:43
-msgid "Select a game."
+#: obozrenie/global_strings.py:40
+msgid "Launcher:"
 msgstr ""
 
 #: obozrenie/global_strings.py:44
-msgid "Available games"
+msgid "Select a game."
 msgstr ""
 
 #: obozrenie/global_strings.py:45
-msgid "Toggle game list view mode."
+msgid "Available games"
 msgstr ""
 
 #: obozrenie/global_strings.py:46
-msgid "Configure the selected game."
+msgid "Toggle game list view mode."
 msgstr ""
 
 #: obozrenie/global_strings.py:47
-msgid "Update server list."
+msgid "Configure the selected game."
 msgstr ""
 
 #: obozrenie/global_strings.py:48
-msgid "Show server information."
+msgid "Update server list."
 msgstr ""
 
 #: obozrenie/global_strings.py:49
-msgid "Connect to the selected server."
+msgid "Show server information."
 msgstr ""
 
 #: obozrenie/global_strings.py:50
+msgid "Connect to the selected server."
+msgstr ""
+
+#: obozrenie/global_strings.py:51
 msgid "Set up server filters."
 msgstr ""
 
-#: obozrenie/global_strings.py:51 obozrenie/global_strings.py:73
+#: obozrenie/global_strings.py:52 obozrenie/global_strings.py:74
 msgid "Name"
 msgstr ""
 
-#: obozrenie/global_strings.py:52
+#: obozrenie/global_strings.py:53
 msgid "Host"
 msgstr ""
 
-#: obozrenie/global_strings.py:53 obozrenie/global_strings.py:75
+#: obozrenie/global_strings.py:54 obozrenie/global_strings.py:76
 msgid "Ping"
 msgstr ""
 
-#: obozrenie/global_strings.py:54
+#: obozrenie/global_strings.py:55
 msgid "Players"
 msgstr ""
 
-#: obozrenie/global_strings.py:55
+#: obozrenie/global_strings.py:56
 msgid "Game Mod"
 msgstr ""
 
-#: obozrenie/global_strings.py:56
+#: obozrenie/global_strings.py:57
 msgid "Game Type"
 msgstr ""
 
-#: obozrenie/global_strings.py:57
+#: obozrenie/global_strings.py:58
 msgid "Terrain"
 msgstr ""
 
-#: obozrenie/global_strings.py:58
+#: obozrenie/global_strings.py:59
 msgid ""
 "Welcome to Obozrenie!\n"
 "Select a game or press refresh button below."
 msgstr ""
 
-#: obozrenie/global_strings.py:59
+#: obozrenie/global_strings.py:60
 msgid "Oops. Something went wrong."
 msgstr ""
 
-#: obozrenie/global_strings.py:60
+#: obozrenie/global_strings.py:61
 msgid "Host address"
 msgstr ""
 
-#: obozrenie/global_strings.py:61
+#: obozrenie/global_strings.py:62
 msgid ""
 "Server address to connect to. Automatically filled on changing server "
 "list selection."
 msgstr ""
 
-#: obozrenie/global_strings.py:62
+#: obozrenie/global_strings.py:63
 msgid "Password"
 msgstr ""
 
-#: obozrenie/global_strings.py:63
+#: obozrenie/global_strings.py:64
 msgid "The server password, if required."
 msgstr ""
 
-#: obozrenie/global_strings.py:64
+#: obozrenie/global_strings.py:65
 msgid "Server information"
 msgstr ""
 
-#: obozrenie/global_strings.py:65
+#: obozrenie/global_strings.py:66
 msgid "Name:"
 msgstr ""
 
-#: obozrenie/global_strings.py:66
+#: obozrenie/global_strings.py:67
 msgid "Host:"
 msgstr ""
 
-#: obozrenie/global_strings.py:67
+#: obozrenie/global_strings.py:68
 msgid "Game:"
 msgstr ""
 
-#: obozrenie/global_strings.py:68
+#: obozrenie/global_strings.py:69
 msgid "Terrain:"
 msgstr ""
 
-#: obozrenie/global_strings.py:69
+#: obozrenie/global_strings.py:70
 msgid "Players:"
 msgstr ""
 
-#: obozrenie/global_strings.py:70
+#: obozrenie/global_strings.py:71
 msgid "Ping:"
 msgstr ""
 
-#: obozrenie/global_strings.py:71
+#: obozrenie/global_strings.py:72
 msgid "Connect"
 msgstr ""
 
-#: obozrenie/global_strings.py:72
+#: obozrenie/global_strings.py:73
 msgid "Close"
 msgstr ""
 
-#: obozrenie/global_strings.py:74
+#: obozrenie/global_strings.py:75
 msgid "Score"
 msgstr ""
 
-#: obozrenie/gtk.py:459
+#: obozrenie/gtk.py:181
+#, python-format
+msgid "%(player_count)s / %(player_limit)s"
+msgstr ""
+
+#: obozrenie/gtk.py:495
 msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/gtk.py:497
+#: obozrenie/gtk.py:537
 msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/gtk.py:500
+#: obozrenie/gtk.py:540
 msgid "Initialization failed. Aborting."
 msgstr ""
 
@@ -241,68 +250,84 @@ msgstr ""
 msgid "No widget generated for type %(widget_type)s"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:139
+#: obozrenie/gtk_templates.py:148
 #, python-format
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:142
+#: obozrenie/gtk_templates.py:151
 msgid "Save"
 msgstr ""
 
-#: obozrenie/option_lists.py:38
+#: obozrenie/option_lists.py:39
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/option_lists.py:39
-msgid "Path to the game"
-msgstr ""
-
-#: obozrenie/option_lists.py:44
-msgid "Working directory"
+#: obozrenie/option_lists.py:40
+msgid "Path to the game."
 msgstr ""
 
 #: obozrenie/option_lists.py:45
-msgid "Working directory of the game"
+msgid "Working directory"
 msgstr ""
 
-#: obozrenie/option_lists.py:50
-msgid "Master URI list"
+#: obozrenie/option_lists.py:46
+msgid "Working directory of the game."
 msgstr ""
 
 #: obozrenie/option_lists.py:51
-msgid "List of master servers to query"
+msgid "Master URI list"
+msgstr ""
+
+#: obozrenie/option_lists.py:52
+msgid "List of master servers to query."
+msgstr ""
+
+#: obozrenie/option_lists.py:57
+msgid "Launch via Steam"
+msgstr ""
+
+#: obozrenie/option_lists.py:58
+msgid "Enables launching via Steam client. Required for VAC-enabled servers."
+msgstr ""
+
+#: obozrenie/option_lists.py:63
+msgid "Steam path"
+msgstr ""
+
+#: obozrenie/option_lists.py:64
+msgid "Steam client path."
 msgstr ""
 
 #: obozrenie/backends/qstat.py:33
 msgid "QStat:"
 msgstr ""
 
-#: obozrenie/backends/qstat.py:77
+#: obozrenie/backends/qstat.py:86
 #, python-format
 msgid "|%(game)s| Requesting server info."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:85
+#: obozrenie/backends/qstat.py:99
 #, python-format
 msgid "|%(game)s| Received server info. Elapsed time: %(stat_time)s s."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:90
+#: obozrenie/backends/qstat.py:104
 #, python-format
 msgid ""
 "|%(game)s| No valid masters specified. Please check your master server "
 "settings."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:99
+#: obozrenie/backends/qstat.py:114
 #, python-format
 msgid ""
 "|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, "
 "server count: %(servers)s."
 msgstr ""
 
-#: obozrenie/backends/qstat.py:101
+#: obozrenie/backends/qstat.py:116
 #, python-format
 msgid "|%(game)s| Master query failed. Address: %(address)s, status: %(status)s."
 msgstr ""
