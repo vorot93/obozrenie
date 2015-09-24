@@ -194,7 +194,7 @@ class GUIActions:
             dialog.hide()
 
     def cb_connect_button_clicked(self, *args):
-        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverlist-view"])[self.server_list_model_format.index("game_id")]
+        game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server = self.app.settings.settings_table["common"]["server-host"]
         password = self.app.settings.settings_table["common"]["server-pass"]
         self.cb_server_connect(game, server, password)
