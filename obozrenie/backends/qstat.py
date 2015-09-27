@@ -117,6 +117,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
                         server_table.append({})
                         server_table[-1]['host'] = qstat_entry['hostname']
                         server_table[-1]['password'] = False
+                        server_table[-1]['secure'] = False
                         server_table[-1]['game_id'] = game
                         server_table[-1]['game_mod'] = None
 
@@ -157,6 +158,8 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
                                 if rule_name in ['gamename']:
                                     server_table[-1]['game_name'] = str(rule_text)
+                                elif rule_name in ['punkbuster', 'sv_punkbuster', 'secure']:
+                                    server_table[-1]['secure'] = bool(int(rule_text))
                                 elif rule_name in ['game']:
                                     server_table[-1]['game_mod'] = str(rule_text)
                                 elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password']:

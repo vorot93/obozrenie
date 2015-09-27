@@ -89,9 +89,9 @@ def add_game_name(array, game_name):
         entry["game_type"] = game_name
 
 
-def add_master_info(array, master):
+def add_secure_info(array, game_name):
     for entry in array:
-        entry["master"] = master
+        entry["secure"] = False
 
 
 def add_rtt_info(array):
@@ -153,7 +153,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
         temp_table = helpers.remove_all_occurences_from_list(temp_table, {})
         add_game_name(temp_table, game)
-        add_master_info(temp_table, master_uri)
+        add_secure_info(temp_table, game)
         server_table.append(temp_table)
 
     server_table = helpers.flatten_list(server_table)

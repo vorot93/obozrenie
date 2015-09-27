@@ -19,6 +19,7 @@
 """Simple and easy to use game server browser."""
 
 
+import ast
 import os
 import signal
 
@@ -45,14 +46,15 @@ class GUIActions:
 
         self.gtk_widgets = {}
 
-        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"Game_Store":                             "game-model",
-                                                                      "ServerList_Store":                       "serverlist-model",
-                                                                      "playerlist-store":                       "playerlist-model",
+        self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, {"game-list-store":                        "game-list-model",
+                                                                      "server-list-filter":                     "server-list-filter",
+                                                                      "server-list-sort":                       "server-list-sort",
+                                                                      "server-list-store":                      "server-list-model",
+                                                                      "player-list-store":                      "player-list-model",
                                                                       "Main_Window":                            "main-window",
                                                                       "Game_ComboBox":                          "game-combobox",
                                                                       "Game_TreeView":                          "game-treeview",
                                                                       "Game_TreeView_Column":                   "game-treeview-column",
-                                                                      "Game_Store":                             "game-model",
                                                                       "Game_ComboBox_Revealer":                 "game-combobox-revealer",
                                                                       "Game_View_Revealer":                     "game-view-revealer",
                                                                       "Game_View_ToggleButton":                 "game-view-togglebutton",
@@ -60,8 +62,21 @@ class GUIActions:
                                                                       "Update_Button":                          "action-update-button",
                                                                       "Info_Button":                            "action-info-button",
                                                                       "Connect_Button":                         "action-connect-button",
-                                                                      "Filters_Button":                         "filters-button",
-                                                                      "ServerList_Store":                       "serverlist-model",
+                                                                      "filters-revealer":                       "filters-revealer",
+                                                                      "filters-button":                         "filters-button",
+                                                                      "filter-mod-label":                       "filter-mod-label",
+                                                                      "filter-type-label":                      "filter-type-label",
+                                                                      "filter-terrain-label":                   "filter-terrain-label",
+                                                                      "filter-ping-label":                      "filter-ping-label",
+                                                                      "filter-secure-label":                    "filter-secure-label",
+                                                                      "filter-mod-entry":                       "filter-mod",
+                                                                      "filter-type-entry":                      "filter-type",
+                                                                      "filter-terrain-entry":                   "filter-terrain",
+                                                                      "filter-ping-adjustment":                 "filter-ping",
+                                                                      "filter-secure-comboboxtext":             "filter-secure",
+                                                                      "filter-notfull-checkbutton":             "filter-notfull",
+                                                                      "filter-notempty-checkbutton":            "filter-notempty",
+                                                                      "filter-nopassword-checkbutton":          "filter-nopassword",
                                                                       "ServerList_View":                        "serverlist-view",
                                                                       "Name_ServerList_TreeViewColumn":         "serverlist-view-name-column",
                                                                       "Host_ServerList_TreeViewColumn":         "serverlist-view-host-column",
@@ -111,6 +126,7 @@ class GUIActions:
                                          "player_count",
                                          "player_limit",
                                          "ping",
+                                         "secure",
                                          "country",
                                          "name",
                                          "game_id",
@@ -119,11 +135,27 @@ class GUIActions:
                                          "terrain",
                                          "game_icon",
                                          "password_icon",
-                                         "country_icon")
+                                         "secure_icon",
+                                         "country_icon",
+                                         "full",
+                                         "empty")
 
         self.player_list_model_format = ("name",
                                          "score",
                                          "ping")
+
+        self.filter_secure_list = ({"id": "None",  "text": i18n._("(all)")},
+                                   {"id": "True",  "text": i18n._("True")},
+                                   {"id": "False", "text": i18n._("False")})
+
+        self.filter_criteria = [{"column": "game_mod",  "type": "in",               "widget": "filter-mod"},
+                                {"column": "game_type", "type": "in",               "widget": "filter-type"},
+                                {"column": "terrain",   "type": "in",               "widget": "filter-terrain"},
+                                {"column": "ping",      "type": "<=",               "widget": "filter-ping"},
+                                {"column": "secure",    "type": "bool is ast bool", "widget": "filter-secure"},
+                                {"column": "full",      "type": "not true if true", "widget": "filter-notfull"},
+                                {"column": "empty",     "type": "not true if true", "widget": "filter-notempty"},
+                                {"column": "password",  "type": "not true if true", "widget": "filter-nopassword"}]
 
         self.serverlist_notebook_pages = gtk_helpers.get_notebook_page_dict(self.gtk_widgets["serverlist-notebook"], {"servers": self.gtk_widgets["serverlist-scrolledwindow"],
                                                                                                                       "welcome": self.gtk_widgets["serverlist-welcome-label"],
@@ -166,7 +198,7 @@ class GUIActions:
         server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
         if server_entry_index is not None:
             server_entry = server_list_table[server_entry_index]
-            player_model = self.gtk_widgets["playerlist-model"]
+            player_model = self.gtk_widgets["player-list-model"]
             player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
 
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
@@ -230,12 +262,16 @@ class GUIActions:
 
     def cb_game_treeview_togglebutton_clicked(self, *args):
         """Switches between TreeView and ComboBox game selection."""
-        if gtk_helpers.get_widget_value(self.gtk_widgets["game-view-togglebutton"]) is True:
-            self.gtk_widgets["game-combobox-revealer"].set_reveal_child(False)
-            self.gtk_widgets["game-view-revealer"].set_reveal_child(True)
+        button = self.gtk_widgets["game-view-togglebutton"]
+        combobox_revealer = self.gtk_widgets["game-combobox-revealer"]
+        treeview_revealer = self.gtk_widgets["game-view-revealer"]
+
+        if gtk_helpers.get_widget_value(button) is True:
+            combobox_revealer.set_reveal_child(False)
+            treeview_revealer.set_reveal_child(True)
         else:
-            self.gtk_widgets["game-combobox-revealer"].set_reveal_child(True)
-            self.gtk_widgets["game-view-revealer"].set_reveal_child(False)
+            combobox_revealer.set_reveal_child(True)
+            treeview_revealer.set_reveal_child(False)
 
     def cb_game_treeview_selection_changed(self, *args):
         game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
@@ -248,6 +284,13 @@ class GUIActions:
             if query_status == self.core.QUERY_STATUS.WORKING:
                 self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id)
+
+    def cb_filters_button_clicked(self, *args):
+        button = self.gtk_widgets["filters-button"]
+        revealer = self.gtk_widgets["filters-revealer"]
+        show_filters = gtk_helpers.get_widget_value(button)
+
+        revealer.set_reveal_child(show_filters)
 
     def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
@@ -265,7 +308,7 @@ class GUIActions:
 
         game_table = self.core.get_game_table_copy()
         game_icons = self.game_icons
-        game_model = self.gtk_widgets["game-model"]
+        game_model = self.gtk_widgets["game-list-model"]
 
         game_store_table = []
         for entry in game_table:
@@ -289,7 +332,7 @@ class GUIActions:
         server_table = self.app.core.get_servers_data(game)
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
-        model = self.gtk_widgets["serverlist-model"]
+        model = self.gtk_widgets["server-list-sort"]
         view = self.gtk_widgets["serverlist-view"]
 
         self.set_game_state(game, query_status)  # Display game status in GUI
@@ -300,6 +343,8 @@ class GUIActions:
                 self.fill_server_list_model(server_table)
                 view.set_model(model)
                 self.set_loading_state("ready")
+            elif query_status == query_status_enum.WORKING:
+                self.set_loading_state("working")
             elif query_status == query_status_enum.ERROR:
                 self.set_loading_state("error")
 
@@ -318,7 +363,7 @@ class GUIActions:
         else:
             return
 
-        model = self.gtk_widgets["game-model"]
+        model = self.gtk_widgets["game-list-model"]
         column = self.game_list_model_format.index("game_id")
         game_index = gtk_helpers.search_model(model, column, game)
 
@@ -340,7 +385,7 @@ class GUIActions:
 
         view_table = helpers.deepcopy(server_table)
 
-        model = self.gtk_widgets["serverlist-model"]
+        model = self.gtk_widgets["server-list-model"]
         model_append = model.append
         model_format = self.server_list_model_format
 
@@ -370,14 +415,82 @@ class GUIActions:
             else:
                 entry["password_icon"] = None
 
+            if entry["secure"] is True:
+                entry["secure_icon"] = "security-high-symbolic"
+            else:
+                entry["secure_icon"] = None
+
             # Country flags
             entry["country_icon"] = flag_icons.get(country)
+
+            # Filtering stuff
+            entry["full"] = entry["player_count"] >= entry["player_limit"]
+            entry["empty"] = entry["player_count"] == 0
 
         view_table = helpers.sort_dict_table(view_table, "ping")
         server_list = helpers.dict_to_list(view_table, model_format)
 
         for entry in server_list:
             model_append(entry)
+
+
+    # Server list filtering
+
+    def server_filter_func(self, model, treeiter, *args):
+        """Tests if row matches filter settings"""
+        filter_criteria = self.filter_criteria
+        server_list_model_format_index = self.server_list_model_format.index
+        result = None
+
+        # Cycle through all criteria and break if at least one isn't satisfied
+        for criterium in filter_criteria:
+            if result is not False:
+                column = criterium["column"]
+                comparison = criterium["type"]
+                column_index = server_list_model_format_index(column)
+                entry_value = model[treeiter][column_index]
+                comparison_value = criterium["value"]
+                if comparison_value is None or comparison_value == "" or comparison_value == "None":
+                    result = True
+                else:
+                    if comparison == "==":
+                        result = entry_value == comparison_value
+                    elif comparison == "!=":
+                        result = entry_value != comparison_value
+                    if comparison == "bool is ast bool":
+                        result = entry_value is ast.literal_eval(comparison_value)
+                    elif comparison == "not true if true":
+                        if comparison_value is True:
+                            result = entry_value != comparison_value
+                        else:
+                            result = True
+                    elif comparison == "<":
+                        if comparison_value == 0:
+                            result = True
+                        else:
+                            result = entry_value < comparison_value
+                    elif comparison == "<=":
+                        if comparison_value == 0:
+                            result = True
+                        else:
+                            result = entry_value <= comparison_value
+                    elif comparison == ">":
+                        result = entry_value > comparison_value
+                    elif comparison == "in":
+                        if entry_value is None:
+                            result = False
+                        else:
+                            result = comparison_value in entry_value
+        return result
+
+    def cb_server_filters_changed(self, *args):
+        filter_criteria = self.filter_criteria
+        for criterium in filter_criteria:
+            criterium["value"] = gtk_helpers.get_widget_value(self.gtk_widgets[criterium["widget"]])
+
+        self.gtk_widgets["server-list-filter"].refilter()
+
+    # Server selection
 
     def cb_server_list_selection_changed(self, *args):
         """Updates text in Entry on TreeView selection change."""
@@ -488,15 +601,23 @@ class App(Gtk.Application):
         try:
             # Load settings
             print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
+            guiactions = self.guiactions
+
             self.status = "starting"
-            self.guiactions.fill_game_store()
+            guiactions.fill_game_store()
+
             self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
 
             # Connect signals
             self.builder.connect_signals(self.guiactions)
+            guiactions.gtk_widgets["server-list-filter"].set_visible_func(guiactions.server_filter_func)
+
             gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
-            self.guiactions.cb_game_treeview_togglebutton_clicked()
-            self.guiactions.cb_server_connect_data_changed()
+            for entry in self.guiactions.filter_secure_list:
+                guiactions.gtk_widgets["filter-secure"].append(entry["id"], entry["text"])
+            guiactions.cb_game_treeview_togglebutton_clicked()
+            guiactions.cb_server_filters_changed()
+            guiactions.cb_server_connect_data_changed()
 
             # Add main window
             main_window = self.guiactions.gtk_widgets["main-window"]

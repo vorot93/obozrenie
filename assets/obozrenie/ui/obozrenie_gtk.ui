@@ -25,7 +25,22 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
   <!-- interface-name Obozrenie -->
   <!-- interface-description Game Server Browser -->
   <!-- interface-copyright Artem Vorotnikov 2015 -->
-  <object class="GtkListStore" id="Game_Store">
+  <object class="GtkImage" id="connect-icon">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">network-server-symbolic</property>
+  </object>
+  <object class="GtkAdjustment" id="filter-ping-adjustment">
+    <property name="upper">9999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkImage" id="find-icon">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-find-symbolic</property>
+  </object>
+  <object class="GtkListStore" id="game-list-store">
     <columns>
       <!-- column-name game_id -->
       <column type="gchararray"/>
@@ -39,48 +54,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkListStore" id="ServerList_Store">
-    <columns>
-      <!-- column-name host -->
-      <column type="gchararray"/>
-      <!-- column-name password -->
-      <column type="gboolean"/>
-      <!-- column-name player_count -->
-      <column type="gint"/>
-      <!-- column-name player_limit -->
-      <column type="gint"/>
-      <!-- column-name ping -->
-      <column type="gint"/>
-      <!-- column-name country -->
-      <column type="gchararray"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name game_id -->
-      <column type="gchararray"/>
-      <!-- column-name game_mod -->
-      <column type="gchararray"/>
-      <!-- column-name game_type -->
-      <column type="gchararray"/>
-      <!-- column-name terrain -->
-      <column type="gchararray"/>
-      <!-- column-name game_icon -->
-      <column type="GdkPixbuf"/>
-      <!-- column-name lockicon -->
-      <column type="gchararray"/>
-      <!-- column-name country_icon -->
-      <column type="GdkPixbuf"/>
-    </columns>
-  </object>
-  <object class="GtkImage" id="connect-icon">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">network-server-symbolic</property>
-  </object>
-  <object class="GtkImage" id="find-icon">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">edit-find-symbolic</property>
-  </object>
   <object class="GtkImage" id="info-icon">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -91,7 +64,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
     <property name="can_focus">False</property>
     <property name="icon_name">view-list-symbolic</property>
   </object>
-  <object class="GtkListStore" id="playerlist-store">
+  <object class="GtkListStore" id="player-list-store">
     <columns>
       <!-- column-name name -->
       <column type="gchararray"/>
@@ -110,6 +83,52 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">view-refresh-symbolic</property>
+  </object>
+  <object class="GtkListStore" id="server-list-store">
+    <columns>
+      <!-- column-name host -->
+      <column type="gchararray"/>
+      <!-- column-name password -->
+      <column type="gboolean"/>
+      <!-- column-name player_count -->
+      <column type="gint"/>
+      <!-- column-name player_limit -->
+      <column type="gint"/>
+      <!-- column-name ping -->
+      <column type="gint"/>
+      <!-- column-name secure -->
+      <column type="gboolean"/>
+      <!-- column-name country -->
+      <column type="gchararray"/>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name game_id -->
+      <column type="gchararray"/>
+      <!-- column-name game_mod -->
+      <column type="gchararray"/>
+      <!-- column-name game_type -->
+      <column type="gchararray"/>
+      <!-- column-name terrain -->
+      <column type="gchararray"/>
+      <!-- column-name game_icon -->
+      <column type="GdkPixbuf"/>
+      <!-- column-name lock_icon -->
+      <column type="gchararray"/>
+      <!-- column-name secure_icon -->
+      <column type="gchararray"/>
+      <!-- column-name country_icon -->
+      <column type="GdkPixbuf"/>
+      <!-- column-name full -->
+      <column type="gboolean"/>
+      <!-- column-name empty -->
+      <column type="gboolean"/>
+    </columns>
+  </object>
+  <object class="GtkTreeModelFilter" id="server-list-filter">
+    <property name="child_model">server-list-store</property>
+  </object>
+  <object class="GtkTreeModelSort" id="server-list-sort">
+    <property name="model">server-list-filter</property>
   </object>
   <object class="GtkApplicationWindow" id="Main_Window">
     <property name="can_focus">False</property>
@@ -145,13 +164,13 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="hexpand">True</property>
                 <property name="column_spacing">5</property>
                 <child>
-                  <object class="GtkToggleButton" id="Filters_Button">
+                  <object class="GtkToggleButton" id="filters-button">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">action-filters-button</property>
                     <property name="image">find-icon</property>
+                    <signal name="toggled" handler="cb_filters_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -277,7 +296,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">server-connect-game</property>
-                        <property name="model">Game_Store</property>
+                        <property name="model">game-list-store</property>
                         <property name="id_column">0</property>
                         <signal name="changed" handler="cb_server_connect_data_changed" swapped="no"/>
                         <child>
@@ -315,7 +334,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
           </object>
           <packing>
             <property name="left_attach">1</property>
-            <property name="top_attach">2</property>
+            <property name="top_attach">3</property>
           </packing>
         </child>
         <child>
@@ -339,7 +358,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="can_focus">True</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
-                    <property name="model">ServerList_Store</property>
+                    <property name="model">server-list-sort</property>
                     <property name="search_column">6</property>
                     <signal name="row-activated" handler="cb_server_list_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
@@ -354,23 +373,29 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">350</property>
                         <property name="title" translatable="yes">serverlist-view-name-column</property>
-                        <property name="sort_column_id">6</property>
+                        <property name="sort_column_id">7</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="GameIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">11</attribute>
+                            <attribute name="pixbuf">12</attribute>
                           </attributes>
                         </child>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="PasswordIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="icon-name">12</attribute>
+                            <attribute name="icon-name">13</attribute>
+                          </attributes>
+                        </child>
+                        <child>
+                          <object class="GtkCellRendererPixbuf" id="SecureIcon_CellRenderer"/>
+                          <attributes>
+                            <attribute name="icon-name">14</attribute>
                           </attributes>
                         </child>
                         <child>
                           <object class="GtkCellRendererText" id="Name_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">6</attribute>
+                            <attribute name="text">7</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -386,7 +411,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="CountryIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">13</attribute>
+                            <attribute name="pixbuf">15</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -448,11 +473,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
                         <property name="title" translatable="yes">serverlist-view-game_mod-column</property>
-                        <property name="sort_column_id">8</property>
+                        <property name="sort_column_id">9</property>
                         <child>
                           <object class="GtkCellRendererText" id="GameMod_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">8</attribute>
+                            <attribute name="text">9</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -463,11 +488,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
                         <property name="title" translatable="yes">serverlist-view-game_type-column</property>
-                        <property name="sort_column_id">9</property>
+                        <property name="sort_column_id">10</property>
                         <child>
                           <object class="GtkCellRendererText" id="GameType_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">9</attribute>
+                            <attribute name="text">10</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -478,11 +503,11 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">100</property>
                         <property name="title" translatable="yes">serverlist-view-terrain-column</property>
-                        <property name="sort_column_id">10</property>
+                        <property name="sort_column_id">11</property>
                         <child>
                           <object class="GtkCellRendererText" id="Terrain_CellRenderer"/>
                           <attributes>
-                            <attribute name="text">10</attribute>
+                            <attribute name="text">11</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -632,7 +657,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   <object class="GtkTreeView" id="Game_TreeView">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="model">Game_Store</property>
+                    <property name="model">game-list-store</property>
                     <property name="search_column">0</property>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeview-selection">
@@ -672,7 +697,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
-            <property name="height">2</property>
+            <property name="height">3</property>
           </packing>
         </child>
         <child>
@@ -714,7 +739,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">game-combobox</property>
-                        <property name="model">Game_Store</property>
+                        <property name="model">game-list-store</property>
                         <property name="id_column">0</property>
                         <property name="active_id">0</property>
                         <signal name="changed" handler="cb_game_combobox_changed" swapped="no"/>
@@ -797,6 +822,195 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
             <property name="left_attach">0</property>
             <property name="top_attach">0</property>
             <property name="width">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkRevealer" id="filters-revealer">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="transition_type">slide-up</property>
+            <child>
+              <object class="GtkGrid" id="filters-grid">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="row_spacing">5</property>
+                <property name="column_spacing">15</property>
+                <child>
+                  <object class="GtkLabel" id="filter-mod-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">filter-mod-label</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="filter-mod-entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <signal name="changed" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="filter-type-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">filter-type-label</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="filter-type-entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <signal name="changed" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="filter-terrain-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">filter-terrain-label</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="filter-terrain-entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <signal name="changed" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="filter-ping-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">filter-ping-label</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="filter-secure-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">filter-secure-label</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="filter-notfull-checkbutton">
+                    <property name="label" translatable="yes">filter-notfull-label</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">start</property>
+                    <property name="halign">0.5</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="filter-notempty-checkbutton">
+                    <property name="label" translatable="yes">filter-notempty-label</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">start</property>
+                    <property name="halign">0.5</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="filter-nopassword-checkbutton">
+                    <property name="label" translatable="yes">filter-nopassword-label</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">start</property>
+                    <property name="halign">0.5</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="filter-secure-comboboxtext">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <signal name="changed" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="filter-ping-spinbutton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="adjustment">filter-ping-adjustment</property>
+                    <signal name="value-changed" handler="cb_server_filters_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">2</property>
           </packing>
         </child>
       </object>
@@ -1051,7 +1265,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   <object class="GtkTreeView" id="serverinfo-players-treeview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="model">playerlist-store</property>
+                    <property name="model">player-list-store</property>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeview-selection3"/>
                     </child>
