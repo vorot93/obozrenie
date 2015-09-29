@@ -23,7 +23,7 @@ from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
 
-def launch_game(game, launch_pattern, game_settings, server, password, steam_app_id=None):
+def launch_game(game, launch_pattern, game_settings, host, port, password, steam_app_id=None):
     """Launches the game based on specified launch pattern"""
     try:
         launch_cmd = []
@@ -34,14 +34,11 @@ def launch_game(game, launch_pattern, game_settings, server, password, steam_app
         # Pre-launch
         if launch_pattern == "steam":
             steam_path = game_settings["steam_path"]
-            launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", server]
+            launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", host + ":" + port]
             if password != '':
                 launch_cmd.append("+password", password)
 
         elif launch_pattern == "rigsofrods":
-            host, port = server.split(":")
-            host = host
-            port = port
             config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
             launch_cmd = [path]
 
@@ -61,7 +58,7 @@ def launch_game(game, launch_pattern, game_settings, server, password, steam_app
                     f.close()
 
         elif launch_pattern == "quake":
-            launch_cmd = [path, "+connect", server]
+            launch_cmd = [path, "+connect", host + ":" + port]
             if password != '':
                 launch_cmd.append("+password", password)
 
@@ -79,15 +76,20 @@ def launch_game(game, launch_pattern, game_settings, server, password, steam_app
             except KeyError:
                 env_dict['LD_LIBRARY_PATH'] = ld_dir
 
-            launch_cmd = [path, "-game", game, "+connect", server]
+            launch_cmd = [path, "-game", game, "+connect", host + ":" + port]
             if password != '':
                 launch_cmd.append("+password", password)
 
         elif launch_pattern == "openttd":
-            launch_cmd = [path, "-n", server]
+            launch_cmd = [path, "-n", host + ":" + port]
+
+        elif launch_pattern == "minetest":
+            launch_cmd = [path, "--address", host, "--port", port]
+            if password != '':
+                launch_cmd.append("--password", password)
 
         # Launch
-        print(LAUNCHER_MSG, "Launching", path)
+        print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
         call_exit_code = subprocess.call(launch_cmd, cwd=env_dict['PWD'], env=env_dict)
 
         # Post-launch
@@ -96,4 +98,4 @@ def launch_game(game, launch_pattern, game_settings, server, password, steam_app
         return call_exit_code
     except OSError as e:
         print(e)
-        return Exception
+        return e

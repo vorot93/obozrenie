@@ -97,13 +97,16 @@ def add_secure_info(array, game_name):
 def add_rtt_info(array):
     """Appends server response time to the table."""
     hosts_array = []
-    rtt_temp_array = []
-    rtt_temp_array.append([])
     rtt_array = []
     rtt_array.append([])
 
     for entry in array:
-        hosts_array.append(entry["host"].split(':')[0])
+        host = entry['host'].split(":")
+        if len(host) > 1:
+            host = ":".join(host[0:-1])
+        else:
+            host = ":".join(host)
+        hosts_array.append(host)
 
     pinger = ping.Pinger()
     pinger.hosts = list(set(hosts_array))
@@ -114,8 +117,12 @@ def add_rtt_info(array):
 
     # Match ping in host list.
     for entry in array:
-        ip = entry["host"].split(':')[0]
-        entry["ping"] = rtt_array[ip]
+        host = entry['host'].split(":")
+        if len(host) > 1:
+            host = ":".join(host[0:-1])
+        else:
+            host = ":".join(host)
+        entry["ping"] = rtt_array[host]
 
 
 def stat_master(game, game_info, game_settings, proxy=None):

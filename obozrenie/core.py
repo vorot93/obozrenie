@@ -169,6 +169,9 @@ class GameTable():
             game_table[game]["settings"][option] = value
 
     def get_query_status(self, game):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
             query_status = helpers.deepcopy(game_table[game]["query-status"])
         return query_status
@@ -178,6 +181,9 @@ class GameTable():
             game_table[game]["query-status"] = status
 
     def get_server_info(self, game, host):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
             server_table = helpers.deepcopy(game_table[game]["servers"])
         server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
@@ -192,17 +198,26 @@ class GameTable():
                 self.game_table[server_entry_index] = data
 
     def get_servers_data(self, game):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
             servers_data = helpers.deepcopy(game_table[game]["servers"])
         return servers_data
 
     def set_servers_data(self, game, servers_data):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
             self.clear_servers_data(game)
             for entry in servers_data:
                 game_table[game]["servers"].append(entry)
 
     def clear_servers_data(self, game):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
             with game_table[game]["servers"] as server_list:
                 server_list.clear()
@@ -255,8 +270,9 @@ class Core(GameTable):
                 backend_process.daemon=True
                 backend_process.start()
                 backend_process.join()
-                if len(server_list_proxy) > 0 and server_list_proxy[0] is Exception:
-                    raise Exception
+                if len(server_list_proxy) > 0 and issubclass(type(server_list_proxy[0]), Exception):
+                    e = server_list_proxy[0]
+                    raise e
             except Exception as e:
                 print(CORE_MSG, e)
                 print(CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG)
@@ -290,6 +306,8 @@ class Core(GameTable):
 
     def start_game(self, game, server, password):
         """Start game"""
+        host = ":".join(server.split(":")[0:-1])
+        port = server.split(":")[-1]
         game_info = self.get_game_info(game)
         game_settings = self.get_game_settings(game)
         launch_pattern = game_info["launch_pattern"]
@@ -304,7 +322,7 @@ class Core(GameTable):
         except:
             pass
 
-        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, launch_pattern, game_settings, server, password, steam_app_id))
+        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, launch_pattern, game_settings, host, port, password, steam_app_id))
         launch_process.daemon = True
         launch_process.start()
 
@@ -347,11 +365,7 @@ class Settings:
                 value = default_common_settings_table[group][option]
                 try:
                     value = user_common_settings_table[group][option]
-                except ValueError:
-                    pass
-                except KeyError:
-                    pass
-                except TypeError:
+                except ValueError and KeyError and TypeError:
                     pass
 
                 self.settings_table[group][option] = value
@@ -368,11 +382,7 @@ class Settings:
                 value = default_game_settings_table[game][option]
                 try:
                     value = user_game_settings_table[game][option]
-                except ValueError:
-                    pass
-                except KeyError:
-                    pass
-                except TypeError:
+                except ValueError and KeyError and TypeError:
                     pass
 
                 self.core.set_game_setting(game, option, value)

@@ -327,9 +327,9 @@ class GUIActions:
 
     def show_game_page(self, game):
         """Set of actions to do after query is complete."""
-        query_status = self.app.core.get_query_status(game)
+        query_status = self.app.core.get_query_status(str(game))
         query_status_enum = self.core.QUERY_STATUS
-        server_table = self.app.core.get_servers_data(game)
+        server_table = self.app.core.get_servers_data(str(game))
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         model = self.gtk_widgets["server-list-sort"]
@@ -515,7 +515,10 @@ class GUIActions:
     def cb_server_connect_data_changed(self, *args):
         """Resets button sensitivity on server connect data change"""
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
-        server_list_table = self.core.get_servers_data(game)
+        try:
+            server_list_table = self.core.get_servers_data(game)
+        except ValueError and KeyError:
+            server_list_table = []
         host = self.app.settings.settings_table["common"]["server-host"]
         server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
 
