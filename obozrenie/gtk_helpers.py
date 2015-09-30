@@ -21,21 +21,36 @@
 import ast
 import os
 
-from gi.repository import GdkPixbuf, Gtk
+from gi.repository import GLib, GdkPixbuf, Gtk
 
 
-def get_icon_dict(key_list, icon_type, icon_format, icon_dir, width, height, error_msg=None):
+def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
+    icon_is_set = False
+    for icon_format in icon_formats:
+        try:
+            icon = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, entry.lower() + "." + icon_format), width, height)
+            icon_is_set = True
+            break
+        except GLib.GError:
+            pass
+
+    if icon_is_set is False:
+        raise FileNotFoundError
+
+    return icon
+
+def get_icon_dict(key_list, icon_type, icon_formats, icon_dir, width, height, error_msg=None):
     """Loads icon pixbufs into memory for later usage"""
     icon_dict = {}
     for entry in key_list:
         try:
-            icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, entry.lower() + "." + icon_format), width, height)
-        except:
+            icon_dict[entry] = get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height)
+        except FileNotFoundError:
             if error_msg is not None:
                 error_msg(entry)
             try:
-                icon_dict[entry] = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, 'unknown' + "." + icon_format), width, height)
-            except:
+                icon_dict[entry] = get_icon_for_entry("unknown", icon_type, icon_formats, icon_dir, width, height)
+            except FileNotFoundError:
                 icon_dict[entry] = None
 
     return icon_dict

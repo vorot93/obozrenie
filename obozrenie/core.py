@@ -368,7 +368,7 @@ class Settings:
                 value = default_common_settings_table[group][option]
                 try:
                     value = user_common_settings_table[group][option]
-                except ValueError and KeyError and TypeError:
+                except (ValueError, KeyError, TypeError):
                     pass
 
                 self.settings_table[group][option] = value
@@ -385,7 +385,7 @@ class Settings:
                 value = default_game_settings_table[game][option]
                 try:
                     value = user_game_settings_table[game][option]
-                except ValueError and KeyError and TypeError:
+                except (ValueError, KeyError, TypeError):
                     pass
 
                 self.core.set_game_setting(game, option, value)

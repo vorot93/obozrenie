@@ -63,6 +63,11 @@ def get_game_options():
                                    'name':        i18n._("Steam path"),
                                    'description': i18n._("Steam client path."),
                                    'gtk_type':    "Entry with Label"
+                                   },
+                   'nickname':     {
+                                   'name':        i18n._("Nickname"),
+                                   'description': i18n._("Your nickname."),
+                                   'gtk_type':    "Entry with Label"
                                    }
                   }
 

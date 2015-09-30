@@ -169,11 +169,11 @@ class GUIActions:
         # Load flags
         try:
             country_db = self.core.geolocation.const.COUNTRY_CODES
-            self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', 'svg', ICON_FLAGS_DIR, 24, 18)
+            self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
         except TypeError and AttributeError:
             self.flag_icons = {}
         game_list = self.core.get_game_set()
-        self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', 'png', ICON_GAMES_DIR, 24, 24)
+        self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
 
     def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
@@ -642,8 +642,8 @@ class App(Gtk.Application):
 
             self.status = "up"
         except Exception as e:
-            print(e)
             app.quit()
+            raise e
 
     def on_activate(self, app):
         window = self.guiactions.gtk_widgets["main-window"]

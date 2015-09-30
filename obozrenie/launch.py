@@ -29,11 +29,11 @@ def launch_game(game, launch_pattern, game_settings, host, port, password, steam
         launch_cmd = []
         env_dict = dict(os.environ)
 
-        path = os.path.expanduser(game_settings["path"])
+        path = os.path.expanduser(str(game_settings["path"]))
 
         # Pre-launch
         if launch_pattern == "steam":
-            steam_path = game_settings["steam_path"]
+            steam_path = str(game_settings["steam_path"])
             launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", host + ":" + port]
             if password != '':
                 launch_cmd.append("+password", password)
@@ -84,18 +84,19 @@ def launch_game(game, launch_pattern, game_settings, host, port, password, steam
             launch_cmd = [path, "-n", host + ":" + port]
 
         elif launch_pattern == "minetest":
-            launch_cmd = [path, "--address", host, "--port", port]
+            nickname = str(game_settings["nickname"])
+            launch_cmd = [path, "--go", "--address", host, "--port", port, "--name", nickname]
             if password != '':
                 launch_cmd.append("--password", password)
 
         # Launch
         print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
-        call_exit_code = subprocess.call(launch_cmd, cwd=env_dict['PWD'], env=env_dict)
+        pid = subprocess.Popen(launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
 
         # Post-launch
         if launch_pattern == "rigsofrods":
             subprocess.call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
-        return call_exit_code
+        return 0
     except OSError as e:
         print(e)
         return e
