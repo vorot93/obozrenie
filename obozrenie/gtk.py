@@ -517,7 +517,7 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         try:
             server_list_table = self.core.get_servers_data(game)
-        except ValueError and KeyError:
+        except (ValueError, KeyError):
             server_list_table = []
         host = self.app.settings.settings_table["common"]["server-host"]
         server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
@@ -554,7 +554,11 @@ class GUIActions:
                 widget = self.builder.get_object(widget_name)
                 value = gtk_helpers.get_widget_value(widget)
                 if isinstance(widget, Gtk.TreeView) and "gtk_widget_colnum" in self.widget_table[group][option].keys():
-                    value = value[self.widget_table[group][option]["gtk_widget_colnum"]]
+                    colnum = self.widget_table[group][option]["gtk_widget_colnum"]
+                    try:
+                        value = value[colnum]
+                    except TypeError:
+                        pass
                 self.app.settings.settings_table[group][option] = str(value)
 
     def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
@@ -620,7 +624,10 @@ class App(Gtk.Application):
                 guiactions.gtk_widgets["filter-secure"].append(entry["id"], entry["text"])
             guiactions.cb_game_treeview_togglebutton_clicked()
             guiactions.cb_server_filters_changed()
-            guiactions.cb_server_connect_data_changed()
+            try:
+                guiactions.cb_server_connect_data_changed()
+            except ValueError:
+                pass
 
             # Add main window
             main_window = self.guiactions.gtk_widgets["main-window"]

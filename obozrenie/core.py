@@ -152,40 +152,83 @@ class GameTable():
         """
         Returns information about the specified game.
         """
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
-            game_info = helpers.deepcopy(game_table[game]["info"])
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            game_info = helpers.deepcopy(game_entry["info"])
         return game_info
 
     def get_game_settings(self, game):
         """
         Returns settings for the specified game.
         """
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
-            game_settings = helpers.deepcopy(game_table[game]["settings"])
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            game_settings = helpers.deepcopy(game_entry["settings"])
+
         return game_settings
 
     def set_game_setting(self, game, option, value):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
-            game_table[game]["settings"][option] = value
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            game_entry["settings"][option] = value
 
     def get_query_status(self, game):
         if game == '' or game is None:
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         with self.__game_table as game_table:
-            query_status = helpers.deepcopy(game_table[game]["query-status"])
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            query_status = helpers.deepcopy(game_entry["query-status"])
         return query_status
 
     def set_query_status(self, game, status):
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         with self.__game_table as game_table:
-            game_table[game]["query-status"] = status
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            game_entry["query-status"] = status
 
     def get_server_info(self, game, host):
         if game == '' or game is None:
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         with self.__game_table as game_table:
-            server_table = helpers.deepcopy(game_table[game]["servers"])
+            try:
+                game_entry = game_table[game]
+            except KeyError:
+                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+
+            server_table = helpers.deepcopy(game_entry["servers"])
         server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
         return server_entry
 
@@ -309,6 +352,9 @@ class Core(GameTable):
 
     def start_game(self, game, server, password):
         """Start game"""
+        if game == '' or game is None:
+            raise ValueError(i18n._('Please specify a valid game id.'))
+
         host = ":".join(server.split(":")[0:-1])
         port = server.split(":")[-1]
         game_info = self.get_game_info(game)
