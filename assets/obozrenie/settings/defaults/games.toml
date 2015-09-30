@@ -2,6 +2,11 @@
 path = "RoR"
 master_uri = ["http://api.rigsofrods.com/serverlist/"]
 
+[minetest]
+path = "minetest"
+master_uri = ["http://servers.minetest.net"]
+nickname = "Player"
+
 [csgo]
 path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/csgo_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"

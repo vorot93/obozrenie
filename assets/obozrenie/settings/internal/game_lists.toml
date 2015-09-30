@@ -4,6 +4,12 @@ backend = "rigsofrods"
 launch_pattern = "rigsofrods"
 settings = ["path", "master_uri"]
 
+[minetest]
+name = "Minetest"
+backend = "minetest"
+launch_pattern = "minetest"
+settings = ["path", "master_uri", "nickname"]
+
 [csgo]
 name = "Counter-Strike: Global Offensive"
 backend = "qstat"
