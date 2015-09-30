@@ -7,6 +7,37 @@ import threading
 import obozrenie.helpers as helpers
 
 
+def add_rtt_info(array):
+    """Appends server response time to the table."""
+    hosts_array = []
+    rtt_array = []
+    rtt_array.append([])
+
+    for entry in array:
+        host = entry['host'].split(":")
+        if len(host) > 1:
+            host = ":".join(host[0:-1])
+        else:
+            host = ":".join(host)
+        hosts_array.append(host)
+
+    pinger = Pinger()
+    pinger.hosts = list(set(hosts_array))
+    pinger.action = "ping"
+
+    pinger.status.clear()
+    rtt_array = pinger.start()
+
+    # Match ping in host list.
+    for entry in array:
+        host = entry['host'].split(":")
+        if len(host) > 1:
+            host = ":".join(host[0:-1])
+        else:
+            host = ":".join(host)
+        entry["ping"] = rtt_array[host]
+
+
 class Pinger():
     status = {}  # Populated while we are running
     hosts = []  # List of all hosts/ips in our input queue
@@ -27,17 +58,20 @@ class Pinger():
         else:
             ping_cmd = ["ping", '-c', '1', '-n', '-W', '1', entry]
 
-        ping_output, _ = subprocess.Popen(ping_cmd, stdout=subprocess.PIPE).communicate()
+        ping_output_byte, _ = subprocess.Popen(ping_cmd, stdout=subprocess.PIPE).communicate()
+        ping_output = ping_output_byte.decode()
 
         try:
             if sys.platform == 'win32':
-                rtt_info = round(float(ping_output.rstrip('\n').split('\n')[-1].split(',')[0].split('=')[-1].strip('ms')))
+                rtt_info = ping_output.rstrip('\n').split('\n')[-1].split(',')[0].split('=')[-1].strip('ms')
             else:
-                rtt_info = round(float(ping_output.split('\n')[1].split('=')[-1].split(' ')[0]))
-        except:
-            rtt_info = 9999
+                rtt_info = ping_output.split('\n')[1].split('=')[-1].split(' ')[0]
 
-        return rtt_info
+            rtt_num = round(float(rtt_info))
+        except:
+            rtt_num = 9999
+
+        return rtt_num
 
     def pop_queue(self):
         entry = None

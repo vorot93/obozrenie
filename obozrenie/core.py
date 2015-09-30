@@ -292,7 +292,10 @@ class Core(GameTable):
                         try:
                             entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
                         except OSError:
-                            entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                            try:
+                                entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                            except:
+                                entry['country'] = ""
                         except:
                             pass
 
