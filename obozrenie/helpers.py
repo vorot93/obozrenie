@@ -18,6 +18,7 @@
 
 """Helper functions for processing data."""
 
+import collections
 import copy
 import json
 import os
@@ -26,6 +27,24 @@ import threading
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
+
+
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+
+class ThreadSafeBunch(Bunch):
+    def __init__(self, * p_arg, ** n_arg):
+        super().__init__(* p_arg, ** n_arg)
+        self.__lock = threading.RLock()
+
+    def __enter__(self):
+        self.__lock.acquire()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.__lock.release()
 
 
 class ThreadSafeDict(dict):
@@ -60,9 +79,8 @@ class ThreadSafeList(list):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
 
 
-def enum(*sequential, **named):
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    return type('Enum', (), enums)
+def enum(*args):
+    return collections.namedtuple('Enum', args)._make(range(len(args)))
 
 
 def deepcopy(foo):

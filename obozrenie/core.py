@@ -152,8 +152,8 @@ class GameTable():
         """
         Returns information about the specified game.
         """
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        if game in ('', None):
+            raise ValueError(i18n._('Invalid game specified.'))
 
         with self.__game_table as game_table:
             try:
@@ -168,8 +168,8 @@ class GameTable():
         """
         Returns settings for the specified game.
         """
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        if game in ('', None):
+            raise ValueError(i18n._('Invalid game specified.'))
 
         with self.__game_table as game_table:
             try:
@@ -182,8 +182,13 @@ class GameTable():
         return game_settings
 
     def set_game_setting(self, game, option, value):
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        faulty_param = None
+        if game in ('', None):
+            faulty_param = i18n._('game id')
+        elif option in ('', None):
+            faulty_param = i18n._('option')
+        if faulty_param is not None:
+            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
 
         with self.__game_table as game_table:
             try:
@@ -194,8 +199,8 @@ class GameTable():
             game_entry["settings"][option] = value
 
     def get_query_status(self, game):
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        if game in ('', None):
+            raise ValueError(i18n._('Invalid game specified.'))
 
         with self.__game_table as game_table:
             try:
@@ -207,8 +212,8 @@ class GameTable():
         return query_status
 
     def set_query_status(self, game, status):
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        if game in ('', None):
+            raise ValueError(i18n._('Invalid game specified.'))
 
         with self.__game_table as game_table:
             try:
@@ -219,8 +224,13 @@ class GameTable():
             game_entry["query-status"] = status
 
     def get_server_info(self, game, host):
-        if game == '' or game is None:
-            raise ValueError(i18n._('Please specify a valid game id.'))
+        faulty_param = None
+        if game in ('', None):
+            faulty_param = i18n._('game id')
+        elif host in ('', None):
+            faulty_param = i18n._('hostname')
+        if faulty_param is not None:
+            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
 
         with self.__game_table as game_table:
             try:
@@ -233,6 +243,16 @@ class GameTable():
         return server_entry
 
     def set_server_info(self, game, host, data):
+        faulty_param = None
+        if game in ('', None):
+            faulty_param = i18n._('game id')
+        elif host in ('', None):
+            faulty_param = i18n._('hostname')
+        elif isinstance(data, dict) is False:
+            faulty_param = i18n._('server data')
+        if faulty_param is not None:
+            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
+
         with self.__game_table as game_table:
             server_entry_index = game_table[helpers.search_dict_table(helpers.deepcopy(game_table), "host", host)]
             if server_entry_index is None:
@@ -241,7 +261,7 @@ class GameTable():
                 self.game_table[server_entry_index] = data
 
     def get_servers_data(self, game):
-        if game == '' or game is None:
+        if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         with self.__game_table as game_table:
