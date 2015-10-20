@@ -664,15 +664,3 @@ class App(Gtk.Application):
         else:
             self.status = "start failed"
             print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
-
-if __name__ == "__main__":
-    os.setpgrp()  # create new process group, become its leader
-    try:
-        core_instance = core.Core()
-        settings_instance = core.Settings(core_instance, os.path.expanduser(PROFILE_PATH))
-        app_instance = App(core_instance, settings_instance)
-        app_instance.run(None)
-    except Exception as e:
-        print(e)
-    finally:
-        os.killpg(0, signal.SIGTERM)  # kill all processes in my group
