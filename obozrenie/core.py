@@ -22,8 +22,6 @@ import os
 import multiprocessing
 import threading
 
-from gi.repository import GLib
-
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 from obozrenie.option_lists import *
@@ -366,9 +364,9 @@ class Core(GameTable):
 
                 self.set_query_status(game, self.QUERY_STATUS.READY)
 
-        # Workaround: GUI toolkits are not thread safe therefore request callback in the main thread
+        # Call post-stat callback
         if callback is not None:
-            GLib.idle_add(callback, game)
+            callback(game)
 
     def start_game(self, game, server, password):
         """Start game"""

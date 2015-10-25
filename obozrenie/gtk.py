@@ -299,7 +299,10 @@ class GUIActions:
         self.set_loading_state("working")
         self.set_game_state(game, self.core.QUERY_STATUS.WORKING)
 
-        self.core.update_server_list(game, self.show_game_page)
+        self.core.update_server_list(game, self.cb_update_server_list)
+
+    def cb_update_server_list(self, game):
+        GLib.idle_add(self.show_game_page, game)
 
     def fill_game_store(self):
         """
