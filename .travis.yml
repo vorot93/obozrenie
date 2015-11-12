@@ -11,5 +11,8 @@ python:
 cache: pip
 install:
   - pip install -r requirements.txt
+  - pip install codecov
 script:
-  - python -m tests.tests
+  - coverage run -m tests.tests
+after_success:
+  - codecov
