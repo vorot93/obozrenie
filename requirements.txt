@@ -2,3 +2,5 @@ xmltodict
 beautifulsoup4
 pytoml
 pygeoip
+pyxdg
+requests
