@@ -28,6 +28,58 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "minetest.toml")
 MINETEST_MSG = BACKENDCAT_MSG + i18n._("Minetest:")
 
 
+def get_json(master_page_uri):
+    try:
+        master_page_object = requests.get(master_page_uri)
+        master_page = master_page_object.text
+    except:
+        raise ConnectionError(i18n._(MINETEST_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {'uri': master_page_uri, 'code': "unknown"})
+
+    try:
+        server_table = list(json.loads(master_page)["list"])
+    except ValueError as e:
+        raise ValueError(i18n._(MINETEST_MSG), i18n._("Error parsing URI %(uri)s.: \n %(exception)s") % {'uri': master_page_uri, 'exception': e})
+    else:
+        return server_table
+
+
+def parse_json_entry(entry):
+    entry_dict = {'rules': {}, 'players': []}
+    try:
+        entry_dict['password'] = bool(entry['password'])
+    except KeyError:
+        entry_dict['password'] = False
+    entry_dict['host'] = ":".join((str(entry['ip']), str(entry['port'])))
+    entry_dict['player_count'] = int(entry['clients'])
+    try:
+        entry_dict['player_limit'] = int(entry['proto_max'])
+    except:
+        entry_dict['player_limit'] = 9999
+    try:
+        entry_dict['name'] = str(entry['name'])
+    except AttributeError:
+        pass
+
+    entry_dict['game_id'] = "minetest"
+
+    try:
+        entry_dict['game_type'] = str(entry['gameid'])
+    except AttributeError:
+        pass
+
+    entry_dict['terrain'] = ""
+
+    try:
+        for player in entry['clients_list']:
+            entry_dict['players'].append({'name': str(player)})
+    except KeyError:
+        pass
+
+    entry_dict['secure'] = False
+
+    return entry_dict
+
+
 def stat_master(game, game_info, game_settings, proxy=None):
     """Stats the master server"""
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
@@ -40,51 +92,12 @@ def stat_master(game, game_info, game_settings, proxy=None):
     for master_uri in master_uri_list:
         master_page_uri = master_uri.strip('/') + '/list'
         try:
-            master_page_object = requests.get(master_page_uri)
-            master_page = master_page_object.text
-        except:
-            print(i18n._(MINETEST_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {'uri': master_page_uri, 'code': "unknown"})
-            continue
-
-        try:
-            server_json_table = server_json_table + list(json.loads(master_page)["list"])
-        except ValueError as e:
-            print(i18n._(MINETEST_MSG), i18n._("Error parsing URI %(uri)s.: \n %(exception)s") % {'uri': master_page_uri, 'exception': e})
-            continue
+            server_json_table += get_json(master_page_uri)
+        except (ConnectionError, ValueError) as e:
+            print(BACKENDCAT_MSG + MINETEST_MSG, e)
 
     for entry in server_json_table:
-        entry_dict = {'rules': {}, 'players': []}
-        try:
-            entry_dict['password'] = bool(entry['password'])
-        except KeyError:
-            entry_dict['password'] = False
-        entry_dict['host'] = ":".join((str(entry['ip']), str(entry['port'])))
-        entry_dict['player_count'] = int(entry['clients'])
-        try:
-            entry_dict['player_limit'] = int(entry['proto_max'])
-        except:
-            entry_dict['player_limit'] = 9999
-        try:
-            entry_dict['name'] = str(entry['name'])
-        except AttributeError:
-            pass
-
-        entry_dict['game_id'] = "minetest"
-
-        try:
-            entry_dict['game_type'] = str(entry['gameid'])
-        except AttributeError:
-            pass
-
-        entry_dict['terrain'] = ""
-
-        try:
-            for player in entry['players']:
-                entry_dict['players'].append({'name': str(player)})
-        except KeyError:
-            pass
-
-        entry_dict['secure'] = False
+        entry_dict = parse_json_entry(entry)
 
         server_table.append(entry_dict)
 
