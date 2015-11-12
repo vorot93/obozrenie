@@ -1,5 +1,6 @@
 # Obozrenie
 
+[![Build Status](https://travis-ci.org/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/obozrenie/obozrenie?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Simple and easy to use game server browser.
