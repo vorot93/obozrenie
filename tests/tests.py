@@ -58,6 +58,20 @@ class HelpersTests(unittest.TestCase):
         self.assertTrue(unit['expectation'] == unit['result'])
 
     @staticmethod
+    def unit_flatten_list():
+        """Does helper flatten list of iterable objects based on specified format correctly?"""
+        spec_list = ['a', ['b', ['c', 'd'], 'e'], 'f']
+        spec_result = ['a', 'b', 'c', 'd', 'e', 'f']
+
+        result = helpers.flatten_list(spec_list)
+
+        return {'expectation': spec_result, 'result': result}
+
+    def test_flatten_list(self):
+        unit = self.unit_flatten_list()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+    @staticmethod
     def unit_sort_dict_table():
         """Checks how helper function sorts dictionary tables"""
         spec_table = [{'name': 'Olga', 'age': 32, 'gender': 'F'}, {'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}]

@@ -162,8 +162,17 @@ def dict_to_list(dict_table, key_list):
     return list_table
 
 
+def flatten(container):
+    for i in container:
+        if isinstance(i, list) or isinstance(i, tuple):
+            for j in flatten(i):
+                yield j
+        else:
+            yield i
+
+
 def flatten_list(nested_list):
-    flattened_list = [item for sublist in nested_list for item in sublist]
+    flattened_list = list(flatten(nested_list))
     return flattened_list
 
 def remove_all_occurences_from_list(target_list, value):
