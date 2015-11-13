@@ -31,6 +31,104 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
 
 
+def debug_msg(game_name, msg):
+    if msg is not None:
+        print(QSTAT_MSG, i18n._("|%(game)s|") % {'game': game_name}, msg)
+
+
+def parse_server_entry(qstat_entry, game, master_type, server_type):
+    color_code_pattern = '[\\^](.)'
+
+    debug_message = None
+    server_dict = None
+    if qstat_entry['@type'] == master_type:
+        master_server_uri = qstat_entry['@address']
+        master_server_status = qstat_entry['@status']
+        if master_server_status == 'UP':
+            master_server_entry_count = qstat_entry['@servers']
+            debug_message = i18n._("Queried Master. Address: %(address)s, status: %(status)s, server count: %(servers)s.") % {'address': master_server_uri, 'status': master_server_status, 'servers': master_server_entry_count}
+        else:
+            debug_message = i18n._("Master query failed. Address: %(address)s, status: %(status)s.") % {'address': master_server_uri, 'status': master_server_status}
+
+    elif qstat_entry['@type'] == server_type:  # If it is not bogus either...
+        server_dict = {}
+        server_status = qstat_entry['@status']
+        if server_status == 'UP':
+            server_dict['host'] = qstat_entry['hostname']
+            server_dict['password'] = False
+            server_dict['secure'] = False
+            server_dict['game_id'] = game
+            server_dict['game_mod'] = None
+
+            if qstat_entry['name'] is None:
+                server_dict['name'] = None
+            else:
+                server_dict['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
+            server_dict['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
+            server_dict['terrain'] = str(qstat_entry['map'])
+            try:
+                server_dict['player_count'] = int(qstat_entry['numplayers'])
+            except:
+                server_dict['player_count'] = 0
+            try:
+                server_dict['player_limit'] = int(qstat_entry['maxplayers'])
+            except:
+                server_dict['player_limit'] = 0
+            try:
+                server_dict['ping'] = int(qstat_entry['ping'])
+            except KeyError:
+                server_dict['ping'] = 9999
+            server_dict['rules'] = {}
+            server_dict['players'] = []
+
+            if qstat_entry['rules'] is not None:
+                if isinstance(qstat_entry['rules']['rule'], dict):
+                    rule = qstat_entry['rules']['rule']
+                    qstat_entry['rules']['rule'] = [rule]
+
+                for rule in qstat_entry['rules']['rule']:
+                    rule_name = rule['@name']
+                    if '#text' in rule.keys():
+                        server_dict['rules'][rule_name] = rule['#text']
+                    else:
+                        server_dict['rules'][rule_name] = None
+
+                    rule_text = server_dict['rules'][rule_name]
+
+                    if rule_name in ['gamename']:
+                        server_dict['game_name'] = str(rule_text)
+                    elif rule_name in ['punkbuster', 'sv_punkbuster', 'secure']:
+                        server_dict['secure'] = bool(int(rule_text))
+                    elif rule_name in ['game']:
+                        server_dict['game_mod'] = str(rule_text)
+                    elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password']:
+                        try:
+                            server_dict['password'] = bool(int(rule_text))
+                        except TypeError:
+                            server_dict['password'] = False
+            if qstat_entry['players'] is not None:
+                if isinstance(qstat_entry['players']['player'], dict):
+                    player = qstat_entry['players']['player']
+                    qstat_entry['players']['player'] = [player]  # Enforce player array even if n=1
+
+                for player in qstat_entry['players']['player']:
+                    player_entry = {}
+                    player_entry['name'] = re.sub(color_code_pattern, '', str(player['name']))
+                    try:
+                        player_entry['score'] = int(player['score'])
+                    except:
+                        player_entry['score'] = None
+                    try:
+                        player_entry['ping'] = int(player['ping'])
+                    except:
+                        player_entry['ping'] = 9999
+                    server_dict['players'].append(player_entry)
+            else:
+                server_dict['players'] = []
+
+    return server_dict, debug_message
+
+
 def stat_master(game, game_info, game_settings, proxy=None):
     hosts_array = []
     server_table = []
@@ -92,110 +190,32 @@ def stat_master(game, game_info, game_settings, proxy=None):
     stat_end_time = time.time()
 
     stat_total_time = stat_end_time - stat_start_time
-    print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Received server info. Elapsed time: %(stat_time)s s.") % {'game': game_name, 'stat_time': round(stat_total_time, 2)})
-    color_code_pattern = '[\\^](.)'
+    debug_msg(game_name, i18n._("Received server info. Elapsed time: %(stat_time)s s.") % {'stat_time': round(stat_total_time, 2)})
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
             if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
-                print(QSTAT_MSG, i18n._("|%(game)s| No valid masters specified. Please check your master server settings.") % {'game': game_name})
+                debug_msg(game_name, i18n._("No valid masters specified. Please check your master server settings."))
                 break
 
         except TypeError:
             try:
-                if qstat_entry['@type'] == backend_config_object['game'][game]['master_type']:
-                    master_server_uri = qstat_entry['@address']
-                    master_server_status = qstat_entry['@status']
-                    if master_server_status == 'UP':
-                        master_server_entry_count = qstat_entry['@servers']
-                        print(QSTAT_MSG, i18n._("|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, server count: %(servers)s.") % {'game': game_name, 'address': master_server_uri, 'status': master_server_status, 'servers': master_server_entry_count})
-                    else:
-                        print(QSTAT_MSG, i18n._("|%(game)s| Master query failed. Address: %(address)s, status: %(status)s.") % {'game': game_name, 'address': master_server_uri, 'status': master_server_status})
+                server_dict, msg = parse_server_entry(qstat_entry, game, backend_config_object['game'][game]['master_type'], backend_config_object['game'][game]['server_type'])
 
-                elif qstat_entry['@type'] == backend_config_object['game'][game]['server_type']:  # If it is not bogus either...
-                    server_status = qstat_entry['@status']
-                    if server_status == 'UP':
-                        server_table.append({})
-                        server_table[-1]['host'] = qstat_entry['hostname']
-                        server_table[-1]['password'] = False
-                        server_table[-1]['secure'] = False
-                        server_table[-1]['game_id'] = game
-                        server_table[-1]['game_mod'] = None
+                debug_msg(game_name, msg)
 
-                        if qstat_entry['name'] is None:
-                            server_table[-1]['name'] = None
-                        else:
-                            server_table[-1]['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
-                        server_table[-1]['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
-                        server_table[-1]['terrain'] = str(qstat_entry['map'])
-                        try:
-                            server_table[-1]['player_count'] = int(qstat_entry['numplayers'])
-                        except:
-                            server_table[-1]['player_count'] = 0
-                        try:
-                            server_table[-1]['player_limit'] = int(qstat_entry['maxplayers'])
-                        except:
-                            server_table[-1]['player_limit'] = 0
-                        try:
-                            server_table[-1]['ping'] = int(qstat_entry['ping'])
-                        except KeyError:
-                            server_table[-1]['ping'] = 9999
-                        server_table[-1]['rules'] = {}
-                        server_table[-1]['players'] = []
-
-                        if qstat_entry['rules'] is not None:
-                            if isinstance(qstat_entry['rules']['rule'], dict):
-                                rule = qstat_entry['rules']['rule']
-                                qstat_entry['rules']['rule'] = [rule]
-
-                            for rule in qstat_entry['rules']['rule']:
-                                rule_name = rule['@name']
-                                if '#text' in rule.keys():
-                                    server_table[-1]['rules'][rule_name] = rule['#text']
-                                else:
-                                    server_table[-1]['rules'][rule_name] = None
-
-                                rule_text = server_table[-1]['rules'][rule_name]
-
-                                if rule_name in ['gamename']:
-                                    server_table[-1]['game_name'] = str(rule_text)
-                                elif rule_name in ['punkbuster', 'sv_punkbuster', 'secure']:
-                                    server_table[-1]['secure'] = bool(int(rule_text))
-                                elif rule_name in ['game']:
-                                    server_table[-1]['game_mod'] = str(rule_text)
-                                elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password']:
-                                    try:
-                                        server_table[-1]['password'] = bool(int(rule_text))
-                                    except TypeError:
-                                        server_table[-1]['password'] = False
-                        if qstat_entry['players'] is not None:
-                            if isinstance(qstat_entry['players']['player'], dict):
-                                player = qstat_entry['players']['player']
-                                qstat_entry['players']['player'] = [player]
-
-                            for player in qstat_entry['players']['player']:
-                                server_table[-1]['players'].append({})
-                                server_table[-1]['players'][-1]['name'] = re.sub(color_code_pattern, '', str(player['name']))
-                                try:
-                                    server_table[-1]['players'][-1]['score'] = int(player['score'])
-                                except:
-                                    server_table[-1]['players'][-1]['score'] = None
-                                try:
-                                    server_table[-1]['players'][-1]['ping'] = int(player['ping'])
-                                except:
-                                    server_table[-1]['players'][-1]['ping'] = 9999
-                        else:
-                            server_table[-1]['players'] = None
-
-                        for filter_rule in ((server_game_name, "game_name"), (server_game_type, "game_type")):
-                            if filter_rule[0] is not None:
-                                if filter_rule[1] not in server_table[-1].keys():
-                                    del server_table[-1]
-                                    continue
-                                else:
-                                    if server_table[-1][filter_rule[1]] != filter_rule[0]:
-                                        del server_table[-1]
-                                        continue
-
+                if server_dict is not None:
+                    appendable = True
+                    for filter_rule in ((server_game_name, "game_name"), (server_game_type, "game_type")):
+                        if filter_rule[0] is not None:
+                            if filter_rule[1] not in server_dict.keys():
+                                appendable = False
+                                break
+                            else:
+                                if server_dict[filter_rule[1]] != filter_rule[0]:
+                                    appendable = False
+                                    break
+                    if appendable:
+                        server_table.append(server_dict)
 
             except Exception as e:
                 print(QSTAT_MSG, e)
