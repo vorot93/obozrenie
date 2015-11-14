@@ -80,8 +80,9 @@ class ThreadSafeList(list):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
 
 
-def debug_msg(msg):
-    print(" | ".join([time.strftime('%F %T'), *msg]))
+def debug_msg(msg=None):
+    if msg is not None:
+        print(" | ".join([time.strftime('%F %T'), *[str(part) for part in msg]]))
 
 
 def enum(*args):

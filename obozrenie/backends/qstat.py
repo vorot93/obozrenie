@@ -31,7 +31,7 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
 QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat")
 
 
-def debug_msg(game_name, msg):
+def debug_msg(game_name, msg=None):
     if msg is not None:
         helpers.debug_msg([QSTAT_MSG, game_name, msg])
 
@@ -229,7 +229,6 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
                 server_dict = response['server_dict']
                 msg = response['debug_msg']
-
                 debug_msg(game_name, msg)
 
                 if server_dict is not None:
@@ -247,10 +246,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
                         server_table.append(server_dict)
 
             except Exception as e:
-                debug_msg(game_name, e.args[0])
-                if proxy is not None:
-                    proxy.append(Exception)
-                return Exception
+                debug_msg(game_name, str(e.args[0]))
     parse_end_time = time.time()
 
     debug_msg(game_name, i18n._("Parsed QStat response. Elapsed time: %(parse_time)s ms") % {'parse_time': round((parse_end_time - parse_start_time) * 1000, 2)})

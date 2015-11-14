@@ -296,13 +296,13 @@ class Core(GameTable):
             import pygeoip
             try:
                 open(GEOIP_DATA_FILE)
-                print(CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {'geoip_data_file': GEOIP_DATA_FILE})
+                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {'geoip_data_file': GEOIP_DATA_FILE}])
                 self.geolocation = pygeoip
             except FileNotFoundError:
-                print(CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation."))
+                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation.")])
                 self.geolocation = None
         except ImportError:
-            print(CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation."))
+            helpers.debug_msg([CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
             self.geolocation = None
 
     def update_server_list(self, game, stat_callback=None):
@@ -321,7 +321,7 @@ class Core(GameTable):
         # Start query if it's not up already
         if self.get_query_status(game) != self.QUERY_STATUS.WORKING:
             self.set_query_status(game, self.QUERY_STATUS.WORKING)
-            print(CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name})
+            helpers.debug_msg([CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name}])
             server_list_proxy = None
             stat_master_cmd = backends.backend_table[backend].stat_master
             try:
@@ -335,8 +335,8 @@ class Core(GameTable):
                     e = server_list_proxy[0]
                     raise e
             except Exception as e:
-                print(CORE_MSG, e)
-                print(CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG)
+                helpers.debug_msg([CORE_MSG, e])
+                helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG])
                 self.set_query_status(game, self.QUERY_STATUS.ERROR)
 
             # ListProxy -> list
@@ -469,5 +469,5 @@ class Settings:
 
 
 if __name__ == "__main__":
-    print(CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser.\n"
-                           "Please run an appropriate UI instead."))
+    helpers.debug_msg([CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser.\n"
+                                        "Please run an appropriate UI instead.")])

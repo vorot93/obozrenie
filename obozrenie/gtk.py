@@ -610,7 +610,7 @@ class App(Gtk.Application):
 
         try:
             # Load settings
-            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Obozrenie is starting"), "\n" + SEPARATOR_MSG)
+            helpers.debug_msg([GTK_MSG, i18n._("Obozrenie is starting")])
             guiactions = self.guiactions
 
             self.status = "starting"
@@ -663,7 +663,7 @@ class App(Gtk.Application):
         if self.status == "up":
             self.settings.save()
             self.status = "shutting down"
-            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Shutting down"), "\n" + SEPARATOR_MSG)
+            helpers.debug_msg([GTK_MSG, i18n._("Shutting down")])
         else:
             self.status = "start failed"
-            print(SEPARATOR_MSG + "\n" + i18n._(GTK_MSG), i18n._("Initialization failed. Aborting."), "\n", SEPARATOR_MSG)
+            helpers.debug_msg([GTK_MSG, i18n._("Initialization failed. Aborting.")])
