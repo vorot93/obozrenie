@@ -239,7 +239,7 @@ class GUIActions:
     @staticmethod
     def cb_about(action, dialog, parent, *args):
         """Opens the About dialog."""
-        about_dialog = templates.AboutDialog(parent, PROJECT, DESCRIPTION, WEBSITE, VERSION, AUTHORS, ARTISTS, COPYRIGHT, Gtk.License.GPL_3_0, None)
+        about_dialog = templates.AboutDialog(parent, PROJECT, DESCRIPTION, WEBSITE, VERSION, AUTHORS, ARTISTS, COPYRIGHT, Gtk.License.GPL_3_0, ICON_NAME)
         about_dialog.run()
         about_dialog.destroy()
 

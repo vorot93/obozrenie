@@ -1,4 +1,4 @@
-# Obozrenie
+![Obozrenie](https://cdn.rawgit.com/obozrenie/obozrenie/master/assets/icons/hicolor/scalable/apps/obozrenie.svg)
 
 [![Build Status](https://travis-ci.org/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
 [![Climate](https://codeclimate.com/github/obozrenie/obozrenie/badges/gpa.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
@@ -46,7 +46,11 @@ Obozrenie is written in Python, with use of PyGObject libraries. It consists of 
 * Core library forms multi-layered tables with game settings and server information (Game Table) and Obozrenie-wide configuration (Settings Table).
 * GTK+ GUI shows this information in a user-friendly form.
 
-## License
+## Licenses
+### Obozrenie
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 3, as published by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+### Obozrenie logo
+This logo uses Neometric typeface by [Andres Sanchez](http://andresl.tumblr.com) distributed under CC-BY-SA-NC.
