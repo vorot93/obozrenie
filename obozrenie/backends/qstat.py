@@ -36,97 +36,119 @@ def debug_msg(game_name, msg):
         helpers.debug_msg([QSTAT_MSG, game_name, msg])
 
 
-def parse_server_entry(qstat_entry, game, master_type, server_type):
+def parse_master_entry(qstat_entry, game):
+    master_server_uri = qstat_entry['@address']
+    master_server_status = qstat_entry['@status']
+    server_dict = None
+    debug_message = None
+    if master_server_status == 'UP':
+        master_server_entry_count = qstat_entry['@servers']
+        debug_message = i18n._("Queried Master. Address: %(address)s, status: %(status)s, server count: %(servers)s.") % {'address': master_server_uri, 'status': master_server_status, 'servers': master_server_entry_count}
+    else:
+        debug_message = i18n._("Master query failed. Address: %(address)s, status: %(status)s.") % {'address': master_server_uri, 'status': master_server_status}
+
+    return {'server_dict': server_dict, 'debug_msg': debug_message}
+
+
+def parse_player_entry(player, color_code_pattern):
+    """Parses player entry returned by QStat"""
+    player_entry = {}
+
+    player_entry['name'] = re.sub(color_code_pattern, '', str(player['name']))
+    try:
+        player_entry['score'] = int(player['score'])
+    except:
+        player_entry['score'] = None
+    try:
+        player_entry['ping'] = int(player['ping'])
+    except:
+        player_entry['ping'] = 9999
+
+    return player_entry
+
+
+def parse_server_entry(qstat_entry, game):
+    """Parses server entry returned by QStat"""
     color_code_pattern = '[\\^](.)'
 
     debug_message = None
     server_dict = None
-    if qstat_entry['@type'] == master_type:
-        master_server_uri = qstat_entry['@address']
-        master_server_status = qstat_entry['@status']
-        if master_server_status == 'UP':
-            master_server_entry_count = qstat_entry['@servers']
-            debug_message = i18n._("Queried Master. Address: %(address)s, status: %(status)s, server count: %(servers)s.") % {'address': master_server_uri, 'status': master_server_status, 'servers': master_server_entry_count}
-        else:
-            debug_message = i18n._("Master query failed. Address: %(address)s, status: %(status)s.") % {'address': master_server_uri, 'status': master_server_status}
 
-    elif qstat_entry['@type'] == server_type:  # If the server is not bogus...
+    server_status = qstat_entry['@status']
+    if server_status == 'UP':
         server_dict = {}
-        server_status = qstat_entry['@status']
-        if server_status == 'UP':
-            server_dict['host'] = qstat_entry['hostname']
-            server_dict['password'] = False
-            server_dict['secure'] = False
-            server_dict['game_id'] = game
-            server_dict['game_mod'] = ""
+        server_dict['host'] = qstat_entry['hostname']
+        server_dict['password'] = False
+        server_dict['secure'] = False
+        server_dict['game_id'] = game
+        server_dict['game_mod'] = ""
 
-            if qstat_entry['name'] is None:
-                server_dict['name'] = ""
-            else:
-                server_dict['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
-            server_dict['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
-            server_dict['terrain'] = str(qstat_entry['map'])
-            try:
-                server_dict['player_count'] = int(qstat_entry['numplayers'])
-            except:
-                server_dict['player_count'] = 0
-            try:
-                server_dict['player_limit'] = int(qstat_entry['maxplayers'])
-            except:
-                server_dict['player_limit'] = 0
-            try:
-                server_dict['ping'] = int(qstat_entry['ping'])
-            except KeyError:
-                server_dict['ping'] = 9999
-            server_dict['rules'] = {}
-            server_dict['players'] = []
+        if qstat_entry['name'] is None:
+            server_dict['name'] = ""
+        else:
+            server_dict['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
+        server_dict['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
+        server_dict['terrain'] = str(qstat_entry['map'])
+        try:
+            server_dict['player_count'] = int(qstat_entry['numplayers'])
+        except (KeyError, TypeError):
+            server_dict['player_count'] = 0
+        try:
+            server_dict['player_limit'] = int(qstat_entry['maxplayers'])
+        except (KeyError, TypeError):
+            server_dict['player_limit'] = 0
+        try:
+            server_dict['ping'] = int(qstat_entry['ping'])
+        except (KeyError, TypeError):
+            server_dict['ping'] = 9999
+        server_dict['rules'] = {}
+        server_dict['players'] = []
 
-            if qstat_entry['rules'] is not None:
-                if isinstance(qstat_entry['rules']['rule'], dict):
-                    rule = qstat_entry['rules']['rule']
-                    qstat_entry['rules']['rule'] = [rule]  # Enforce rule array even if n=1
+        if qstat_entry['rules'] is not None:
+            rules_list = helpers.enforce_array(qstat_entry['rules']['rule'])
 
-                for rule in qstat_entry['rules']['rule']:
-                    rule_name = rule['@name']
-                    if '#text' in rule.keys():
-                        server_dict['rules'][rule_name] = rule['#text']
-                    else:
-                        server_dict['rules'][rule_name] = None
+            for rule in rules_list:
+                rule_name = rule['@name']
+                if '#text' in rule.keys():
+                    server_dict['rules'][rule_name] = rule['#text']
+                else:
+                    server_dict['rules'][rule_name] = None
 
-                    rule_text = server_dict['rules'][rule_name]
+                rule_text = server_dict['rules'][rule_name]
 
-                    if rule_name in ['gamename']:
-                        server_dict['game_name'] = str(rule_text)
-                    elif rule_name in ['punkbuster', 'sv_punkbuster', 'secure']:
-                        server_dict['secure'] = bool(int(rule_text))
-                    elif rule_name in ['game']:
-                        server_dict['game_mod'] = str(rule_text)
-                    elif rule_name in ['g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password']:
-                        try:
-                            server_dict['password'] = bool(int(rule_text))
-                        except TypeError:
-                            server_dict['password'] = False
-            if qstat_entry['players'] is not None:
-                if isinstance(qstat_entry['players']['player'], dict):
-                    player = qstat_entry['players']['player']
-                    qstat_entry['players']['player'] = [player]  # Enforce player array even if n=1
-
-                for player in qstat_entry['players']['player']:
-                    player_entry = {}
-                    player_entry['name'] = re.sub(color_code_pattern, '', str(player['name']))
+                if rule_name in ('gamename'):
+                    server_dict['game_name'] = str(rule_text)
+                elif rule_name in ('punkbuster', 'sv_punkbuster', 'secure'):
+                    server_dict['secure'] = bool(int(rule_text))
+                elif rule_name in ('game'):
+                    server_dict['game_mod'] = str(rule_text)
+                elif rule_name in ('g_needpass', 'needpass', 'si_usepass', 'pswrd', 'password'):
                     try:
-                        player_entry['score'] = int(player['score'])
-                    except:
-                        player_entry['score'] = None
-                    try:
-                        player_entry['ping'] = int(player['ping'])
-                    except:
-                        player_entry['ping'] = 9999
-                    server_dict['players'].append(player_entry)
-            else:
-                server_dict['players'] = []
+                        server_dict['password'] = bool(int(rule_text))
+                    except TypeError:
+                        server_dict['password'] = False
 
-    return server_dict, debug_message
+        if qstat_entry['players'] is not None:
+            player_list = helpers.enforce_array(qstat_entry['players']['player'])
+
+            for player_entry in player_list:
+                server_dict['players'].append(parse_player_entry(player_entry, color_code_pattern))
+
+    return {'server_dict': server_dict, 'debug_msg': debug_message}
+
+
+def parse_qstat_entry(qstat_entry, game, master_type, server_type):
+    response = None
+    if qstat_entry['@type'] == master_type:
+        response = parse_master_entry(qstat_entry, game)
+
+    elif qstat_entry['@type'] == server_type:
+        response = parse_server_entry(qstat_entry, game)
+
+    debug_message = response['debug_msg']
+    server_dict = response['server_dict']
+
+    return {'server_dict': server_dict, 'debug_msg': debug_message}
 
 
 def stat_master(game, game_info, game_settings, proxy=None):
@@ -184,7 +206,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
         server_table_qstat_xml = qstat_output.decode()
         server_table_dict = json.loads(json.dumps(xmltodict.parse(server_table_qstat_xml)))
     except Exception as e:
-        print(QSTAT_MSG, e)
+        debug_msg(game_name, e.args[0])
         proxy.append(Exception)
         return Exception
     stat_end_time = time.time()
@@ -194,6 +216,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
     server_table_dict['qstat']['server'] = helpers.enforce_array(server_table_dict['qstat']['server'])  # Enforce server array even if n=1
 
+    parse_start_time = time.time()
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
             if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
@@ -202,7 +225,10 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
         except TypeError:
             try:
-                server_dict, msg = parse_server_entry(qstat_entry, game, backend_config_object['game'][game]['master_type'], backend_config_object['game'][game]['server_type'])
+                response = parse_qstat_entry(qstat_entry, game, backend_config_object['game'][game]['master_type'], backend_config_object['game'][game]['server_type'])
+
+                server_dict = response['server_dict']
+                msg = response['debug_msg']
 
                 debug_msg(game_name, msg)
 
@@ -221,10 +247,13 @@ def stat_master(game, game_info, game_settings, proxy=None):
                         server_table.append(server_dict)
 
             except Exception as e:
-                print(QSTAT_MSG, e)
+                debug_msg(game_name, e.args[0])
                 if proxy is not None:
                     proxy.append(Exception)
                 return Exception
+    parse_end_time = time.time()
+
+    debug_msg(game_name, i18n._("Parsed QStat response. Elapsed time: %(parse_time)s ms") % {'parse_time': round((parse_end_time - parse_start_time) * 1000, 2)})
 
     if proxy is not None:
         for entry in server_table:

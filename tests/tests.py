@@ -112,19 +112,39 @@ class MinetestTests(unittest.TestCase):
 class QStatTests(unittest.TestCase):
     """Tests for QStat backend"""
     @staticmethod
-    def unit_qstat_parse_master_entry():
-        """Check QStat output parsing"""
-        xml_string = '<qstat><server type="Q2M" address="localhost:12345" status="UP" servers="44"></server></qstat>'
+    def unit_parse_master_entry():
+        """Check QStat output parsing - masters"""
+        xml_string = '<server type="Q2M" address="localhost:12345" status="UP" servers="44"></server>'
 
-        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['qstat']['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
-        spec_result = (None, i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.'))
+        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
+        spec_result = {'server_dict': None, 'debug_msg': i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.')}
 
-        result = backends.qstat.parse_server_entry(**spec_args)
+        result = backends.qstat.parse_qstat_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 
-    def test_qstat_parse_master_entry(self):
-        unit = self.unit_qstat_parse_master_entry()
+    def test_parse_master_entry(self):
+        unit = self.unit_parse_master_entry()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+    @staticmethod
+    def unit_parse_server_entry():
+        """Check QStat output parsing - masters"""
+        xml_string = '<server type="Q2S" address="localhost:12345" status="UP"><hostname>localhost</hostname><name>Gandalfehtgreen&apos;s Casino (R.I.P.)</name><gametype>action</gametype><map>locknload</map><numplayers>0</numplayers><maxplayers>15</maxplayers><numspectators>0</numspectators><maxspectators>0</maxspectators><ping>1126</ping><retries>1</retries><rules><rule name="*Q2Admin">2.0~3a63381</rule><rule name="actionversion">TNG 2.81~d504f0d</rule><rule name="allitem">0</rule><rule name="allweapon">0</rule><rule name="capturelimit">0</rule><rule name="cheats">0</rule><rule name="ctf">0</rule><rule name="deathmatch">1</rule><rule name="dmflags">8</rule><rule name="fraglimit">0</rule><rule name="game">action</rule><rule name="gamedate">Sep 15 2013</rule><rule name="gamedir">action</rule><rule name="gamename">action</rule><rule name="items">1</rule><rule name="matchmode">0</rule><rule name="needpass">0</rule><rule name="port">12345</rule><rule name="protocol">34</rule><rule name="q2a_mvd">1.6hau</rule><rule name="roundlimit">15</rule><rule name="roundtimelimit">5</rule><rule name="t1">0</rule><rule name="t2">0</rule><rule name="t3">0</rule><rule name="teamplay">1</rule><rule name="tgren">1</rule><rule name="timelimit">60</rule><rule name="use_3teams">0</rule><rule name="use_classic">0</rule><rule name="use_tourney">0</rule><rule name="uptime">297+0:09.46</rule></rules><players><player><name>PlayerA</name><score>0</score><ping>3</ping></player><player><name>PlayerB</name><score>0</score><ping>4</ping></player><player><name>PlayerC</name><score>0</score><ping>5</ping></player></players></server>'
+
+        spec_server_dict = {'game_name': 'action', 'password': False, 'game_mod': '', 'player_count': 0, 'secure': False, 'ping': 1126, 'rules': {'gamedir': 'action', 'needpass': '0', 'uptime': '297+0:09.46', 'use_classic': '0', 'timelimit': '60', 'capturelimit': '0', 'game': 'action', 'tgren': '1', 'actionversion': 'TNG 2.81~d504f0d', 'allitem': '0', 'use_tourney': '0', 't1': '0', 'protocol': '34', 'port': '12345', 'cheats': '0', 'ctf': '0', 'deathmatch': '1', 'q2a_mvd': '1.6hau', '*Q2Admin': '2.0~3a63381', 'teamplay': '1', 'use_3teams': '0', 'gamedate': 'Sep 15 2013', 't2': '0', 'fraglimit': '0', 'matchmode': '0', 'dmflags': '8', 'allweapon': '0', 'roundlimit': '15', 'gamename': 'action', 'roundtimelimit': '5', 'items': '1', 't3': '0'}, 'players': [{'name': 'PlayerA', 'ping': 3, 'score': 0}, {'name': 'PlayerB', 'ping': 4, 'score': 0}, {'name': 'PlayerC', 'ping': 5, 'score': 0}], 'name': "Gandalfehtgreen's Casino (R.I.P.)", 'player_limit': 15, 'host': 'localhost', 'game_type': 'action', 'game_id': 'q2', 'terrain': 'locknload'}
+        spec_debug_msg = None
+
+
+        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
+        spec_result = {'server_dict': spec_server_dict, 'debug_msg': spec_debug_msg}
+
+        result = backends.qstat.parse_qstat_entry(**spec_args)
+
+        return {'expectation': spec_result, 'result': result}
+
+    def test_parse_server_entry(self):
+        unit = self.unit_parse_server_entry()
         self.assertTrue(unit['expectation'] == unit['result'])
 
 
