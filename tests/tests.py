@@ -19,8 +19,9 @@
 
 import json
 import unittest
+import xmltodict
 
-from obozrenie import helpers, backends
+from obozrenie import helpers, backends, i18n
 
 
 class HelpersTests(unittest.TestCase):
@@ -105,6 +106,25 @@ class MinetestTests(unittest.TestCase):
 
     def test_minetest_parse(self):
         unit = self.unit_minetest_parse()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+
+class QStatTests(unittest.TestCase):
+    """Tests for QStat backend"""
+    @staticmethod
+    def unit_qstat_parse_master_entry():
+        """Check QStat output parsing"""
+        xml_string = '<qstat><server type="Q2M" address="localhost:12345" status="UP" servers="44"></server></qstat>'
+
+        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['qstat']['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
+        spec_result = (None, i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.'))
+
+        result = backends.qstat.parse_server_entry(**spec_args)
+
+        return {'expectation': spec_result, 'result': result}
+
+    def test_qstat_parse_master_entry(self):
+        unit = self.unit_qstat_parse_master_entry()
         self.assertTrue(unit['expectation'] == unit['result'])
 
 

@@ -24,6 +24,7 @@ import json
 import os
 import pytoml
 import threading
+import time
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
@@ -79,8 +80,18 @@ class ThreadSafeList(list):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
 
 
+def debug_msg(msg):
+    print(" | ".join([time.strftime('%F %T'), *msg]))
+
+
 def enum(*args):
     return collections.namedtuple('Enum', args)._make(range(len(args)))
+
+
+def enforce_array(entry_array):
+    if not isinstance(entry_array, list):
+        entry_array = [entry_array]
+    return entry_array
 
 
 def deepcopy(foo):

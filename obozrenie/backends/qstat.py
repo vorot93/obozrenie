@@ -28,12 +28,12 @@ import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
 
 BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "qstat.toml")
-QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat:")
+QSTAT_MSG = BACKENDCAT_MSG + i18n._("QStat")
 
 
 def debug_msg(game_name, msg):
     if msg is not None:
-        print(QSTAT_MSG, i18n._("|%(game)s|") % {'game': game_name}, msg)
+        helpers.debug_msg([QSTAT_MSG, game_name, msg])
 
 
 def parse_server_entry(qstat_entry, game, master_type, server_type):
@@ -50,7 +50,7 @@ def parse_server_entry(qstat_entry, game, master_type, server_type):
         else:
             debug_message = i18n._("Master query failed. Address: %(address)s, status: %(status)s.") % {'address': master_server_uri, 'status': master_server_status}
 
-    elif qstat_entry['@type'] == server_type:  # If it is not bogus either...
+    elif qstat_entry['@type'] == server_type:  # If the server is not bogus...
         server_dict = {}
         server_status = qstat_entry['@status']
         if server_status == 'UP':
@@ -58,10 +58,10 @@ def parse_server_entry(qstat_entry, game, master_type, server_type):
             server_dict['password'] = False
             server_dict['secure'] = False
             server_dict['game_id'] = game
-            server_dict['game_mod'] = None
+            server_dict['game_mod'] = ""
 
             if qstat_entry['name'] is None:
-                server_dict['name'] = None
+                server_dict['name'] = ""
             else:
                 server_dict['name'] = re.sub(color_code_pattern, '', str(qstat_entry['name']))
             server_dict['game_type'] = re.sub(color_code_pattern, '', str(qstat_entry['gametype']))
@@ -84,7 +84,7 @@ def parse_server_entry(qstat_entry, game, master_type, server_type):
             if qstat_entry['rules'] is not None:
                 if isinstance(qstat_entry['rules']['rule'], dict):
                     rule = qstat_entry['rules']['rule']
-                    qstat_entry['rules']['rule'] = [rule]
+                    qstat_entry['rules']['rule'] = [rule]  # Enforce rule array even if n=1
 
                 for rule in qstat_entry['rules']['rule']:
                     rule_name = rule['@name']
@@ -177,7 +177,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
     for entry in hosts_array:
         qstat_stdin_object = qstat_stdin_object + qstat_stdin_descriptor + " " + entry + "\n"
 
-    print(i18n._(QSTAT_MSG), i18n._("|%(game)s| Requesting server info.") % {'game': game_name})
+    debug_msg(game_name, i18n._("Requesting server info."))
     stat_start_time = time.time()
     try:
         qstat_output, _ = subprocess.Popen(qstat_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(input=qstat_stdin_object.strip().encode())
@@ -191,6 +191,9 @@ def stat_master(game, game_info, game_settings, proxy=None):
 
     stat_total_time = stat_end_time - stat_start_time
     debug_msg(game_name, i18n._("Received server info. Elapsed time: %(stat_time)s s.") % {'stat_time': round(stat_total_time, 2)})
+
+    server_table_dict['qstat']['server'] = helpers.enforce_array(server_table_dict['qstat']['server'])  # Enforce server array even if n=1
+
     for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
         try:
             if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
