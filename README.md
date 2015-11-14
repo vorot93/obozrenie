@@ -1,10 +1,11 @@
 ![Obozrenie](https://cdn.rawgit.com/obozrenie/obozrenie/master/assets/icons/hicolor/scalable/apps/obozrenie.svg)
 
-[![Build Status](https://travis-ci.org/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
-[![Climate](https://codeclimate.com/github/obozrenie/obozrenie/badges/gpa.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
-[![Coverage](https://codeclimate.com/github/obozrenie/obozrenie/badges/coverage.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
-[![codecov.io](https://codecov.io/github/obozrenie/obozrenie/coverage.svg?branch=master)](https://codecov.io/github/obozrenie/obozrenie?branch=master)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/obozrenie/obozrenie?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![GNU GPL](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://gnu.org/licenses/gpl.html)
+[![Build Status](https://img.shields.io/travis/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
+[![Climate](https://img.shields.io/codeclimate/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
+[![Coverage](https://img.shields.io/codeclimate/coverage/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
+[![codecov.io](https://img.shields.io/codecov/c/github/obozrenie/obozrenie.svg)](https://codecov.io/github/obozrenie/obozrenie)
 
 Simple and easy to use game server browser.
 
