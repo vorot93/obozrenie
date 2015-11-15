@@ -174,7 +174,10 @@ class GUIActions:
             self.flag_icons = {}
         game_list = self.core.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
-        self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
+        try:
+            self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
+        except NameError:
+            pass
 
     def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
