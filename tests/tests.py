@@ -91,6 +91,20 @@ class HelpersTests(unittest.TestCase):
 class LauncherTests(unittest.TestCase):
     """Tests for launcher"""
     @staticmethod
+    def unit_steam_launch_pattern():
+        """Check Steam launch pattern"""
+        spec_args = {'game_settings': {'steam_path': 'steam'}, 'steam_app_id': '12345', 'host': 'localhost', 'port': '27960', 'password': 'abracadabra'}
+        spec_result = ['steam', '-applaunch', '12345', '+connect', 'localhost:27960', '+password', 'abracadabra']
+
+        result = launch.steam_launch_pattern(**spec_args)
+
+        return {'expectation': spec_result, 'result': result}
+
+    def test_steam_launch_pattern(self):
+        unit = self.unit_steam_launch_pattern()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+    @staticmethod
     def unit_quake_launch_pattern():
         """Check Quake launch pattern"""
         spec_args = {'path': 'quake', 'host': 'localhost', 'port': '27960', 'password': 'abracadabra'}

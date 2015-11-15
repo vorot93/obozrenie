@@ -23,11 +23,11 @@ from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
 
-def steam_launch_pattern(game_settings, host, port, password, steam_app_id=None, **kwargs):
+def steam_launch_pattern(game_settings, host, port, password, steam_app_id, **kwargs):
     steam_path = str(game_settings["steam_path"])
     launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", host + ":" + port]
-    if password != '':
-        launch_cmd.append("+password", password)
+    if password:
+        launch_cmd += ["+password", password]
 
     return launch_cmd
 
@@ -87,8 +87,8 @@ def hl2_launch_pattern(game, path, game_settings, host, port, password, **kwargs
         env_dict['LD_LIBRARY_PATH'] = ld_dir
 
     launch_cmd = [path, "-game", game, "+connect", host + ":" + port]
-    if password != '':
-        launch_cmd.append("+password", password)
+    if password:
+        launch_cmd += ["+password", password]
 
     return launch_cmd
 
@@ -102,8 +102,8 @@ def openttd_launch_pattern(path, host, port, **kwargs):
 def minetest_launch_pattern(game_settings, path, host, port, password, **kwargs):
     nickname = str(game_settings["nickname"])
     launch_cmd = [path, "--go", "--address", host, "--port", port, "--name", nickname]
-    if password != '':
-        launch_cmd.append("--password", password)
+    if password:
+        launch_cmd += ["--password", password]
 
     return launch_cmd
 
