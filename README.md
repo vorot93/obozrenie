@@ -4,9 +4,10 @@ Simple and easy to use game server browser for Linux.
 
 [![Gitter](https://img.shields.io/badge/gitter-%23obozrenie%2Fobozrenie-blue.svg)](https://gitter.im/obozrenie/obozrenie?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![GNU GPL](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://gnu.org/licenses/gpl.html)
+[![PyPI](https://img.shields.io/pypi/v/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
+[![PyPI](https://img.shields.io/pypi/dm/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
 [![Build Status](https://img.shields.io/travis/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
 [![Climate](https://img.shields.io/codeclimate/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
-[![Coverage](https://img.shields.io/codeclimate/coverage/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
 [![codecov.io](https://img.shields.io/codecov/c/github/obozrenie/obozrenie.svg)](https://codecov.io/github/obozrenie/obozrenie)
 
 ## Overview
