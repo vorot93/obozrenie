@@ -65,8 +65,8 @@ def rigsofrods_postlaunch_hook(**kwargs):
 
 def quake_launch_pattern(path, host, port, password, **kwargs):
     launch_cmd = [path, "+connect", host + ":" + port]
-    if password != '':
-        launch_cmd.append("+password", password)
+    if password:
+        launch_cmd += ["+password", password]
 
     return launch_cmd
 

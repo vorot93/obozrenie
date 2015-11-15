@@ -21,7 +21,7 @@ import json
 import unittest
 import xmltodict
 
-from obozrenie import helpers, backends, i18n
+from obozrenie import helpers, backends, i18n, launch
 
 
 class HelpersTests(unittest.TestCase):
@@ -85,6 +85,23 @@ class HelpersTests(unittest.TestCase):
 
     def test_sort_dict_table(self):
         unit = self.unit_sort_dict_table()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+
+class LauncherTests(unittest.TestCase):
+    """Tests for launcher"""
+    @staticmethod
+    def unit_quake_launch_pattern():
+        """Check Quake launch pattern"""
+        spec_args = {'path': 'quake', 'host': 'localhost', 'port': '27960', 'password': 'abracadabra'}
+        spec_result = ['quake', '+connect', 'localhost:27960', '+password', 'abracadabra']
+
+        result = launch.quake_launch_pattern(**spec_args)
+
+        return {'expectation': spec_result, 'result': result}
+
+    def test_quake_launch_pattern(self):
+        unit = self.unit_quake_launch_pattern()
         self.assertTrue(unit['expectation'] == unit['result'])
 
 
