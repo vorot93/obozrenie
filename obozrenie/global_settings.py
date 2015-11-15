@@ -42,6 +42,10 @@ ICON_DIR = os.path.join(ASSETS_DIR, 'pixmaps', 'obozrenie')
 ICON_FLAGS_DIR = os.path.join(ICON_DIR, 'flags')
 ICON_GAMES_DIR = os.path.join(ICON_DIR, 'games')
 
+if is_run_from_git_workdir():
+    ICON_PATH = os.path.join(ASSETS_DIR, 'icons', 'hicolor', 'scalable', 'apps', ICON_NAME + '.svg')
+    ICON_NAME = None
+
 SETTINGS_DIR = os.path.join(PROJECT_DIR, 'settings')
 SETTINGS_INTERNAL_DIR = os.path.join(SETTINGS_DIR, 'internal')
 SETTINGS_INTERNAL_BACKENDS_DIR = os.path.join(SETTINGS_INTERNAL_DIR, 'backends')

@@ -23,7 +23,7 @@ import ast
 import os
 import signal
 
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GdkPixbuf, GLib, Gio, Gtk
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
@@ -174,6 +174,7 @@ class GUIActions:
             self.flag_icons = {}
         game_list = self.core.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
+        self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
 
     def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
@@ -236,10 +237,21 @@ class GUIActions:
         """Starts the game."""
         self.core.start_game(game, server, password)
 
-    @staticmethod
-    def cb_about(action, dialog, parent, *args):
+    def cb_about(self, action, dialog, parent, *args):
         """Opens the About dialog."""
-        about_dialog = templates.AboutDialog(parent, PROJECT, DESCRIPTION, WEBSITE, VERSION, AUTHORS, ARTISTS, COPYRIGHT, Gtk.License.GPL_3_0, ICON_NAME)
+        kwargs = {'parent': parent, 'program_name': PROJECT, 'comments': DESCRIPTION, 'website': WEBSITE, 'version': VERSION, 'authors': AUTHORS, 'copyright': COPYRIGHT, 'license_type': Gtk.License.GPL_3_0}
+        if ICON_NAME:
+            kwargs.update({'logo_icon_name': ICON_NAME})
+        else:
+            try:
+                logo = self.logo
+                dest_width = 400
+                dest_height = logo.props.height * (400 / logo.props.width)
+                logo_scaled = logo.scale_simple(**{'interp_type': GdkPixbuf.InterpType.HYPER, 'dest_width': dest_width, 'dest_height': dest_height})
+                kwargs.update({'logo': logo_scaled})
+            except GLib.GError:
+                pass
+        about_dialog = Gtk.AboutDialog(**kwargs)
         about_dialog.run()
         about_dialog.destroy()
 

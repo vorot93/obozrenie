@@ -157,20 +157,3 @@ class PreferencesDialog(Gtk.Dialog):
         if self.callback_close is not None:
             self.callback_close(self.game, self.widget_option_mapping, self.dynamic_settings_table)
         self.destroy()
-
-
-class AboutDialog(Gtk.AboutDialog):
-    def __init__(self, parent_window, project, description, website, version, authors, artists, copyright, license_type, icon):
-        Gtk.AboutDialog.__init__(self, parent=parent_window)
-
-        self.set_program_name(project)
-        self.set_comments(description)
-        self.set_website(website)
-        self.set_version(version)
-        self.set_authors(authors)
-        self.set_artists(artists)
-        self.set_copyright(copyright)
-        self.set_license_type(license_type)
-        self.set_logo_icon_name(icon)
-
-        self.show_all()
