@@ -246,14 +246,9 @@ class GUIActions:
         if ICON_NAME:
             kwargs.update({'logo_icon_name': ICON_NAME})
         else:
-            try:
-                logo = self.logo
-                dest_width = 400
-                dest_height = logo.props.height * (400 / logo.props.width)
-                logo_scaled = logo.scale_simple(**{'interp_type': GdkPixbuf.InterpType.HYPER, 'dest_width': dest_width, 'dest_height': dest_height})
-                kwargs.update({'logo': logo_scaled})
-            except GLib.GError:
-                pass
+            logo = self.logo
+            kwargs.update({'logo': logo})
+
         about_dialog = Gtk.AboutDialog(**kwargs)
         about_dialog.run()
         about_dialog.destroy()
