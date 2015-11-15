@@ -32,14 +32,13 @@ def steam_launch_pattern(game_settings, host, port, password, steam_app_id=None,
     return launch_cmd
 
 
-def rigsofrods_launch_pattern(game_settings, path, host, port, password, **kwargs):
-    config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
+def rigsofrods_launch_pattern(path, **kwargs):
     launch_cmd = [path]
 
     return launch_cmd
 
 
-def rigsofrods_prelaunch_hook(game_settings, path, host, port, password, **kwargs):
+def rigsofrods_prelaunch_hook(game_settings, host, port, password, **kwargs):
     config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
 
     if os.path.exists(config_file):
@@ -64,7 +63,7 @@ def rigsofrods_postlaunch_hook(**kwargs):
     subprocess.call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
 
 
-def quake_launch_pattern(**kwargs):
+def quake_launch_pattern(path, host, port, password, **kwargs):
     launch_cmd = [path, "+connect", host + ":" + port]
     if password != '':
         launch_cmd.append("+password", password)
