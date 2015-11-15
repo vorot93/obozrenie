@@ -32,7 +32,7 @@ import obozrenie.backends as backends
 import obozrenie.launch as launch
 
 
-class GameTable():
+class GameTable:
     """
     The Game Table is the persistent game information storage that is used through out Obozrenie.
 
@@ -88,6 +88,9 @@ class GameTable():
         self.QUERY_STATUS = helpers.enum('EMPTY', 'WORKING', 'READY', 'ERROR')
         self.__game_table = self.create_game_table(gameconfig_object)
 
+    def __repr__(self):
+        return i18n._("<Game Table - games: %(game_num)i, id: %(gt_id)i>") % {'game_num': len(self.__game_table), 'gt_id': id(self)}
+
     def create_game_table(self, gameconfig_object):
         """
         Loads game list into a table.
@@ -111,11 +114,14 @@ class GameTable():
                     game_table_entry_temp["settings"] = helpers.ThreadSafeDict()
                     game_table_entry_temp["servers"] = helpers.ThreadSafeList()
 
-                    with game_table_entry_temp["settings"] as game_table_entry_settings_temp:
-                        # Create setting groups
-                        for j in range(len(gameconfig_object[game_id]["settings"])):
-                            option_name = gameconfig_object[game_id]["settings"][j]
-                            game_table_entry_settings_temp[option_name] = ""
+                    try:
+                        with game_table_entry_temp["settings"] as game_table_entry_settings_temp:
+                            # Create setting groups
+                            for j in range(len(gameconfig_object[game_id]["settings"])):
+                                option_name = gameconfig_object[game_id]["settings"][j]
+                                game_table_entry_settings_temp[option_name] = ""
+                    except KeyError:
+                        pass
 
                     with game_table_entry_temp["info"] as game_table_entry_info_temp:
                         game_table_entry_info_temp["name"] = name
@@ -128,6 +134,16 @@ class GameTable():
                     game_table_entry_temp["query-status"] = self.QUERY_STATUS.EMPTY
 
         return game_table
+
+    @property
+    def copy(self):
+        """
+        Returns a deep copy of the Game Table.
+        It is the slowest accessor method. Please try to query for specific information.
+        """
+        with self.__game_table as game_table:
+            game_table_copy = helpers.deepcopy(game_table)
+        return game_table_copy
 
     def get_game_table_copy(self):
         """
@@ -284,13 +300,13 @@ class GameTable():
                 server_list.clear()
 
 
-class Core(GameTable):
+class Core:
     """
-    Contains core logic and game table of Obozrenie server browser.
+    Contains core logic of Obozrenie server browser.
     """
 
     def __init__(self):
-        super().__init__(helpers.load_table(GAME_CONFIG_FILE))
+        self.game_table = GameTable(helpers.load_table(GAME_CONFIG_FILE))
 
         try:
             import pygeoip
@@ -313,14 +329,14 @@ class Core(GameTable):
 
     def stat_master_target(self, game, callback):
         """Separate update thread. Strictly per-game."""
-        game_info = self.get_game_info(game)
-        game_settings = self.get_game_settings(game)
+        game_info = self.game_table.get_game_info(game)
+        game_settings = self.game_table.get_game_settings(game)
         game_name = game_info["name"]
         backend = game_info["backend"]
 
         # Start query if it's not up already
-        if self.get_query_status(game) != self.QUERY_STATUS.WORKING:
-            self.set_query_status(game, self.QUERY_STATUS.WORKING)
+        if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:
+            self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.WORKING)
             helpers.debug_msg([CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name}])
             server_list_proxy = None
             stat_master_cmd = backends.backend_table[backend].stat_master
@@ -337,11 +353,11 @@ class Core(GameTable):
             except Exception as e:
                 helpers.debug_msg([CORE_MSG, e])
                 helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG])
-                self.set_query_status(game, self.QUERY_STATUS.ERROR)
+                self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.ERROR)
 
             # ListProxy -> list
-            if self.get_query_status(game) != self.QUERY_STATUS.ERROR:
-                self.set_servers_data(game, server_list_proxy)
+            if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.ERROR:
+                self.game_table.set_servers_data(game, server_list_proxy)
                 temp_list = []
                 for entry in server_list_proxy:
                     temp_list.append(entry)
@@ -360,9 +376,9 @@ class Core(GameTable):
                         except:
                             pass
 
-                self.set_servers_data(game, temp_list)
+                self.game_table.set_servers_data(game, temp_list)
 
-                self.set_query_status(game, self.QUERY_STATUS.READY)
+                self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.READY)
 
         # Call post-stat callback
         if callback is not None:
@@ -375,8 +391,8 @@ class Core(GameTable):
 
         host = ":".join(server.split(":")[0:-1])
         port = server.split(":")[-1]
-        game_info = self.get_game_info(game)
-        game_settings = self.get_game_settings(game)
+        game_info = self.game_table.get_game_info(game)
+        game_settings = self.game_table.get_game_settings(game)
         launch_pattern = game_info["launch_pattern"]
         steam_app_id = None
         try:
@@ -444,15 +460,15 @@ class Settings:
         user_game_settings_table = helpers.load_table(self.user_game_settings_path)
 
         # Set game settings
-        for game in self.core.get_game_set():
-            for option in self.core.get_game_settings(game):
+        for game in self.core.game_table.get_game_set():
+            for option in self.core.game_table.get_game_settings(game):
                 value = default_game_settings_table[game][option]
                 try:
                     value = user_game_settings_table[game][option]
                 except (ValueError, KeyError, TypeError):
                     pass
 
-                self.core.set_game_setting(game, option, value)
+                self.core.game_table.set_game_setting(game, option, value)
 
     def save(self):
         """Saves configuration."""
@@ -461,13 +477,12 @@ class Settings:
 
         # Compile game settings table
         user_game_settings_table = {}
-        for game in self.core.get_game_set():
-            user_game_settings_table[game] = self.core.get_game_settings(game)
+        for game in self.core.game_table.get_game_set():
+            user_game_settings_table[game] = self.core.game_table.get_game_settings(game)
 
         # Save game settings
         helpers.save_table(self.user_game_settings_path, user_game_settings_table)
 
 
 if __name__ == "__main__":
-    helpers.debug_msg([CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser.\n"
-                                        "Please run an appropriate UI instead.")])
+    helpers.debug_msg([CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser. Please run an appropriate UI instead.")])

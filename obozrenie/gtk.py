@@ -172,7 +172,7 @@ class GUIActions:
             self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
         except TypeError and AttributeError:
             self.flag_icons = {}
-        game_list = self.core.get_game_set()
+        game_list = self.core.game_table.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
         try:
             self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
@@ -183,8 +183,8 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
         prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
-                                                   self.core.get_game_info(game),
-                                                   self.core.get_game_settings(game),
+                                                   self.core.game_table.get_game_info(game),
+                                                   self.core.game_table.get_game_settings(game),
                                                    self.app.settings.dynamic_widget_table,
                                                    callback_start=self.apply_settings_to_preferences_dialog,
                                                    callback_close=self.update_game_settings_table)
@@ -195,7 +195,7 @@ class GUIActions:
         """Shows server information window."""
         dialog = self.gtk_widgets["serverinfo-dialog"]
 
-        game_table = self.core.get_game_table_copy()
+        game_table = self.core.game_table.get_game_table_copy()
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server_list_table = game_table[game]["servers"]
         host = self.app.settings.settings_table["common"]["server-host"]
@@ -285,13 +285,13 @@ class GUIActions:
 
     def cb_game_treeview_selection_changed(self, *args):
         game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
-        query_status = self.core.get_query_status(game_id)
+        query_status = self.core.game_table.get_query_status(game_id)
 
         gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
-        if query_status == self.core.QUERY_STATUS.EMPTY:  # Refresh server list on first access
+        if query_status == self.core.game_table.QUERY_STATUS.EMPTY:  # Refresh server list on first access
             self.cb_update_button_clicked()
         else:
-            if query_status == self.core.QUERY_STATUS.WORKING:
+            if query_status == self.core.game_table.QUERY_STATUS.WORKING:
                 self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id)
 
@@ -307,9 +307,9 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         self.set_loading_state("working")
-        self.set_game_state(game, self.core.QUERY_STATUS.WORKING)
+        self.set_game_state(game, self.core.game_table.QUERY_STATUS.WORKING)
 
-        self.core.update_server_list(game, self.cb_update_server_list)
+        self.core.update_server_list(game, stat_callback=self.cb_update_server_list)
 
     def cb_update_server_list(self, game):
         GLib.idle_add(self.show_game_page, game)
@@ -319,7 +319,7 @@ class GUIActions:
         Loads game list into a list store
         """
 
-        game_table = self.core.get_game_table_copy()
+        game_table = self.core.game_table.copy
         game_icons = self.game_icons
         game_model = self.gtk_widgets["game-list-model"]
 
@@ -340,9 +340,9 @@ class GUIActions:
 
     def show_game_page(self, game):
         """Set of actions to do after query is complete."""
-        query_status = self.app.core.get_query_status(str(game))
-        query_status_enum = self.core.QUERY_STATUS
-        server_table = self.app.core.get_servers_data(str(game))
+        query_status = self.app.core.game_table.get_query_status(str(game))
+        query_status_enum = self.core.game_table.QUERY_STATUS
+        server_table = self.app.core.game_table.get_servers_data(str(game))
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
         model = self.gtk_widgets["server-list-sort"]
@@ -365,7 +365,7 @@ class GUIActions:
 
     def set_game_state(self, game, state):
         icon = ""
-        query_status_enum = self.core.QUERY_STATUS
+        query_status_enum = self.core.game_table.QUERY_STATUS
 
         if state == query_status_enum.WORKING:
             icon = "emblem-synchronizing-symbolic"
@@ -529,7 +529,7 @@ class GUIActions:
         """Resets button sensitivity on server connect data change"""
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         try:
-            server_list_table = self.core.get_servers_data(game)
+            server_list_table = self.core.game_table.get_servers_data(game)
         except (ValueError, KeyError):
             server_list_table = []
         host = self.app.settings.settings_table["common"]["server-host"]
@@ -554,7 +554,7 @@ class GUIActions:
 
     def apply_settings_to_preferences_dialog(self, game, widget_option_mapping, dynamic_settings_table):
         for option in widget_option_mapping:
-            value = self.core.get_game_settings(game)[option]
+            value = self.core.game_table.get_game_settings(game)[option]
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value = "\n".join(value)
             gtk_helpers.set_widget_value(widget_option_mapping[option], value)
@@ -579,7 +579,7 @@ class GUIActions:
             value = gtk_helpers.get_widget_value(widget_option_mapping[option])
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value = value.split("\n")
-            self.core.set_game_setting(game, option, value)
+            self.core.game_table.set_game_setting(game, option, value)
 
     def cb_post_settings_genload(self, widget_table, group, option, value):
         self.widget_table = widget_table
