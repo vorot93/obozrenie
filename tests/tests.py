@@ -2,7 +2,7 @@
 # This source file is part of Obozrenie
 # Copyright 2015 Artem Vorotnikov
 
-# For more information, see https://github.com/skybon/obozrenie
+# For more information, see https://github.com/obozrenie/obozrenie
 
 # Obozrenie is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3, as
