@@ -34,17 +34,27 @@ for directory, _, filenames in os.walk(data_dir):
             files.append(filename)
         data_files.append((os.path.join('share', dest), files))
 
-setup(name='Obozrenie',
-      version=VERSION,
-      description='Simple and easy to use game server browser',
-      author='Artem Vorotnikov',
-      author_email='artem@vorotnikov.me',
-      url='https://github.com/obozrenie',
-      packages=['obozrenie', 'obozrenie.backends'],
-      package_dir={'obozrenie': 'obozrenie', 'obozrenie.backends': 'obozrenie/backends'},
-      data_files=data_files,
-      cmdclass={'compile_catalog':  babel.compile_catalog,
-                'extract_messages': babel.extract_messages,
-                'init_catalog':     babel.init_catalog,
-                'update_catalog':   babel.update_catalog}
-      )
+app_info = {'name': 'Obozrenie',
+            'version': VERSION,
+            'description': 'Simple and easy to use game server browser',
+            'long_description': open('README.md').read(),
+            'author': 'Artem Vorotnikov',
+            'author_email': 'artem@vorotnikov.me',
+            'url': 'https://github.com/obozrenie/obozrenie',
+            'license': open('COPYING').read(),
+            'install_requires': ['xmltodict', 'pyxdg', 'pytoml', 'beautifulsoup4', 'babel'],
+            'packages': ['obozrenie', 'obozrenie.backends'],
+            'package_dir': {'obozrenie': 'obozrenie', 'obozrenie.backends': 'obozrenie/backends'},
+            'data_files': data_files,
+            'cmdclass': {'compile_catalog':  babel.compile_catalog,
+                         'extract_messages': babel.extract_messages,
+                         'init_catalog':     babel.init_catalog,
+                         'update_catalog':   babel.update_catalog},
+            'classifiers': ['License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+                            'Topic :: Games/Entertainment',
+                            'Topic :: Internet :: WWW/HTTP',
+                            'Topic :: Utilities',
+                            'Programming Language :: Python :: 3']
+            }
+
+setup(**app_info)
