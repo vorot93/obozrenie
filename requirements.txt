@@ -1,6 +1,6 @@
 xmltodict
-beautifulsoup4
-pytoml
-pygeoip
 pyxdg
+pytoml
+beautifulsoup4
+babel
 requests
