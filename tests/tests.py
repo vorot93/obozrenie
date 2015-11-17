@@ -150,7 +150,7 @@ class QStatTests(unittest.TestCase):
         spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
         spec_result = {'server_dict': None, 'debug_msg': i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.')}
 
-        result = adapters.qstat.parse_qstat_entry(**spec_args)
+        result = adapters.qstat.adapt_qstat_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 
@@ -170,7 +170,7 @@ class QStatTests(unittest.TestCase):
         spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
         spec_result = {'server_dict': spec_server_dict, 'debug_msg': spec_debug_msg}
 
-        result = adapters.qstat.parse_qstat_entry(**spec_args)
+        result = adapters.qstat.adapt_qstat_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 

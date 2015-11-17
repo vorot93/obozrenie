@@ -40,7 +40,7 @@ def debug_msg(game_name, msg=None):
         helpers.debug_msg([QSTAT_MSG, game_name, msg])
 
 
-def parse_master_entry(qstat_entry, game):
+def adapt_master_entry(qstat_entry, game):
     master_server_uri = qstat_entry['@address']
     master_server_status = qstat_entry['@status']
     server_dict = None
@@ -71,7 +71,7 @@ def parse_player_entry(player, color_code_pattern):
     return player_entry
 
 
-def parse_server_entry(qstat_entry, game):
+def adapt_server_entry(qstat_entry, game):
     """Parses server entry returned by QStat"""
     color_code_pattern = '[\\^](.)'
 
@@ -141,13 +141,13 @@ def parse_server_entry(qstat_entry, game):
     return {'server_dict': server_dict, 'debug_msg': debug_message}
 
 
-def parse_qstat_entry(qstat_entry, game, master_type, server_type):
+def adapt_qstat_entry(qstat_entry, game, master_type, server_type):
     response = None
     if qstat_entry['@type'] == master_type:
-        response = parse_master_entry(qstat_entry, game)
+        response = adapt_master_entry(qstat_entry, game)
 
     elif qstat_entry['@type'] == server_type:
-        response = parse_server_entry(qstat_entry, game)
+        response = adapt_server_entry(qstat_entry, game)
 
     debug_message = response['debug_msg']
     server_dict = response['server_dict']
@@ -155,11 +155,48 @@ def parse_qstat_entry(qstat_entry, game, master_type, server_type):
     return {'server_dict': server_dict, 'debug_msg': debug_message}
 
 
+def adapt_server_list(qstat_string, game, game_name, qstat_master_type, qstat_server_type, server_game_name, server_game_type):
+    server_table = []
+
+    server_table_dict = json.loads(json.dumps(xmltodict.parse(qstat_string)))
+    server_table_dict['qstat']['server'] = helpers.enforce_array(server_table_dict['qstat']['server'])  # Enforce server array even if n=1
+
+    for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
+        try:
+            if server_table_dict['qstat']['server']['@type'] == qstat_master_type:
+                debug_msg(game_name, i18n._("No valid masters specified. Please check your master server settings."))
+                break
+
+        except TypeError:
+            try:
+                response = adapt_qstat_entry(qstat_entry, game, qstat_master_type, qstat_server_type)
+
+                server_dict = response['server_dict']
+                msg = response['debug_msg']
+                debug_msg(game_name, msg)
+
+                if server_dict is not None:
+                    appendable = True
+                    for filter_rule in ((server_game_name, "game_name"), (server_game_type, "game_type")):
+                        if filter_rule[0] is not None:
+                            if filter_rule[1] not in server_dict.keys():
+                                appendable = False
+                                break
+                            else:
+                                if server_dict[filter_rule[1]] != filter_rule[0]:
+                                    appendable = False
+                                    break
+                    if appendable:
+                        server_table.append(server_dict)
+
+            except Exception as e:
+                debug_msg(game_name, str(e.args[0]))
+
+    return server_table
+
+
 def stat_master(game, game_info, master_list, proxy=None):
     hosts_array = []
-    server_table = []
-    server_table_qstat_xml = []
-    server_table_dict = []
 
     qstat_stdin_object = ""
 
@@ -169,6 +206,9 @@ def stat_master(game, game_info, master_list, proxy=None):
 
     game_name = game_info["name"]
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
+
+    qstat_master_type = backend_config_object['game'][game]['master_type']
+    qstat_server_type = backend_config_object['game'][game]['server_type']
 
     if "server_gamename" not in backend_config_object['game'][game].keys():
         backend_config_object['game'][game]['server_gamename'] = None
@@ -204,9 +244,8 @@ def stat_master(game, game_info, master_list, proxy=None):
     debug_msg(game_name, i18n._("Requesting server info."))
     stat_start_time = time.time()
     try:
-        qstat_output, _ = subprocess.Popen(qstat_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(input=qstat_stdin_object.strip().encode())
-        server_table_qstat_xml = qstat_output.decode()
-        server_table_dict = json.loads(json.dumps(xmltodict.parse(server_table_qstat_xml)))
+        qstat_output_raw, _ = subprocess.Popen(qstat_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(input=qstat_stdin_object.strip().encode())
+        qstat_output = qstat_output_raw.decode()
     except Exception as e:
         debug_msg(game_name, e.args[0])
         proxy.append(Exception)
@@ -216,39 +255,8 @@ def stat_master(game, game_info, master_list, proxy=None):
     stat_total_time = stat_end_time - stat_start_time
     debug_msg(game_name, i18n._("Received server info. Elapsed time: %(stat_time)s s.") % {'stat_time': round(stat_total_time, 2)})
 
-    server_table_dict['qstat']['server'] = helpers.enforce_array(server_table_dict['qstat']['server'])  # Enforce server array even if n=1
-
     parse_start_time = time.time()
-    for qstat_entry in server_table_dict['qstat']['server']:  # For every server...
-        try:
-            if server_table_dict['qstat']['server']['@type'] == backend_config_object['game'][game]['master_type']:
-                debug_msg(game_name, i18n._("No valid masters specified. Please check your master server settings."))
-                break
-
-        except TypeError:
-            try:
-                response = parse_qstat_entry(qstat_entry, game, backend_config_object['game'][game]['master_type'], backend_config_object['game'][game]['server_type'])
-
-                server_dict = response['server_dict']
-                msg = response['debug_msg']
-                debug_msg(game_name, msg)
-
-                if server_dict is not None:
-                    appendable = True
-                    for filter_rule in ((server_game_name, "game_name"), (server_game_type, "game_type")):
-                        if filter_rule[0] is not None:
-                            if filter_rule[1] not in server_dict.keys():
-                                appendable = False
-                                break
-                            else:
-                                if server_dict[filter_rule[1]] != filter_rule[0]:
-                                    appendable = False
-                                    break
-                    if appendable:
-                        server_table.append(server_dict)
-
-            except Exception as e:
-                debug_msg(game_name, str(e.args[0]))
+    server_table = adapt_server_list(qstat_output, game, game_name, qstat_master_type, qstat_server_type, server_game_name, server_game_type)
     parse_end_time = time.time()
 
     debug_msg(game_name, i18n._("Parsed QStat response. Elapsed time: %(parse_time)s ms") % {'parse_time': round((parse_end_time - parse_start_time) * 1000, 2)})
