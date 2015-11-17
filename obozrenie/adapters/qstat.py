@@ -155,7 +155,7 @@ def parse_qstat_entry(qstat_entry, game, master_type, server_type):
     return {'server_dict': server_dict, 'debug_msg': debug_message}
 
 
-def stat_master(game, game_info, game_settings, proxy=None):
+def stat_master(game, game_info, master_list, proxy=None):
     hosts_array = []
     server_table = []
     server_table_qstat_xml = []
@@ -181,9 +181,7 @@ def stat_master(game, game_info, game_settings, proxy=None):
     if "server_gametype" in backend_config_object['game'][game].keys():
         server_game_type = backend_config_object['game'][game]['server_gametype']
 
-    hosts_temp_array = list(game_settings["master_uri"])
-
-    for entry in hosts_temp_array:
+    for entry in master_list:
         entry = entry.strip()
         if '://' in entry:
             entry_protocol, entry_host = entry.split('://')

@@ -21,7 +21,7 @@ import json
 import unittest
 import xmltodict
 
-from obozrenie import helpers, backends, i18n, launch
+from obozrenie import helpers, adapters, i18n, launch
 
 
 class HelpersTests(unittest.TestCase):
@@ -131,7 +131,7 @@ class MinetestTests(unittest.TestCase):
         spec_args = {"entry": json.loads(json_string)}
         spec_result = json_result
 
-        result = backends.minetest.parse_json_entry(**spec_args)
+        result = adapters.minetest.parse_json_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 
@@ -150,7 +150,7 @@ class QStatTests(unittest.TestCase):
         spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
         spec_result = {'server_dict': None, 'debug_msg': i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.')}
 
-        result = backends.qstat.parse_qstat_entry(**spec_args)
+        result = adapters.qstat.parse_qstat_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 
@@ -170,7 +170,7 @@ class QStatTests(unittest.TestCase):
         spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
         spec_result = {'server_dict': spec_server_dict, 'debug_msg': spec_debug_msg}
 
-        result = backends.qstat.parse_qstat_entry(**spec_args)
+        result = adapters.qstat.parse_qstat_entry(**spec_args)
 
         return {'expectation': spec_result, 'result': result}
 

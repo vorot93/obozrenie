@@ -31,7 +31,7 @@ SEPARATOR_MSG = ("-------------------------------------------")
 ERROR_MSG = i18n._("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
 CORECAT_MSG = i18n._("Core/")
 UICAT_MSG = i18n._("UI/")
-BACKENDCAT_MSG = i18n._("Backend/")
+BACKENDCAT_MSG = i18n._("Adapter/")
 
 CORE_MSG = CORECAT_MSG + i18n._("Core:")
 SETTINGS_MSG = CORECAT_MSG + i18n._("Settings:")

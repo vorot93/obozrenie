@@ -98,19 +98,18 @@ def add_secure_info(array, game_name):
         entry["secure"] = False
 
 
-def stat_master(game, game_info, game_settings, proxy=None):
+def stat_master(game, game_info, master_list, proxy=None):
     """Stats the master server"""
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-    master_uri_list = list(game_settings["master_uri"])
 
     parser = ServerListParser()
 
     server_table = []
 
-    for master_uri in master_uri_list:
+    for master_uri in master_list:
         master_page_uri = master_uri.strip('/') + '/?version=' + protocol
         try:
             master_page_object = requests.get(master_page_uri)

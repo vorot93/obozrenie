@@ -28,7 +28,7 @@ from obozrenie.option_lists import *
 
 import obozrenie.i18n as i18n
 import obozrenie.helpers as helpers
-import obozrenie.backends as backends
+import obozrenie.adapters as adapters
 import obozrenie.launch as launch
 
 
@@ -332,18 +332,19 @@ class Core:
         game_info = self.game_table.get_game_info(game)
         game_settings = self.game_table.get_game_settings(game)
         game_name = game_info["name"]
-        backend = game_info["backend"]
+        master_list = list(game_settings["master_uri"])
+        adapter = game_info["backend"]
 
         # Start query if it's not up already
         if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:
             self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.WORKING)
             helpers.debug_msg([CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name}])
             server_list_proxy = None
-            stat_master_cmd = backends.backend_table[backend].stat_master
+            stat_master_cmd = adapters.adapter_table[adapter].stat_master
             try:
                 mgr = multiprocessing.Manager()
                 server_list_proxy = mgr.list()
-                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, game_info, game_settings, server_list_proxy))
+                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, game_info, master_list, server_list_proxy))
                 backend_process.daemon=True
                 backend_process.start()
                 backend_process.join()
