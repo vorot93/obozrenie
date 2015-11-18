@@ -101,7 +101,7 @@ class GameTable:
                 game_table_temp[game_id] = helpers.ThreadSafeDict()
 
                 name = str(gameconfig_object[game_id]["name"])
-                backend = str(gameconfig_object[game_id]["backend"])
+                adapter = str(gameconfig_object[game_id]['adapter'])
                 launch_pattern = str(gameconfig_object[game_id]["launch_pattern"])
                 try:
                     steam_app_id = str(gameconfig_object[game_id]["steam_app_id"])
@@ -125,7 +125,7 @@ class GameTable:
 
                     with game_table_entry_temp["info"] as game_table_entry_info_temp:
                         game_table_entry_info_temp["name"] = name
-                        game_table_entry_info_temp["backend"] = backend
+                        game_table_entry_info_temp['adapter'] = adapter
                         game_table_entry_info_temp["launch_pattern"] = launch_pattern
                         try:
                             game_table_entry_info_temp["steam_app_id"] = steam_app_id
@@ -333,7 +333,7 @@ class Core:
         game_settings = self.game_table.get_game_settings(game)
         game_name = game_info["name"]
         master_list = list(game_settings["master_uri"])
-        adapter = game_info["backend"]
+        adapter = game_info["adapter"]
 
         # Start query if it's not up already
         if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:

@@ -101,6 +101,8 @@ class GUIActions:
                                                                       "serverinfo-host-data":                   "serverinfo-host",
                                                                       "serverinfo-game-label":                  "serverinfo-game-label",
                                                                       "serverinfo-game-data":                   "serverinfo-game",
+                                                                      "serverinfo-gameid-label":                "serverinfo-gameid-label",
+                                                                      "serverinfo-gameid-data":                 "serverinfo-gameid",
                                                                       "serverinfo-terrain-label":               "serverinfo-terrain-label",
                                                                       "serverinfo-terrain-data":                "serverinfo-terrain",
                                                                       "serverinfo-players-label":               "serverinfo-players-label",
@@ -117,7 +119,6 @@ class GUIActions:
                                                                       })
         self.game_list_model_format = ("game_id",
                                        "name",
-                                       "backend",
                                        "game_icon",
                                        "status_icon")
 
@@ -208,6 +209,7 @@ class GUIActions:
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
+            gtk_helpers.set_widget_value(self.gtk_widgets['serverinfo-gameid'], server_entry['game_id'])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], i18n._("%(player_count)s / %(player_limit)s") % {'player_count': str(server_entry["player_count"]), 'player_limit': str(server_entry["player_limit"])})
             gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
@@ -231,7 +233,7 @@ class GUIActions:
         self.cb_server_connect(game, server, password)
 
     def cb_serverinfo_connect_button_clicked(self, *args):
-        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-game"])
+        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-gameid"])
         server = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-host"])
         password = self.app.settings.settings_table["common"]["server-pass"]
         self.cb_server_connect(game, server, password)
@@ -328,7 +330,6 @@ class GUIActions:
             game_store_table.append({})
             game_store_table[-1]["game_id"] = entry
             game_store_table[-1]["name"] = game_table[entry]["info"]["name"]
-            game_store_table[-1]["backend"] = game_table[entry]["info"]["backend"]
             game_store_table[-1]["status_icon"] = None
             game_store_table[-1]["game_icon"] = game_icons[entry]
 

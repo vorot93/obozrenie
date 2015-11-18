@@ -1,194 +1,225 @@
 [rigsofrods]
 name = "Rigs of Rods"
-backend = "rigsofrods"
+proxy = "requests_http"
+adapter = "rigsofrods"
 launch_pattern = "rigsofrods"
 settings = ["path", "master_uri"]
 
 [minetest]
 name = "Minetest"
-backend = "minetest"
+proxy = "requests_http"
+adapter = "minetest"
 launch_pattern = "minetest"
 settings = ["path", "master_uri", "nickname"]
 
 [csgo]
 name = "Counter-Strike: Global Offensive"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "730"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [cstrike]
 name = "Counter-Strike: Source"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "240"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [dod]
 name = "Day of Defeat: Source"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "300"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [garrysmod]
 name = "Garry's Mod"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "400"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [gesource]
 name = "GoldenEye: Source"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 settings = ["path", "master_uri"]
 
 [hl1mp]
 name = "Half-Life Deathmatch: Source"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "360"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [hl2mp]
 name = "Half-Life 2: Deathmatch"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "320"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [left4dead2]
 name = "Left 4 Dead 2"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "550"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [portal2]
 name = "Portal 2"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "620"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [tf]
 name = "Team Fortress 2"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "hl2"
 steam_app_id = "440"
 settings = ["path", "workdir", "master_uri", "steam_launch", "steam_path"]
 
 [alienarena]
 name = "Alien Arena"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [doom3]
 name = "Doom 3"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [jediacademy]
 name = "Star Wars Jedi Knight II: Jedi Academy"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [jedioutcast]
 name = "Star Wars Jedi Knight II: Jedi Outcast"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [q2]
 name = "Quake II"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [q3a]
 name = "Quake III Arena"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [q4]
 name = "Quake 4"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [qw]
 name = "QuakeWorld"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [rtcw]
 name = "Return to Castle Wolfenstein"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [et]
 name = "Wolfenstein: Enemy Territory"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [openarena]
 name = "OpenArena"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [openttd]
 name = "OpenTTD"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "openttd"
 settings = ["path", "master_uri"]
 
 [stef1]
 name = "Star Trek: Voyager - Elite Force"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [turtlearena]
 name = "Turtle Arena"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [unvanquished]
 name = "Unvanquished"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [urbanterror]
 name = "Urban Terror"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [warsow]
 name = "Warsow"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [wop]
 name = "World of Padman"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]
 
 [xonotic]
 name = "Xonotic"
-backend = "qstat"
+proxy = "qstat_output"
+adapter = "qstat"
 launch_pattern = "quake"
 settings = ["path", "workdir", "master_uri"]

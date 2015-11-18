@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 
+<!-- Generated with glade 3.19.0 
 
 Copyright (C) Artem Vorotnikov 2015
 
@@ -45,8 +45,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <!-- column-name game_id -->
       <column type="gchararray"/>
       <!-- column-name game_name -->
-      <column type="gchararray"/>
-      <!-- column-name game_backend -->
       <column type="gchararray"/>
       <!-- column-name game_icon -->
       <column type="GdkPixbuf"/>
@@ -302,7 +300,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="server-connect-game-icon"/>
                           <attributes>
-                            <attribute name="pixbuf">3</attribute>
+                            <attribute name="pixbuf">2</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -670,7 +668,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_TreeView_Icon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">3</attribute>
+                            <attribute name="pixbuf">2</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -684,7 +682,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_TreeView_StatusIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="icon-name">4</attribute>
+                            <attribute name="icon-name">3</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -746,7 +744,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_ComboBox_Icon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">3</attribute>
+                            <attribute name="pixbuf">2</attribute>
                           </attributes>
                         </child>
                         <child>
@@ -761,7 +759,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkCellRendererPixbuf" id="Game_ComboBox_StatusIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="icon-name">4</attribute>
+                            <attribute name="icon-name">3</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -934,8 +932,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
-                    <property name="halign">start</property>
-                    <property name="halign">0.5</property>
+                    <property name="xalign">0.5</property>
                     <property name="draw_indicator">True</property>
                     <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
                   </object>
@@ -950,8 +947,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
-                    <property name="halign">start</property>
-                    <property name="halign">0.5</property>
+                    <property name="xalign">0.5</property>
                     <property name="draw_indicator">True</property>
                     <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
                   </object>
@@ -966,8 +962,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
-                    <property name="halign">start</property>
-                    <property name="halign">0.5</property>
+                    <property name="xalign">0.5</property>
                     <property name="draw_indicator">True</property>
                     <signal name="toggled" handler="cb_server_filters_changed" swapped="no"/>
                   </object>
@@ -1144,51 +1139,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="serverinfo-terrain-label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">end</property>
-                    <property name="label" translatable="yes">serverinfo-terrain-label</property>
-                    <attributes>
-                      <attribute name="weight" value="bold"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">3</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="serverinfo-players-label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">end</property>
-                    <property name="label" translatable="yes">serverinfo-players-label</property>
-                    <attributes>
-                      <attribute name="weight" value="bold"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">4</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="serverinfo-ping-label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">end</property>
-                    <property name="label" translatable="yes">serverinfo-ping-label</property>
-                    <attributes>
-                      <attribute name="weight" value="bold"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">5</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkLabel" id="serverinfo-host-data">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -1213,27 +1163,18 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="serverinfo-terrain-data">
+                  <object class="GtkLabel" id="serverinfo-ping-label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="label" translatable="yes">serverinfo-terrain-data</property>
+                    <property name="halign">end</property>
+                    <property name="label" translatable="yes">serverinfo-ping-label</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">3</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="serverinfo-players-data">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="label" translatable="yes">serverinfo-players-data</property>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">4</property>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">6</property>
                   </packing>
                 </child>
                 <child>
@@ -1245,7 +1186,86 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
+                    <property name="top_attach">6</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-players-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">end</property>
+                    <property name="label" translatable="yes">serverinfo-players-label</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
                     <property name="top_attach">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-players-data">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">serverinfo-players-data</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-terrain-label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">end</property>
+                    <property name="label" translatable="yes">serverinfo-terrain-label</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-terrain-data">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">serverinfo-terrain-data</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-gameid-label">
+                    <property name="can_focus">False</property>
+                    <property name="halign">end</property>
+                    <property name="label" translatable="yes">serverinfo-gameid-label</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="serverinfo-gameid-data">
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">serverinfo-gameid-data</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">3</property>
                   </packing>
                 </child>
               </object>
