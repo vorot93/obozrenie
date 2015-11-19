@@ -171,11 +171,50 @@ class QStatTests(unittest.TestCase):
         spec_result = {'server_dict': spec_server_dict, 'debug_msg': spec_debug_msg}
 
         result = adapters.qstat.adapt_qstat_entry(**spec_args)
-
         return {'expectation': spec_result, 'result': result}
 
     def test_parse_server_entry(self):
         unit = self.unit_parse_server_entry()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+
+class RigsofrodsTests(unittest.TestCase):
+    module = adapters.rigsofrods
+    @classmethod
+    def unit_parse_server_entry(cls):
+        spec_entry = [{'#text': '1 / 10', '@valign': 'middle'},
+                      {'#text': 'password', '@valign': 'middle'},
+                      {'@valign': 'middle', 'a': {'#text': 'My Little Server', '@href': 'rorserver://user:pass@localhost:12345/'}},
+                      {'#text': 'any', '@valign': 'middle'}]
+        spec_server_dict = {'player_count': 1, 'player_limit': 10, 'password': True, 'host': 'localhost:12345', 'name': 'My Little Server', 'terrain': 'any'}
+
+        func = cls.module.parse_server_entry
+        spec_args = {'entry': spec_entry}
+        spec_result = spec_server_dict
+
+        result = func(**spec_args)
+        return {'expectation': spec_result, 'result': result}
+
+    def test_parse_server_entry(self):
+        unit = self.unit_parse_server_entry()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+    @classmethod
+    def unit_adapt_server_list(cls):
+        spec_html_string = "<table border='1'><tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr><tr><td valign='middle'>3 / 16</td><td valign='middle'>password</td><td valign='middle'><a href='rorserver://localhost:12345/'>My Little Server 1</a></td><td valign='middle'>Terrain A</td></tr><tr><td valign='middle'>1 / 9</td><td valign='middle'></td><td valign='middle'><a href='rorserver://localhost:54321/'>My Little Server 2</a></td><td valign='middle'>Terrain B</td></tr></table>"
+        spec_server_list = [{'player_count': 3, 'player_limit': 16, 'password': True, 'secure': False, 'game_id': 'rigsofrods', 'game_type': 'rigsofrods', 'host': 'localhost:12345', 'name': 'My Little Server 1', 'terrain': 'Terrain A'},
+                            {'player_count': 1, 'player_limit': 9, 'password': False, 'secure': False, 'game_id': 'rigsofrods', 'game_type': 'rigsofrods', 'host': 'localhost:54321', 'name': 'My Little Server 2', 'terrain': 'Terrain B'}]
+        spec_game = 'rigsofrods'
+
+        func = cls.module.adapt_server_list
+        spec_args = {'game': spec_game, 'html_string': spec_html_string}
+        spec_result = spec_server_list
+
+        result = func(**spec_args)
+        return {'expectation': spec_result, 'result': result}
+
+    def test_parse_server_entry(self):
+        unit = self.unit_adapt_server_list()
         self.assertTrue(unit['expectation'] == unit['result'])
 
 

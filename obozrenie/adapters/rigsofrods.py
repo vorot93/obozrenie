@@ -20,7 +20,10 @@
 import os
 
 import html.parser
+import json
 import requests
+import xmltodict
+from typing import *
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
@@ -33,79 +36,58 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
 RIGSOFRODS_MSG = BACKENDCAT_MSG + i18n._("Rigs of Rods:")
 
 
-class ServerListParser(html.parser.HTMLParser):
-    """The HTML Parser for Master server list retrieved from master_uri"""
-    def __init__(self):
-        super().__init__()
-
-        self.list1 = []
-        self.list2 = []
-        self.parser_mode = 0
-
-        self.replacements = ({"original": "<tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr>", "replacement": ""                              },
-                             {"original": "rorserver://",                                                                                    "replacement": ""                              },
-                             {"original": "user:pass@",                                                                                      "replacement": ""                              },
-                             {"original": "<td valign='middle'>password</td>",                                                               "replacement": "<td valign='middle'>True</td>" },
-                             {"original": "<td valign='middle'></td>",                                                                       "replacement": "<td valign='middle'>False</td>"})
-        self.format = (("players",  int ),
-                       ("password", bool),
-                       ("name",     str ),
-                       ("terrain",  str ))
-
-        self.col_num = 0
-
-    def handle_data(self, data):
-        """Normal data handler"""
-        if data == 'False':
-            data = False
-        if self.parser_mode == 0:
-            if data == "Full server":
-                self.parser_mode = 1
-            else:
-                if self.col_num >= len(self.format):
-                    self.col_num = 0
-
-                if self.col_num == 0:
-                    self.list1.append([])
-
-                    self.list1[-1] = dict()
-
-                if self.format[self.col_num][0] == "players":
-                    self.list1[-1]["player_count"] = int(data.split('/')[0])
-                    self.list1[-1]["player_limit"] = int(data.split('/')[1])
-                else:
-                    self.list1[-1][self.format[self.col_num][0]] = self.format[self.col_num][1](data)
-
-                self.col_num += 1
-
-        elif self.parser_mode == 1:
-            self.list2.append(data)
-
-    def handle_starttag(self, tag, value):
-        """Extracts host link from cell"""
-        if tag == "a":
-            self.list1[-1]["host"] = value[0][1].replace("/", "")
+def normalize_game_name(entry: Dict[str, Union[str, int, bool]], game_name: str) -> Dict[str, Union[str, int, bool]]:
+    entry['game_id'] = game_name
+    entry['game_type'] = game_name
 
 
-def add_game_name(array, game_name):
-    for entry in array:
-        entry["game_id"] = game_name
-        entry["game_type"] = game_name
+def normalize_secure_info(entry: Dict[str, Union[str, int, bool]], game_name: str) -> Dict[str, Union[str, int, bool]]:
+    entry['secure'] = False
 
 
-def add_secure_info(array, game_name):
-    for entry in array:
-        entry["secure"] = False
+def parse_server_entry(entry: list) -> Dict[str, Union[str, int, bool]]:
+    players = entry[0]['#text'].split('/')
+
+    try:
+        password = bool(entry[1]['#text'].strip())
+    except KeyError:
+        password = False
+
+    server_dict = {'player_count': int(players[0]),
+                   'player_limit': int(players[1]),
+                   'password': password,
+                   'name': str(entry[2]['a']['#text']),
+                   'host': str(entry[2]['a']['@href']).replace('rorserver://', '').replace('user:pass@', '').strip('/'),
+                   'terrain': str(entry[3]['#text'])}
+
+    return server_dict
 
 
-def stat_master(game, game_info, master_list, proxy=None):
+def adapt_server_list(game: str, html_string: str) -> List[Dict[str, Union[str, int, bool]]]:
+    html_dict = json.loads(json.dumps(xmltodict.parse(html_string)))
+
+    server_list = []
+
+    for entry in html_dict['table']['tr'][1:]:
+        try:
+            entry_dict = parse_server_entry(entry['td'])
+
+            normalize_game_name(entry_dict, game)
+            normalize_secure_info(entry_dict, game)
+
+            server_list.append(entry_dict)
+        except:
+            continue
+
+    return server_list
+
+
+def stat_master(game: str, game_info: dict, master_list: list, proxy=None) -> List[Dict[str, Union[str, int, bool]]]:
     """Stats the master server"""
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-
-    parser = ServerListParser()
 
     server_table = []
 
@@ -118,24 +100,13 @@ def stat_master(game, game_info, master_list, proxy=None):
             print(i18n._(RIGSOFRODS_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {'uri': master_page_uri, 'code': "unknown"})
             continue
 
-        for i in range(len(parser.replacements)):
-            master_page = master_page.replace(parser.replacements[i]['original'], parser.replacements[i]['replacement'])
-
         try:
-            parser.feed(master_page)
+            temp_table = adapt_server_list(game, master_page)
         except:
             print(i18n._(RIGSOFRODS_MSG), i18n._("Error parsing URI %(uri)s.") % {'uri': master_page_uri})
             continue
 
-        temp_table = parser.list1.copy()
-        parser.list1.clear()
-
-        temp_table = helpers.remove_all_occurences_from_list(temp_table, {})
-        add_game_name(temp_table, game)
-        add_secure_info(temp_table, game)
-        server_table.append(temp_table)
-
-    server_table = helpers.flatten_list(server_table)
+        server_table += temp_table
 
     ping.add_rtt_info(server_table)
 
