@@ -232,7 +232,7 @@ class GUIActions:
         password = self.app.settings.settings_table["common"]["server-pass"]
         self.cb_server_connect(game, server, password)
 
-    def cb_serverinfo_connect_button_clicked(self, *args):
+    def cb_serverinfo_connect_button_clicked(self, *args) -> str:
         game = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-gameid"])
         server = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-host"])
         password = self.app.settings.settings_table["common"]["server-pass"]
@@ -313,7 +313,7 @@ class GUIActions:
 
         self.core.update_server_list(game, stat_callback=self.cb_update_server_list)
 
-    def cb_update_server_list(self, game):
+    def cb_update_server_list(self, game: str) -> None:
         GLib.idle_add(self.show_game_page, game)
 
     def fill_game_store(self):
@@ -339,7 +339,7 @@ class GUIActions:
         for list_entry in game_store_list:
             game_model.append(list_entry)
 
-    def show_game_page(self, game):
+    def show_game_page(self, game: str) -> None:
         """Set of actions to do after query is complete."""
         query_status = self.app.core.game_table.get_query_status(str(game))
         query_status_enum = self.core.game_table.QUERY_STATUS
@@ -364,7 +364,7 @@ class GUIActions:
 
         self.cb_server_connect_data_changed()  # In case selected server's existence is altered
 
-    def set_game_state(self, game, state):
+    def set_game_state(self, game: str, state: str) -> None:
         icon = ""
         query_status_enum = self.core.game_table.QUERY_STATUS
 
@@ -383,7 +383,7 @@ class GUIActions:
 
         model[game_index][self.game_list_model_format.index("status_icon")] = icon
 
-    def set_loading_state(self, state):
+    def set_loading_state(self, state: str) -> None:
         notebook = self.gtk_widgets["serverlist-notebook"]
 
         if state == "working":
@@ -450,7 +450,7 @@ class GUIActions:
 
     # Server list filtering
 
-    def server_filter_func(self, model, treeiter, *args):
+    def server_filter_func(self, model: Gtk.TreeModel, treeiter: Gtk.TreeIter, *args) -> bool:
         """Tests if row matches filter settings"""
         filter_criteria = self.filter_criteria
         server_list_model_format_index = self.server_list_model_format.index
@@ -464,14 +464,14 @@ class GUIActions:
                 column_index = server_list_model_format_index(column)
                 entry_value = model[treeiter][column_index]
                 comparison_value = criterium["value"]
-                if comparison_value is None or comparison_value == "" or comparison_value == "None":
+                if comparison_value in (None, "", "None"):
                     result = True
                 else:
                     if comparison == "==":
                         result = entry_value == comparison_value
                     elif comparison == "!=":
                         result = entry_value != comparison_value
-                    if comparison == "bool is ast bool":
+                    elif comparison == "bool is ast bool":
                         result = entry_value is ast.literal_eval(comparison_value)
                     elif comparison == "not true if true":
                         if comparison_value is True:
@@ -553,7 +553,7 @@ class GUIActions:
     def cb_listed_widget_changed(self, *args):
         self.update_settings_table()
 
-    def apply_settings_to_preferences_dialog(self, game, widget_option_mapping, dynamic_settings_table):
+    def apply_settings_to_preferences_dialog(self, game: str, widget_option_mapping: dict, dynamic_settings_table: dict) -> None:
         for option in widget_option_mapping:
             value = self.core.game_table.get_game_settings(game)[option]
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":

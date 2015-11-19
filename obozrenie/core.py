@@ -22,14 +22,13 @@ import os
 import multiprocessing
 import threading
 
+from typing import *
+
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 from obozrenie.option_lists import *
 
-import obozrenie.i18n as i18n
-import obozrenie.helpers as helpers
-import obozrenie.adapters as adapters
-import obozrenie.launch as launch
+from obozrenie import i18n, helpers, adapters, launch
 
 
 class GameTable:
@@ -91,7 +90,7 @@ class GameTable:
     def __repr__(self):
         return i18n._("<Game Table - games: %(game_num)i, id: %(gt_id)i>") % {'game_num': len(self.__game_table), 'gt_id': id(self)}
 
-    def create_game_table(self, gameconfig_object):
+    def create_game_table(self, gameconfig_object) -> helpers.ThreadSafeDict:
         """
         Loads game list into a table.
         """
@@ -212,7 +211,7 @@ class GameTable:
 
             game_entry["settings"][option] = value
 
-    def get_query_status(self, game):
+    def get_query_status(self, game: str):
         if game in ('', None):
             raise ValueError(i18n._('Invalid game specified.'))
 
@@ -237,7 +236,7 @@ class GameTable:
 
             game_entry["query-status"] = status
 
-    def get_server_info(self, game, host):
+    def get_server_info(self, game: str, host: str) -> Dict[str, str]:
         faulty_param = None
         if game in ('', None):
             faulty_param = i18n._('game id')
@@ -256,7 +255,7 @@ class GameTable:
         server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
         return server_entry
 
-    def set_server_info(self, game, host, data):
+    def set_server_info(self, game: str, host: str, data) -> None:
         faulty_param = None
         if game in ('', None):
             faulty_param = i18n._('game id')
@@ -274,7 +273,7 @@ class GameTable:
             else:
                 self.game_table[server_entry_index] = data
 
-    def get_servers_data(self, game):
+    def get_servers_data(self, game: str) -> Dict[str, dict]:
         if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
@@ -282,8 +281,8 @@ class GameTable:
             servers_data = helpers.deepcopy(game_table[game]["servers"])
         return servers_data
 
-    def set_servers_data(self, game, servers_data):
-        if game == '' or game is None:
+    def set_servers_data(self, game: str, servers_data) -> None:
+        if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         with self.__game_table as game_table:
@@ -291,8 +290,8 @@ class GameTable:
             for entry in servers_data:
                 game_table[game]["servers"].append(entry)
 
-    def clear_servers_data(self, game):
-        if game == '' or game is None:
+    def clear_servers_data(self, game: str) -> None:
+        if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         with self.__game_table as game_table:
@@ -321,13 +320,13 @@ class Core:
             helpers.debug_msg([CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
             self.geolocation = None
 
-    def update_server_list(self, game, stat_callback=None):
+    def update_server_list(self, game: str, stat_callback: Optional[Callable] = None) -> None:
         """Updates server lists."""
         stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
-    def stat_master_target(self, game, callback):
+    def stat_master_target(self, game: str, callback: Optional[Callable] = None) -> None:
         """Separate update thread. Strictly per-game."""
         game_info = self.game_table.get_game_info(game)
         game_settings = self.game_table.get_game_settings(game)
@@ -385,9 +384,9 @@ class Core:
         if callback is not None:
             callback(game)
 
-    def start_game(self, game, server, password):
+    def start_game(self, game: str, server: str, password: str) -> None:
         """Start game"""
-        if game == '' or game is None:
+        if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
         host = ":".join(server.split(":")[0:-1])
@@ -417,7 +416,7 @@ class Settings:
     Contains methods for saving and loading user settings and setting lists.
     """
 
-    def __init__(self, core, profile_path):
+    def __init__(self, core: Core, profile_path: str):
         """Loads base variables into the class."""
         # Default configs
         self.default_common_settings_path = DEFAULT_COMMON_SETTINGS_PATH
@@ -434,7 +433,7 @@ class Settings:
 
         self.core = core
 
-    def load(self, callback_postgenload=None):
+    def load(self, callback_postgenload: Optional[Callable] = None):
         """Loads configuration."""
         default_common_settings_table = helpers.load_table(self.default_common_settings_path)
         default_game_settings_table = helpers.load_table(self.default_game_settings_path)
@@ -471,7 +470,7 @@ class Settings:
 
                 self.core.game_table.set_game_setting(game, option, value)
 
-    def save(self):
+    def save(self) -> None:
         """Saves configuration."""
         # Save common settings table
         helpers.save_table(self.user_common_settings_path, self.settings_table)
