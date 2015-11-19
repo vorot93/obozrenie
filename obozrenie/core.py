@@ -271,7 +271,7 @@ class GameTable:
             if server_entry_index is None:
                 self.append_server_info(game, data)
             else:
-                self.game_table[server_entry_index] = data
+                game_table[server_entry_index] = data
 
     def get_servers_data(self, game: str) -> Dict[str, dict]:
         if game in ('', None):
