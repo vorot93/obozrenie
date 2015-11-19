@@ -25,6 +25,7 @@ import os
 import pytoml
 import threading
 import time
+from typing import *
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
@@ -153,7 +154,7 @@ def flatten_dict_table(dict_table, leading_key_spec):
 
     return flattened_dict_table
 
-def sort_dict_table(dict_table, sort_key):
+def sort_dict_table(dict_table: List[dict], sort_key: Any) -> List[dict]:
     sorted_dict_list = sorted(dict_table, key=lambda k: k[sort_key])
 
     return sorted_dict_list
