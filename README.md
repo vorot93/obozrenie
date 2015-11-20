@@ -26,7 +26,6 @@ Obozrenie is a game server browser that can be used to access information about 
 ### Required:
 - [Python 3.2+](https://python.org)
 - [PythonGI with GTK+ 3.10+ and higher](https://wiki.gnome.org/Projects/PyGObject)
-- [BeautifulSoup4](http://crummy.com/software/BeautifulSoup)
 - [PyXDG](http://freedesktop.org/Software/pyxdg)
 - [python-pytoml](https://github.com/avakar/pytoml)
 - [python-xmltodict](https://github.com/martinblech/xmltodict)

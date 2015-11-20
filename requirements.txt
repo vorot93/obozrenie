@@ -1,6 +1,5 @@
 xmltodict
 pyxdg
 pytoml
-beautifulsoup4
 babel
 requests
