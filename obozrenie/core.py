@@ -358,7 +358,7 @@ class Core:
             # ListProxy -> list
             if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.ERROR:
                 self.game_table.set_servers_data(game, server_list_proxy)
-                temp_list = []
+                temp_list = []  # type: List[dict]
                 for entry in server_list_proxy:
                     temp_list.append(entry)
 
@@ -394,7 +394,7 @@ class Core:
         game_info = self.game_table.get_game_info(game)
         game_settings = self.game_table.get_game_settings(game)
         launch_pattern = game_info["launch_pattern"]
-        steam_app_id = None
+        steam_app_id = None  # type: Union[None, str]
         try:
             if game_settings["steam_launch"] is True:
                 try:
@@ -442,7 +442,7 @@ class Settings:
 
         # Load into common settings table
         for group in self.common_settings_table:
-            self.settings_table[group] = {}
+            self.settings_table[group] = {}  # type: Dict[str, Any]
             for option in self.common_settings_table[group]:
                 # Define variables
                 value = default_common_settings_table[group][option]

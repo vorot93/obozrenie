@@ -18,12 +18,13 @@
 
 import os
 import subprocess
+from typing import *
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
 
-def steam_launch_pattern(game_settings, host, port, password, steam_app_id, **kwargs):
+def steam_launch_pattern(game_settings: Dict[str, Any], host: str, port: str, password: str, steam_app_id: str, **kwargs) -> List[str]:
     steam_path = str(game_settings["steam_path"])
     launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", host + ":" + port]
     if password:
@@ -32,13 +33,13 @@ def steam_launch_pattern(game_settings, host, port, password, steam_app_id, **kw
     return launch_cmd
 
 
-def rigsofrods_launch_pattern(path, **kwargs):
+def rigsofrods_launch_pattern(path: str, **kwargs) -> List[str]:
     launch_cmd = [path]
 
     return launch_cmd
 
 
-def rigsofrods_prelaunch_hook(game_settings, host, port, password, **kwargs):
+def rigsofrods_prelaunch_hook(game_settings: Dict[str, Any], host: str, port: str, password: str, **kwargs) -> None:
     config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
 
     if os.path.exists(config_file):
@@ -57,13 +58,13 @@ def rigsofrods_prelaunch_hook(game_settings, host, port, password, **kwargs):
             f.close()
 
 
-def rigsofrods_postlaunch_hook(**kwargs):
+def rigsofrods_postlaunch_hook(**kwargs) -> None:
     config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
 
     subprocess.call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
 
 
-def quake_launch_pattern(path, host, port, password, **kwargs):
+def quake_launch_pattern(path: str, host: str, port: str, password: str, **kwargs) -> List[str]:
     launch_cmd = [path, "+connect", host + ":" + port]
     if password:
         launch_cmd += ["+password", password]
@@ -71,7 +72,7 @@ def quake_launch_pattern(path, host, port, password, **kwargs):
     return launch_cmd
 
 
-def hl2_launch_pattern(game, path, game_settings, host, port, password, **kwargs):
+def hl2_launch_pattern(game: str, path: str, game_settings: Dict[str, Any], host: str, port: str, password: str, **kwargs) -> List[str]:
     workdir = os.path.dirname(path)
     env_dict = dict(os.environ)
     try:
@@ -93,13 +94,13 @@ def hl2_launch_pattern(game, path, game_settings, host, port, password, **kwargs
     return launch_cmd
 
 
-def openttd_launch_pattern(path, host, port, **kwargs):
+def openttd_launch_pattern(path, host, port, **kwargs) -> List[str]:
     launch_cmd = [path, "-n", host + ":" + port]
 
     return launch_cmd
 
 
-def minetest_launch_pattern(game_settings, path, host, port, password, **kwargs):
+def minetest_launch_pattern(game_settings: Dict[str, Any], path: str, host: str, port: str, password: str, **kwargs) -> List[str]:
     nickname = str(game_settings["nickname"])
     launch_cmd = [path, "--go", "--address", host, "--port", port, "--name", nickname]
     if password:
@@ -108,17 +109,28 @@ def minetest_launch_pattern(game_settings, path, host, port, password, **kwargs)
     return launch_cmd
 
 
-def launch_game(game, launch_pattern, game_settings, host, port, password, steam_app_id=None):
+def do_launch(launch_cmd: List[str], env_dict: Dict[str, Any]) -> Union[int, Exception]:
+    try:
+        # Launch
+        print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
+        env_dict = dict(os.environ)
+        pid = subprocess.Popen(launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
+        return 0
+    except OSError as e:
+        print(e)
+        return e
+
+
+def launch_game(game: str, launch_pattern: str, game_settings: Dict[str, Any], host: str, port: str, password: str, steam_app_id: str = None) -> Union[None, Exception]:
     """Launches the game based on specified launch pattern"""
     try:
-        launch_cmd = []
         path = os.path.expanduser(str(game_settings["path"]))
 
         # Pre-launch
         try:
             launch_cmd = globals()[launch_pattern + "_launch_pattern"](game=game, path=path, game_settings=game_settings, host=host, port=port, password=password, steam_app_id=steam_app_id)
         except KeyError:
-            raise Exception(" ".join(LAUNCHER_MSG, i18n._("Launch pattern does not exist")))
+            raise Exception(" ".join([LAUNCHER_MSG, i18n._("Launch pattern does not exist")]))
 
     except OSError as e:
         print(e)
@@ -135,15 +147,3 @@ def launch_game(game, launch_pattern, game_settings, host, port, password, steam
             globals()[launch_pattern + "_postlaunch_hook"]()
         except KeyError:
             pass
-
-
-def do_launch(launch_cmd):
-    try:
-        # Launch
-        print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
-        env_dict = dict(os.environ)
-        pid = subprocess.Popen(launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
-        return 0
-    except OSError as e:
-        print(e)
-        return e
