@@ -24,7 +24,7 @@ def is_run_from_git_workdir():
     return os.path.exists('assets')
 
 APPLICATION_ID = "io.obozrenie"
-VERSION = "0.1"
+VERSION = "1"
 
 SYSTEM_DATA_DIR = '/usr/share'
 ASSETS_DIR = SYSTEM_DATA_DIR
