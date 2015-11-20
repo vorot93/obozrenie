@@ -22,7 +22,7 @@ from babel.messages import frontend as babel
 
 from obozrenie.global_settings import VERSION
 
-data_files = []
+data_files = ['README.md', 'requirements.txt', 'COPYING']
 data_dir = 'assets'
 
 for directory, _, filenames in os.walk(data_dir):
