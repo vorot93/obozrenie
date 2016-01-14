@@ -83,7 +83,7 @@ class ThreadSafeList(list):
 
 def debug_msg(msg=None):
     if msg is not None:
-        print(" | ".join([time.strftime('%F %T'), *[str(part) for part in msg]]))
+        print(" | ".join([time.strftime('%F %T')] + [str(part) for part in msg]))
 
 
 def enum(*args):
