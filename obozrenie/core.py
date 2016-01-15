@@ -22,8 +22,6 @@ import os
 import multiprocessing
 import threading
 
-from typing import *
-
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 from obozrenie.option_lists import *
@@ -236,7 +234,7 @@ class GameTable:
 
             game_entry["query-status"] = status
 
-    def get_server_info(self, game: str, host: str) -> Dict[str, str]:
+    def get_server_info(self, game: str, host: str) -> dict:
         faulty_param = None
         if game in ('', None):
             faulty_param = i18n._('game id')
@@ -273,7 +271,7 @@ class GameTable:
             else:
                 game_table[server_entry_index] = data
 
-    def get_servers_data(self, game: str) -> Dict[str, dict]:
+    def get_servers_data(self, game: str) -> dict:
         if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
@@ -320,13 +318,13 @@ class Core:
             helpers.debug_msg([CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
             self.geolocation = None
 
-    def update_server_list(self, game: str, stat_callback: Optional[Callable] = None) -> None:
+    def update_server_list(self, game: str, stat_callback=None) -> None:
         """Updates server lists."""
         stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
-    def stat_master_target(self, game: str, callback: Optional[Callable] = None) -> None:
+    def stat_master_target(self, game: str, callback=None) -> None:
         """Separate update thread. Strictly per-game."""
         game_info = self.game_table.get_game_info(game)
         game_settings = self.game_table.get_game_settings(game)
@@ -358,7 +356,7 @@ class Core:
             # ListProxy -> list
             if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.ERROR:
                 self.game_table.set_servers_data(game, server_list_proxy)
-                temp_list = []  # type: List[dict]
+                temp_list = []  # type: list
                 for entry in server_list_proxy:
                     temp_list.append(entry)
 
@@ -433,7 +431,7 @@ class Settings:
 
         self.core = core
 
-    def load(self, callback_postgenload: Optional[Callable] = None):
+    def load(self, callback_postgenload=None):
         """Loads configuration."""
         default_common_settings_table = helpers.load_table(self.default_common_settings_path)
         default_game_settings_table = helpers.load_table(self.default_game_settings_path)
@@ -442,7 +440,7 @@ class Settings:
 
         # Load into common settings table
         for group in self.common_settings_table:
-            self.settings_table[group] = {}  # type: Dict[str, Any]
+            self.settings_table[group] = {}  # type: dict
             for option in self.common_settings_table[group]:
                 # Define variables
                 value = default_common_settings_table[group][option]

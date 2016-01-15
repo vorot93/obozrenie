@@ -18,13 +18,12 @@
 
 import os
 import subprocess
-from typing import *
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
 
-def steam_launch_pattern(game_settings: Dict[str, Any], host: str, port: str, password: str, steam_app_id: str, **kwargs) -> List[str]:
+def steam_launch_pattern(game_settings: dict, host: str, port: str, password: str, steam_app_id: str, **kwargs) -> list:
     steam_path = str(game_settings["steam_path"])
     launch_cmd = [steam_path, "-applaunch", steam_app_id, "+connect", host + ":" + port]
     if password:
@@ -33,13 +32,13 @@ def steam_launch_pattern(game_settings: Dict[str, Any], host: str, port: str, pa
     return launch_cmd
 
 
-def rigsofrods_launch_pattern(path: str, **kwargs) -> List[str]:
+def rigsofrods_launch_pattern(path: str, **kwargs) -> list:
     launch_cmd = [path]
 
     return launch_cmd
 
 
-def rigsofrods_prelaunch_hook(game_settings: Dict[str, Any], host: str, port: str, password: str, **kwargs) -> None:
+def rigsofrods_prelaunch_hook(game_settings: dict, host: str, port: str, password: str, **kwargs) -> None:
     config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
 
     if os.path.exists(config_file):
@@ -64,7 +63,7 @@ def rigsofrods_postlaunch_hook(**kwargs) -> None:
     subprocess.call(["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
 
 
-def quake_launch_pattern(path: str, host: str, port: str, password: str, **kwargs) -> List[str]:
+def quake_launch_pattern(path: str, host: str, port: str, password: str, **kwargs) -> list:
     launch_cmd = [path, "+connect", host + ":" + port]
     if password:
         launch_cmd += ["+password", password]
@@ -72,7 +71,7 @@ def quake_launch_pattern(path: str, host: str, port: str, password: str, **kwarg
     return launch_cmd
 
 
-def hl2_launch_pattern(game: str, path: str, game_settings: Dict[str, Any], host: str, port: str, password: str, **kwargs) -> List[str]:
+def hl2_launch_pattern(game: str, path: str, game_settings: dict, host: str, port: str, password: str, **kwargs) -> list:
     workdir = os.path.dirname(path)
     env_dict = dict(os.environ)
     try:
@@ -94,13 +93,13 @@ def hl2_launch_pattern(game: str, path: str, game_settings: Dict[str, Any], host
     return launch_cmd
 
 
-def openttd_launch_pattern(path, host, port, **kwargs) -> List[str]:
+def openttd_launch_pattern(path: str, host: str, port: str, **kwargs) -> list:
     launch_cmd = [path, "-n", host + ":" + port]
 
     return launch_cmd
 
 
-def minetest_launch_pattern(game_settings: Dict[str, Any], path: str, host: str, port: str, password: str, **kwargs) -> List[str]:
+def minetest_launch_pattern(game_settings: dict, path: str, host: str, port: str, password: str, **kwargs) -> list:
     nickname = str(game_settings["nickname"])
     launch_cmd = [path, "--go", "--address", host, "--port", port, "--name", nickname]
     if password:
@@ -109,19 +108,19 @@ def minetest_launch_pattern(game_settings: Dict[str, Any], path: str, host: str,
     return launch_cmd
 
 
-def do_launch(launch_cmd: List[str], env_dict: Dict[str, Any]) -> Union[int, Exception]:
+def do_launch(launch_cmd: list, env_dict: dict) -> Exception:
     try:
         # Launch
         print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
         env_dict = dict(os.environ)
         pid = subprocess.Popen(launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
-        return 0
+        return None
     except OSError as e:
         print(e)
         return e
 
 
-def launch_game(game: str, launch_pattern: str, game_settings: Dict[str, Any], host: str, port: str, password: str, steam_app_id: str = None) -> Union[None, Exception]:
+def launch_game(game: str, launch_pattern: str, game_settings: dict, host: str, port: str, password: str, steam_app_id: str = None) -> Exception:
     """Launches the game based on specified launch pattern"""
     try:
         path = os.path.expanduser(str(game_settings["path"]))

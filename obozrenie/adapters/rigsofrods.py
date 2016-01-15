@@ -16,14 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import os
 
-import html.parser
 import json
 import requests
 import xmltodict
-from typing import *
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
@@ -36,16 +33,7 @@ BACKEND_CONFIG = os.path.join(SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
 RIGSOFRODS_MSG = BACKENDCAT_MSG + i18n._("Rigs of Rods:")
 
 
-def normalize_game_name(entry: Dict[str, Union[str, int, bool]], game_name: str) -> Dict[str, Union[str, int, bool]]:
-    entry['game_id'] = game_name
-    entry['game_type'] = game_name
-
-
-def normalize_secure_info(entry: Dict[str, Union[str, int, bool]], game_name: str) -> Dict[str, Union[str, int, bool]]:
-    entry['secure'] = False
-
-
-def parse_server_entry(entry: list) -> Dict[str, Union[str, int, bool]]:
+def parse_server_entry(entry: list) -> dict:
     players = entry[0]['#text'].split('/')
 
     try:
@@ -63,26 +51,26 @@ def parse_server_entry(entry: list) -> Dict[str, Union[str, int, bool]]:
     return server_dict
 
 
-def adapt_server_list(game: str, html_string: str) -> List[Dict[str, Union[str, int, bool]]]:
+def adapt_server_list(game: str, html_string: str) -> list:
     html_dict = json.loads(json.dumps(xmltodict.parse(html_string)))
 
     server_list = []
 
-    for entry in html_dict['table']['tr'][1:]:
+    for html_entry in html_dict['table']['tr'][1:]:
         try:
-            entry_dict = parse_server_entry(entry['td'])
+            entry = parse_server_entry(html_entry['td'])
+            entry['game_id'] = game
+            entry['game_type'] = game
+            entry['secure'] = False
 
-            normalize_game_name(entry_dict, game)
-            normalize_secure_info(entry_dict, game)
-
-            server_list.append(entry_dict)
+            server_list.append(entry)
         except:
             continue
 
     return server_list
 
 
-def stat_master(game: str, game_info: dict, master_list: list, proxy=None) -> List[Dict[str, Union[str, int, bool]]]:
+def stat_master(game: str, game_info: dict, master_list: str, proxy=None) -> list:
     """Stats the master server"""
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)

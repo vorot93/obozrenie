@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import *
-
 import obozrenie.helpers as helpers
 
 from obozrenie.global_settings import *
