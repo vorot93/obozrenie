@@ -84,7 +84,7 @@ def parse_json_entry(entry):
     return entry_dict
 
 
-def stat_master(game, game_info, master_list, proxy=None):
+def stat_master(game: str, game_info: dict, master_list: list):
     """Stats the master server"""
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
@@ -105,8 +105,4 @@ def stat_master(game, game_info, master_list, proxy=None):
 
     ping.add_rtt_info(server_table)
 
-    if proxy is not None:
-        for entry in server_table:
-            proxy.append(entry)
-
-    return server_table
+    return server_table, None

@@ -335,28 +335,20 @@ class Core:
         if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:
             self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.WORKING)
             helpers.debug_msg([CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name}])
-            server_list_proxy = None
             stat_master_cmd = adapters.adapter_table[adapter].stat_master
+            temp_list = None
+
             try:
-                server_list_proxy = []
-                backend_process = threading.Thread(target=stat_master_cmd, args=(game, game_info, master_list, server_list_proxy))
-                backend_process.daemon=True
-                backend_process.start()
-                backend_process.join()
-                if len(server_list_proxy) > 0 and issubclass(type(server_list_proxy[0]), Exception):
-                    e = server_list_proxy[0]
-                    raise e
+                temp_list, err = stat_master_cmd(game, game_info, master_list)
+
+                if err is not None:
+                    raise err
             except Exception as e:
                 helpers.debug_msg([CORE_MSG, e])
                 helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG])
                 self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.ERROR)
-
-            # ListProxy -> list
-            if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.ERROR:
-                self.game_table.set_servers_data(game, server_list_proxy)
-                temp_list = []  # type: list
-                for entry in server_list_proxy:
-                    temp_list.append(entry)
+            else:
+                self.game_table.set_servers_data(game, temp_list)
 
                 for entry in temp_list:
                     entry['country'] = "unknown"

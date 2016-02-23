@@ -70,14 +70,13 @@ def adapt_server_list(game: str, html_string: str) -> list:
     return server_list
 
 
-def stat_master(game: str, game_info: dict, master_list: str, proxy=None) -> list:
+def stat_master(game: str, game_info: dict, master_list: list):
     """Stats the master server"""
+    server_table = []
 
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     protocol = backend_config_object["protocol"]["version"]
-
-    server_table = []
 
     for master_uri in master_list:
         master_page_uri = master_uri.strip('/') + '/?version=' + protocol
@@ -98,8 +97,4 @@ def stat_master(game: str, game_info: dict, master_list: str, proxy=None) -> lis
 
     ping.add_rtt_info(server_table)
 
-    if proxy is not None:
-        for entry in server_table:
-            proxy.append(entry)
-
-    return server_table
+    return server_table, None

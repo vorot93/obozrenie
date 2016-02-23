@@ -195,7 +195,7 @@ def adapt_server_list(qstat_string, game, game_name, qstat_master_type, qstat_se
     return server_table
 
 
-def stat_master(game, game_info, master_list, proxy=None):
+def stat_master(game: str, game_info: dict, master_list: list):
     hosts_array = []
 
     qstat_stdin_object = ""
@@ -248,8 +248,7 @@ def stat_master(game, game_info, master_list, proxy=None):
         qstat_output = qstat_output_raw.decode()
     except Exception as e:
         debug_msg(game_name, e.args[0])
-        proxy.append(Exception)
-        return Exception
+        return [], e
     stat_end_time = time.time()
 
     stat_total_time = stat_end_time - stat_start_time
@@ -261,8 +260,4 @@ def stat_master(game, game_info, master_list, proxy=None):
 
     debug_msg(game_name, i18n._("Parsed QStat response. Elapsed time: %(parse_time)s ms") % {'parse_time': round((parse_end_time - parse_start_time) * 1000, 2)})
 
-    if proxy is not None:
-        for entry in server_table:
-            proxy.append(entry)
-
-    return server_table
+    return server_table, None

@@ -177,7 +177,7 @@ class GUIActions:
         self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
         try:
             self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
-        except NameError:
+        except (NameError, GLib.GError):
             pass
 
     def cb_game_preferences_button_clicked(self, *args):
