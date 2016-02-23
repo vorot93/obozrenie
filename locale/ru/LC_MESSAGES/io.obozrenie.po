@@ -1,69 +1,96 @@
-# Russian translations for PROJECT.
-# Copyright (C) 2015 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
-# Artem Vorotnikov <artem@vorotnikov.me>, 2015.
+# Russian translations for Obozrenie.
+# Copyright (C) 2016 ORGANIZATION
+# This file is distributed under the same license as the Obozrenie project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-10-08 01:15+0300\n"
-"PO-Revision-Date: 2015-10-08 01:18+0300\n"
+"POT-Creation-Date: 2016-02-23 04:55+0300\n"
+"PO-Revision-Date: 2016-02-23 03:56+0300\n"
 "Last-Translator: Artem Vorotnikov <artem@vorotnikov.me>\n"
 "Language: ru\n"
 "Language-Team: русский <>\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
-"X-Generator: Gtranslator 2.91.7\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: obozrenie/core.py:156 obozrenie/core.py:172 obozrenie/core.py:186
-#: obozrenie/core.py:198 obozrenie/core.py:211 obozrenie/core.py:223
-#: obozrenie/core.py:245 obozrenie/core.py:253 obozrenie/core.py:262
-#: obozrenie/core.py:356
-msgid "Please specify a valid game id."
-msgstr "Укажите правильный ID игры."
+#: obozrenie/core.py:89
+#, python-format
+msgid "<Game Table - games: %(game_num)i, id: %(gt_id)i>"
+msgstr "<Игровая таблицы - игр: %(game_num)i, id: %(gt_id)i>"
 
-#: obozrenie/core.py:162 obozrenie/core.py:178 obozrenie/core.py:192
-#: obozrenie/core.py:204 obozrenie/core.py:217 obozrenie/core.py:229
+#: obozrenie/core.py:167 obozrenie/core.py:183 obozrenie/core.py:214
+#: obozrenie/core.py:227
+msgid "Invalid game specified."
+msgstr "Неизвестная игра."
+
+#: obozrenie/core.py:173 obozrenie/core.py:189 obozrenie/core.py:208
+#: obozrenie/core.py:220 obozrenie/core.py:233 obozrenie/core.py:250
 #, python-format
 msgid "Game not found: %(game)s"
 msgstr "Игра не найдена: %(game)s"
 
-#: obozrenie/core.py:281
+#: obozrenie/core.py:198 obozrenie/core.py:240 obozrenie/core.py:259
+msgid "game id"
+msgstr "id игры"
+
+#: obozrenie/core.py:200
+msgid "option"
+msgstr "опция"
+
+#: obozrenie/core.py:202 obozrenie/core.py:244 obozrenie/core.py:265
+#, python-format
+msgid "Invalid %(param)s specified."
+msgstr "Указан неверный %(param)s."
+
+#: obozrenie/core.py:242 obozrenie/core.py:261
+msgid "hostname"
+msgstr "узел"
+
+#: obozrenie/core.py:263
+msgid "server data"
+msgstr "данные сервера"
+
+#: obozrenie/core.py:276 obozrenie/core.py:284 obozrenie/core.py:293
+#: obozrenie/core.py:388
+msgid "Please specify a valid game id."
+msgstr "Укажите правильный ID игры."
+
+#: obozrenie/core.py:312
 #, python-format
 msgid "GeoIP data file %(geoip_data_file)s opened successfully."
 msgstr "Файл данных GeoIP %(geoip_data_file)s открыт успешно."
 
-#: obozrenie/core.py:284
+#: obozrenie/core.py:315
 msgid "GeoIP data file not found. Disabling geolocation."
 msgstr "Файл с данными GeoIP не найден. Геолокация отключена."
 
-#: obozrenie/core.py:287
+#: obozrenie/core.py:318
 msgid "PyGeoIP not found. Disabling geolocation."
 msgstr "PyGeoIP не найден. Геолокация отключена."
 
-#: obozrenie/core.py:306
+#: obozrenie/core.py:338
 #, python-format
 msgid "Refreshing server list for %(game)s."
 msgstr "Обновление серверов для %(game)s."
 
-#: obozrenie/core.py:321
+#: obozrenie/core.py:353
 #, python-format
 msgid "Internal backend error for %(game)s."
 msgstr "Внутренняя ошибка движка для %(game)s."
 
-#: obozrenie/core.py:454
+#: obozrenie/core.py:486
 msgid ""
-"This is the core module of Obozrenie Game Server Browser.\n"
-"Please run an appropriate UI instead."
+"This is the core module of Obozrenie Game Server Browser. Please run an "
+"appropriate UI instead."
 msgstr ""
-"Это модуль ядра обозревателя игровых серверов «Обозрение».\n"
-"Пользуйтесь графическим интерфейсом."
+"Это модуль ядра обозревателя игровых серверов «Обозрение». Пользуйтесь "
+"графическим интерфейсом."
 
 #: obozrenie/global_strings.py:21
 msgid "Obozrenie"
@@ -98,28 +125,28 @@ msgid "UI/"
 msgstr "Интерфейс/"
 
 #: obozrenie/global_strings.py:34
-msgid "Backend/"
-msgstr "Движок/"
+msgid "Adapter/"
+msgstr "Адаптер/"
 
 #: obozrenie/global_strings.py:36
-msgid "Core:"
-msgstr "Ядро:"
+msgid "Core"
+msgstr "Ядро"
 
 #: obozrenie/global_strings.py:37
-msgid "Settings:"
-msgstr "Настройки:"
+msgid "Settings"
+msgstr "Настройки"
 
 #: obozrenie/global_strings.py:38
-msgid "GTK+:"
-msgstr "GTK+:"
+msgid "GTK+"
+msgstr "GTK+"
 
 #: obozrenie/global_strings.py:39
-msgid "Helpers:"
-msgstr "Помощники:"
+msgid "Helpers"
+msgstr "Помощники"
 
 #: obozrenie/global_strings.py:40
-msgid "Launcher:"
-msgstr "Запускалка:"
+msgid "Launcher"
+msgstr "Запускалка"
 
 #: obozrenie/global_strings.py:44
 msgid "Select a game."
@@ -231,11 +258,11 @@ msgstr "Адрес сервера"
 
 #: obozrenie/global_strings.py:70
 msgid ""
-"Server address to connect to. Automatically filled on changing server list "
-"selection."
+"Server address to connect to. Automatically filled on changing server "
+"list selection."
 msgstr ""
-"Адрес сервера для подключения. Заполняется автоматически при выборе сервера "
-"из списка."
+"Адрес сервера для подключения. Заполняется автоматически при выборе "
+"сервера из списка."
 
 #: obozrenie/global_strings.py:71
 msgid "Password"
@@ -281,32 +308,32 @@ msgstr "Закрыть"
 msgid "Score"
 msgstr "Счёт"
 
-#: obozrenie/gtk.py:147
+#: obozrenie/gtk.py:148
 msgid "(all)"
 msgstr "(все)"
 
-#: obozrenie/gtk.py:148
+#: obozrenie/gtk.py:149
 msgid "True"
 msgstr "Да"
 
-#: obozrenie/gtk.py:149
+#: obozrenie/gtk.py:150
 msgid "False"
 msgstr "Нет"
 
-#: obozrenie/gtk.py:208
+#: obozrenie/gtk.py:214
 #, python-format
 msgid "%(player_count)s / %(player_limit)s"
 msgstr "%(player_count)s из %(player_limit)s"
 
-#: obozrenie/gtk.py:610
+#: obozrenie/gtk.py:624
 msgid "Obozrenie is starting"
 msgstr "«Обозрение» запускается"
 
-#: obozrenie/gtk.py:663
+#: obozrenie/gtk.py:677
 msgid "Shutting down"
 msgstr "Выход"
 
-#: obozrenie/gtk.py:666
+#: obozrenie/gtk.py:680
 msgid "Initialization failed. Aborting."
 msgstr "Ошибка инициализации."
 
@@ -323,6 +350,10 @@ msgstr "Настройки %(game)s"
 #: obozrenie/gtk_templates.py:151
 msgid "Save"
 msgstr "Сохранить"
+
+#: obozrenie/launch.py:132
+msgid "Launch pattern does not exist"
+msgstr "Неверные настройки запуска"
 
 #: obozrenie/option_lists.py:39
 msgid "Game path"
@@ -355,8 +386,8 @@ msgstr "Запуск через Steam"
 #: obozrenie/option_lists.py:58
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
-"Включает запуск через клиент Steam. Необходимо для игры на VAC-защищённых "
-"серверах."
+"Включает запуск через клиент Steam. Необходимо для игры на VAC-защищённых"
+" серверах."
 
 #: obozrenie/option_lists.py:63
 msgid "Steam path"
@@ -374,16 +405,25 @@ msgstr "Имя"
 msgid "Your nickname."
 msgstr "Ваше имя."
 
-#: obozrenie/backends/minetest.py:28
+#: obozrenie/adapters/__init__.py:36
+#, python-format
+msgid "%(adapter_num)i adapters loaded successfully"
+msgstr "Адаптеров загружено успешно: %(adapter_num)i"
+
+#: obozrenie/adapters/grokstat.py:24
+msgid "GrokStat"
+msgstr "GrokStat"
+
+#: obozrenie/adapters/minetest.py:32
 msgid "Minetest:"
 msgstr "Minetest:"
 
-#: obozrenie/backends/minetest.py:46 obozrenie/backends/rigsofrods.py:115
+#: obozrenie/adapters/minetest.py:40 obozrenie/adapters/rigsofrods.py:88
 #, python-format
 msgid "Accessing URI %(uri)s failed with error code %(code)s."
 msgstr "Попытка доступа к адресу %(uri)s завершилась ошибкой с кодом %(code)s."
 
-#: obozrenie/backends/minetest.py:52
+#: obozrenie/adapters/minetest.py:45
 #, python-format
 msgid ""
 "Error parsing URI %(uri)s.: \n"
@@ -392,53 +432,63 @@ msgstr ""
 "Ошибка разбора страницы по адресу %(uri)s.: \n"
 " %(exception)s"
 
-#: obozrenie/backends/qstat.py:31
-msgid "QStat:"
-msgstr "QStat:"
+#: obozrenie/adapters/qstat.py:35
+msgid "QStat"
+msgstr "QStat"
 
-#: obozrenie/backends/qstat.py:82
-#, python-format
-msgid "|%(game)s| Requesting server info."
-msgstr "|%(game)s| Запрашиваю информацию о серверах."
-
-#: obozrenie/backends/qstat.py:95
-#, python-format
-msgid "|%(game)s| Received server info. Elapsed time: %(stat_time)s s."
-msgstr "|%(game)s| Получена информация о серверах. Потрачено: %(stat_time)s с."
-
-#: obozrenie/backends/qstat.py:100
+#: obozrenie/adapters/qstat.py:50
 #, python-format
 msgid ""
-"|%(game)s| No valid masters specified. Please check your master server "
-"settings."
+"Queried Master. Address: %(address)s, status: %(status)s, server count: "
+"%(servers)s."
 msgstr ""
-"|%(game)s| Действительные мастер-сервера не указаны. Проверьте настройки."
-
-#: obozrenie/backends/qstat.py:110
-#, python-format
-msgid ""
-"|%(game)s| Queried Master. Address: %(address)s, status: %(status)s, server "
-"count: %(servers)s."
-msgstr ""
-"|%(game)s| Опрошен мастер-сервер. Адрес: %(address)s, состояние: %(status)s, "
+"Опрошен мастер-сервер. Адрес: %(address)s, состояние: %(status)s, "
 "количество серверов: %(servers)s."
 
-#: obozrenie/backends/qstat.py:112
+#: obozrenie/adapters/qstat.py:52
 #, python-format
-msgid ""
-"|%(game)s| Master query failed. Address: %(address)s, status: %(status)s."
-msgstr ""
-"|%(game)s| Ошибка опроса мастер-сервера. Адрес: %(address)s, состояние: "
-"%(status)s."
+msgid "Master query failed. Address: %(address)s, status: %(status)s."
+msgstr "Ошибка опроса мастер-сервера. Адрес: %(address)s, состояние: %(status)s."
 
-#: obozrenie/backends/rigsofrods.py:29
+#: obozrenie/adapters/qstat.py:167
+msgid "No valid masters specified. Please check your master server settings."
+msgstr "Действительные мастер-сервера не указаны. Проверьте настройки."
+
+#: obozrenie/adapters/qstat.py:244
+msgid "Requesting server info."
+msgstr "Запрашиваю информацию о серверах."
+
+#: obozrenie/adapters/qstat.py:256
+#, python-format
+msgid "Received server info. Elapsed time: %(stat_time)s s."
+msgstr "Получена информация о серверах. Потрачено: %(stat_time)s с."
+
+#: obozrenie/adapters/qstat.py:262
+#, python-format
+msgid "Parsed QStat response. Elapsed time: %(parse_time)s ms"
+msgstr "Обработаны данные от QStat. Потрачено времени: %(parse_time)s мс"
+
+#: obozrenie/adapters/rigsofrods.py:33
 msgid "Rigs of Rods:"
 msgstr "Rigs of Rods:"
 
-#: obozrenie/backends/rigsofrods.py:124
+#: obozrenie/adapters/rigsofrods.py:94
 #, python-format
 msgid "Error parsing URI %(uri)s."
 msgstr "Ошибка разбора страницы по адресу %(uri)s."
 
 #~ msgid "Error parsing URI {0}"
 #~ msgstr "Ошибка разбора адреса {0}"
+
+#~ msgid "Backend/"
+#~ msgstr "Движок/"
+
+#~ msgid "Core:"
+#~ msgstr "Ядро:"
+
+#~ msgid "GTK+:"
+#~ msgstr "GTK+:"
+
+#~ msgid "QStat:"
+#~ msgstr "QStat:"
+
