@@ -19,7 +19,6 @@
 """Core functions for Obozrenie Game Server Browser."""
 
 import os
-import multiprocessing
 import threading
 
 from obozrenie.global_settings import *
@@ -339,9 +338,8 @@ class Core:
             server_list_proxy = None
             stat_master_cmd = adapters.adapter_table[adapter].stat_master
             try:
-                mgr = multiprocessing.Manager()
-                server_list_proxy = mgr.list()
-                backend_process = multiprocessing.Process(target=stat_master_cmd, args=(game, game_info, master_list, server_list_proxy))
+                server_list_proxy = []
+                backend_process = threading.Thread(target=stat_master_cmd, args=(game, game_info, master_list, server_list_proxy))
                 backend_process.daemon=True
                 backend_process.start()
                 backend_process.join()
@@ -403,7 +401,7 @@ class Core:
         except:
             pass
 
-        launch_process = multiprocessing.Process(target=launch.launch_game, args=(game, launch_pattern, game_settings, host, port, password, steam_app_id))
+        launch_process = threading.Thread(target=launch.launch_game, args=(game, launch_pattern, game_settings, host, port, password, steam_app_id))
         launch_process.daemon = True
         launch_process.start()
 
