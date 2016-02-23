@@ -22,6 +22,8 @@ import subprocess
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
+from obozrenie import helpers
+
 
 def steam_launch_pattern(game_settings: dict, host: str, port: str, password: str, steam_app_id: str, **kwargs) -> list:
     steam_path = str(game_settings["steam_path"])
@@ -111,12 +113,12 @@ def minetest_launch_pattern(game_settings: dict, path: str, host: str, port: str
 def do_launch(launch_cmd: list) -> Exception:
     try:
         # Launch
-        print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
+        helpers.debug_msg([LAUNCHER_MSG, i18n._("Launching '%(launch_cmd)s'") % {'launch_cmd': " ".join(launch_cmd)}])
         env_dict = dict(os.environ)
         pid = subprocess.Popen(launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
         return None
     except OSError as e:
-        print(e)
+        helpers.debug_msg([LAUNCHER_MSG, e])
         return e
 
 
