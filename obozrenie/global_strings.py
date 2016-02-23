@@ -28,7 +28,7 @@ ARTISTS = [i18n._("Artem Vorotnikov")]
 
 
 SEPARATOR_MSG = ("-------------------------------------------")
-ERROR_MSG = i18n._("\nThis is an error. Please file a bug report at ") + GIT_WEBSITE
+ERROR_MSG = i18n._("This is an error. Please file a bug report at ") + GIT_WEBSITE
 CORECAT_MSG = i18n._("Core/")
 UICAT_MSG = i18n._("UI/")
 BACKENDCAT_MSG = i18n._("Adapter/")
