@@ -6,6 +6,7 @@ Simple and easy to use game server browser for Linux.
 [![GNU GPL](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://gnu.org/licenses/gpl.html)
 [![PyPI](https://img.shields.io/pypi/v/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
 [![PyPI](https://img.shields.io/pypi/dm/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
+[![Docker Pulls](https://img.shields.io/docker/pulls/obozrenie/obozrenie.svg)](https://hub.docker.com/r/obozrenie/obozrenie/)
 
 [![Build Status](https://img.shields.io/travis/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
 [![Climate](https://img.shields.io/codeclimate/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
@@ -37,6 +38,13 @@ Obozrenie is a game server browser that can be used to access information about 
 - [PyGeoIP](https://github.com/appliedsec/pygeoip) with GeoIP database - for geolocation support
 
 ## Get it
+### Docker
+Obozrenie project ships Ubuntu-based Docker image containing Obozrenie browser, runnable out of the box. It is only intended for quick test drive since custom GTK+ theming, game launching or settings storage is not available in this version.
+#### Install / update
+    docker pull obozrenie/obozrenie
+#### Run
+    docker run -it --rm -e LANG=$LANG -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix obozrenie/obozrenie
+### Manual
     git clone https://github.com/obozrenie/obozrenie.git
     cd obozrenie
     ./obozrenie-gtk

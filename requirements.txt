@@ -1,4 +1,5 @@
 xmltodict
+pygeoip
 pyxdg
 pytoml
 babel

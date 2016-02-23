@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 addons:
   apt:
     packages:
@@ -7,8 +7,16 @@ addons:
     - qstat
 language: python
 python:
-  - "3.5"
+  - "3.4"
 cache: pip
+services:
+- docker
+env:
+  global:
+  - secure: "0E1D4RDFB8pXzH4MGaE/Fo5hIPjKXA6CDrgrfM/aXFsKLtRb5U46zA2V8+mxLtuP+Jj1KGnVCdmjYGPaRkz5CXGCaH1jaYTk5g6p93L+6YDgILCmRKQ5Qsu2bVz76HdYlK5Mep4JK4wgu6p2glXFevRWsqxmFdcFvBiDPQ+4AY0HB2RPvvs1/SViH8t7Ntyibp5FHitA35A2COm68+Y2ipm9UlJXem6oDopti2ZTAnX9KT4RsbyxLQi4+k0+SkB3mc3Gd9DHRhQjUfGh6E6HrSTZsW+95NaDmphgmH+2+i3p48ePqikQWfdDJNO5/KxT9s19iCbQjllp91xflzmGRY64xA+iCq+RtvI6VDbyxXcrJwxplGV9kHp3P2ViLafVQa71NWmZdvEcpCW4bK8m9PaLAZxjUNBGZTXj+U5R4CoxU0L4s8wQsWlshL+Y0QDsilodG2X3M/gTFBm1Dtc3gkgL+Nq1WDi+FuetniaNAVlWpnFjrFUt9VJcjV/bU34/gYZedZImsYSt7cv8jTrjKHgtSKKuY1u7fU1egze0Dncr1cdJw+huuBuaHMsNDbwwJXK6f7/9nY088M+o72E3XL2Kx4pKxbVv/fhFh1mhCWyqjlwP686/qFC/YVy6b7HJd3HkdW6ZIVmzEvCOf8jBfaLpXq3wT4W6xSy8JdDoe6Y=" # DOCKER_EMAIL
+  - secure: "W3HivbNr56p5FKLlJDMIWjQFNi/Tj+7HBPWNX4oeDOVetrUWFZRok1Fm12y/FOrmbeCx8YMYugGY2LsRdgUlnWcM9+mFUviAhF08aKukxy9nQbmi8rJDcs/oU5HsuLMDp3DYNdQZWmCKxeYZOkMHGwM1+peldZ62tv5+cAGVbuctFkCnS3FA/8MSijFdCcOW75DQO/+ezZCKYeKSZYnYyy4heP92kwuwEH+pqbe9fT0ofOhkoQcYIumzNkIsMMHLabp3IKcC1GTsayATUQu737ciWMic0cdN4oM5D15iJ6Y/qYlAOSoUt1HHox5DxzcF1sJFbdumeuaQkZmIEUwwka4xUMq9rLBjmfeeMXs+vO+UTEO16x1aqFSOJUnIWpzJHuQrCovFz698toOGeUKUZDTd2QIqeOklYWyFWqSE37X88C8iaVSN+BZFL7QpHaHr6ZJVRwxUZiy7K7iyjMom7FfNYCT5CK6uUR5amBa1PxRsRCLFQC6mW0dnhm2XB8riVSZuEuJuvq0duWslIWTCSxqFdybnuyjXDU+k93Y1Jil1sBQNrWwwUAC9l7745M3fRQ3L7vsiM58ZULkLWgp9nDMYhmuRWmoz8+HGDuNOEpZEDf9VPdWZ2RcnzWTMSR2p4JcaYyPG4T/kgJN4mayrQsJ/DlmGcaz3ZA6fYJwLpaU=" # DOCKER_USER
+  - secure: "T9oQmufUjS6I3IB2RTzwOmjqk71mfaix3Qe4qMRKlXazr0XzKEV2zsgEfHC/ewgcVXEixdy9v+QD3AToSjX6E8gOfW8PJV+7QyVfhoFe9WsF1UoFhbcdEG+dpHUU1uSos13ZQDb1goQJP/YAyTDrpoFuAybLT4NRGi6Aj/VPfRZi/qDqAfvKq7+0ajfcvcsNk756OoTYaFEmNmfCMju7Dkij/gUOfWwqKa3kTC7eyGvWV5uYUG4+Cfmlx+QJmO4v4xEuPYrDdMyYkExltUWANAXtVtiqk7LGzu5Atpj0bk0tG5bnPil13en2KymD3JBhKpdyIQFiER9bACghoMvOwQdM570O5SiZZoyB7nM7JAWKzLBL4EVRmKrTfW6lFLfIFEWF73Os7EpMIR+JmFrqDUymKIqOS8kXE7zqNZ3hp6x388usMS1ByGyHNlHj9HxjnwV8hnODaI8RPTD15mGdWaz719iQhX9TZdMlm5OSyTBMQarHSQ9rfbQUqiMh8GegNiLo1jWLG4dM7y5haKsB/GsXKmZkgEgm9zaf4Zs6ZU+G3DiJo05HiQPsYvAmpY91Xd4y8+u4hdGVfaU93VLe06WuAwrIcCFVXeG6vNpyK+uoCWbOuBlSun602bIET7xC0MAsvXoIrauvhJrYCEexyvNPus1fsb8muuUhxMR6lBo=" # DOCKER_PASS
+  - COMMIT=${TRAVIS_COMMIT::8}
 install:
   - pip install -r requirements.txt
   - pip install codecov
@@ -16,3 +24,10 @@ script:
   - coverage run -m tests.tests
 after_success:
   - codecov
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+  - export REPO=obozrenie/obozrenie
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
+  - docker build -f Dockerfile -t $REPO:$COMMIT .
+  - docker tag $REPO:$COMMIT $REPO:$TAG
+  - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - docker push $REPO

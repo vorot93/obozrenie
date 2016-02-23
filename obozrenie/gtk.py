@@ -23,6 +23,8 @@ import ast
 import os
 import signal
 
+import gi
+[gi.require_version(module, version) for module, version in (('GdkPixbuf', '2.0'), ('Gtk', '3.0'))]
 from gi.repository import GdkPixbuf, GLib, Gio, Gtk
 
 from obozrenie.global_settings import *
