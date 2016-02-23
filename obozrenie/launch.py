@@ -108,7 +108,7 @@ def minetest_launch_pattern(game_settings: dict, path: str, host: str, port: str
     return launch_cmd
 
 
-def do_launch(launch_cmd: list, env_dict: dict) -> Exception:
+def do_launch(launch_cmd: list) -> Exception:
     try:
         # Launch
         print(LAUNCHER_MSG, "Launching '%(launch_cmd)s'" % {'launch_cmd': " ".join(launch_cmd)})
