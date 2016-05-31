@@ -64,8 +64,6 @@ def parse_json_entry(entry):
     except AttributeError:
         pass
 
-    entry_dict['game_id'] = "minetest"
-
     try:
         entry_dict['game_type'] = str(entry['gameid'])
     except AttributeError:
@@ -103,5 +101,10 @@ def stat_master(game: str, game_info: dict, master_list: list):
         server_table.append(entry_dict)
 
     ping.add_rtt_info(server_table)
+
+    for i in range(len(server_table)):
+        entry = server_table[i]
+        entry["game_id"] = game
+        server_table[i] = entry
 
     return server_table, None
