@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.2"
+   width="256"
+   height="256"
+   id="svg2">
+  <defs
+     id="defs4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(0,-796.3622)"
+     id="layer1">
+    <path
+       d="m 0,796.36218 256,0 0,256.00002 -256,0 z"
+       id="rect3049"
+       style="fill:#1e1c1d;fill-opacity:1" />
+    <flowRoot
+       transform="translate(0,796.3622)"
+       id="flowRoot2996"
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0;stroke:none;font-family:Sans"><flowRegion
+         id="flowRegion2998"><rect
+           width="252.5"
+           height="76.428574"
+           x="3.2142856"
+           y="44.214287"
+           id="rect3000" /></flowRegion><flowPara
+         id="flowPara3002"></flowPara></flowRoot>    <flowRoot
+       transform="translate(0,796.3622)"
+       id="flowRoot3004"
+       xml:space="preserve"
+       style="font-size:72px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0;stroke:none;font-family:Sans"><flowRegion
+         id="flowRegion3006"><rect
+           width="239.64285"
+           height="76.785713"
+           x="8.2142859"
+           y="41"
+           id="rect3008"
+           style="font-size:72px" /></flowRegion><flowPara
+         id="flowPara3010"
+         style="font-size:72px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:ONRAMP;-inkscape-font-specification:ONRAMP">FREE</flowPara></flowRoot>    <path
+       d="m 0,1001.5184 256,0 0,50.8437 -256,0 z"
+       id="rect3051"
+       style="fill:#61ad6d;fill-opacity:1" />
+    <g
+       transform="translate(2.2474619,711.2576)"
+       id="flowRoot3031"
+       style="font-size:140px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#999999;fill-opacity:1;stroke:none;font-family:Sans">
+      <path
+         d="m 60.4375,147.02947 -32.688,0 0,11.52 18,0 0,13.248 -18,0 0,24.624 -14.544,0 0,-62.928 47.232,0 0,13.536 0,0"
+         id="path3311"
+         style="font-size:144px;font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 108.5065,196.42147 -14.4,-21.6 -10.656,0 0,21.6 -14.832,0 0,-62.928 42.768,0 c 2.11195,7e-5 3.88795,0.67207 5.328,2.016 1.43994,1.24806 2.15994,2.78406 2.16,4.608 l 0,27.936 c -6e-5,1.92003 -0.72006,3.55203 -2.16,4.896 -1.44005,1.24803 -3.21605,1.87203 -5.328,1.872 l 14.4,21.6 -17.28,0 m -25.056,-34.992 20.592,0 0,-14.544 -20.592,0 0,14.544"
+         id="path3313"
+         style="font-size:144px;font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 179.8315,147.02947 -32.688,0 0,11.52 18,0 0,13.248 -18,0 0,11.376 32.688,0 0,13.248 -47.232,0 0,-62.928 47.232,0 0,13.536 0,0"
+         id="path3315"
+         style="font-size:144px;font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 238.3315,147.02947 -32.688,0 0,11.52 18,0 0,13.248 -18,0 0,11.376 32.688,0 0,13.248 -47.232,0 0,-62.928 47.232,0 0,13.536 0,0"
+         id="path3317"
+         style="font-size:144px;font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+    </g>
+    <g
+       transform="translate(60.104077,726.66167)"
+       id="flowRoot3039"
+       style="font-size:115px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#999999;fill-opacity:1;stroke:none;font-family:Sans">
+      <path
+         d="m -12.62625,191.64279 18.285,0 0,50.255 -11.73,0 0,-39.33 -11.27,21.045 -7.59,0 -11.27,-21.045 0.115,39.33 -11.845,0 0,-50.255 18.285,0 8.51,12.995 8.51,-12.995 0,0"
+         id="path3320"
+         style="font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 28.665938,241.89779 -11.845001,0 0,-50.255 11.845001,0 0,50.255"
+         id="path3322"
+         style="font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 86.6475,191.64279 0,50.255 -10.35,0 -22.54,-34.04 0,34.04 -11.73,0 0,-50.255 16.905,0 15.87,24.15 0,-24.15 11.845,0 0,0"
+         id="path3324"
+         style="font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 133.56031,202.45279 -26.105,0 0,9.2 14.375,0 0,10.58 -14.375,0 0,9.085 26.105,0 0,10.58 -37.719998,0 0,-50.255 37.719998,0 0,10.81 0,0"
+         id="path3326"
+         style="font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+      <path
+         d="m 174.52906,241.89779 -11.5,-17.25 -8.51,0 0,17.25 -11.845,0 0,-50.255 34.155,0 c 1.68663,5e-5 3.10496,0.53672 4.255,1.61 1.14996,0.99672 1.72496,2.22338 1.725,3.68 l 0,22.31 c -4e-5,1.53336 -0.57504,2.83669 -1.725,3.91 -1.15004,0.99669 -2.56837,1.49502 -4.255,1.495 l 11.5,17.25 -13.8,0 m -20.01,-27.945 16.445,0 0,-11.615 -16.445,0 0,11.615"
+         id="path3328"
+         style="font-variant:normal;font-stretch:normal;fill:#999999;font-family:ONRAMP;-inkscape-font-specification:ONRAMP" />
+    </g>
+  </g>
+</svg>

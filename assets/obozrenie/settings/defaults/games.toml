@@ -7,6 +7,11 @@ path = "minetest"
 master_uri = ["http://servers.minetest.net/list"]
 nickname = "Player"
 
+[freeminer]
+path = "freeminer"
+master_uri = ["http://servers.freeminer.org/list"]
+nickname = "Player"
+
 [csgo]
 path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/csgo_linux"
 workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"

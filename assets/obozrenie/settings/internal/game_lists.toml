@@ -12,6 +12,13 @@ adapter = "minetest"
 launch_pattern = "minetest"
 settings = ["path", "master_uri", "nickname"]
 
+[freeminer]
+name = "Freeminer"
+proxy = "requests_http"
+adapter = "minetest"
+launch_pattern = "minetest"
+settings = ["path", "master_uri", "nickname"]
+
 [csgo]
 name = "Counter-Strike: Global Offensive"
 proxy = "qstat_output"
