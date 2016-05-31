@@ -92,9 +92,8 @@ def stat_master(game: str, game_info: dict, master_list: list):
     server_table = []
 
     for master_uri in master_list:
-        master_page_uri = master_uri.strip('/') + '/list'
         try:
-            server_json_table += get_json(master_page_uri)
+            server_json_table += get_json(master_uri)
         except (ConnectionError, ValueError) as e:
             print(BACKENDCAT_MSG + MINETEST_MSG, e)
 

@@ -4,7 +4,7 @@ master_uri = ["http://api.rigsofrods.com/serverlist/"]
 
 [minetest]
 path = "minetest"
-master_uri = ["http://servers.minetest.net"]
+master_uri = ["http://servers.minetest.net/list"]
 nickname = "Player"
 
 [csgo]
