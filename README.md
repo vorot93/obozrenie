@@ -12,6 +12,13 @@ Simple and easy to use game server browser for Linux.
 [![Climate](https://img.shields.io/codeclimate/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
 [![codecov.io](https://img.shields.io/codecov/c/github/obozrenie/obozrenie.svg)](https://codecov.io/github/obozrenie/obozrenie)
 
+## Project status note (2016-06-13)
+Right now Obozrenie is considered feature-complete and ready for general usage.
+
+However, the fact that I chose Python as the language of code led to significant hurdles in terms of application performance, maintainability and shipping today. I am looking into rewriting Obozrenie in a lower level language (like Vala or Go) for better speed and maintainability.
+
+Therefore, new **features** are not likely to be implemented in this codebase. **Game support**, however, will expand on request. Nevertheless you are welcome to voice your wishes at issue tracker.
+
 ## Overview
 Obozrenie is a game server browser that can be used to access information about and connect to multiplayer servers.
 
