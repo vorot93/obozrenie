@@ -247,8 +247,7 @@ def stat_master(game: str, game_info: dict, master_list: list):
         qstat_output_raw, _ = subprocess.Popen(qstat_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(input=qstat_stdin_object.strip().encode())
         qstat_output = qstat_output_raw.decode()
     except Exception as e:
-        debug_msg(game_name, e.args[0])
-        return [], e
+        raise Exception(helpers.debug_msg_str([QSTAT_MSG, game_name, e.args[0]]))
     stat_end_time = time.time()
 
     stat_total_time = stat_end_time - stat_start_time
@@ -260,4 +259,4 @@ def stat_master(game: str, game_info: dict, master_list: list):
 
     debug_msg(game_name, i18n._("Parsed QStat response. Elapsed time: %(parse_time)s ms") % {'parse_time': round((parse_end_time - parse_start_time) * 1000, 2)})
 
-    return server_table, None
+    return server_table

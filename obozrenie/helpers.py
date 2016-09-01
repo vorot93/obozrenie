@@ -79,10 +79,12 @@ class ThreadSafeList(list):
     def __deepcopy__(self, *args):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
 
+def debug_msg_str(msg):
+    return " | ".join([time.strftime('%F %T')] + [str(part) for part in msg])
 
 def debug_msg(msg=None):
     if msg is not None:
-        print(" | ".join([time.strftime('%F %T')] + [str(part) for part in msg]))
+        print(debug_msg_str(msg))
 
 
 def enum(*args):

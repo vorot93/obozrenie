@@ -339,10 +339,7 @@ class Core:
             temp_list = None
 
             try:
-                temp_list, err = stat_master_cmd(game, game_info, master_list)
-
-                if err is not None:
-                    raise err
+                temp_list = stat_master_cmd(game, game_info, master_list)
             except Exception as e:
                 helpers.debug_msg([CORE_MSG, e])
                 helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG])

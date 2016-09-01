@@ -36,15 +36,16 @@ def get_json(master_page_uri):
     try:
         master_page_object = requests.get(master_page_uri)
         master_page = master_page_object.text
-    except:
-        raise ConnectionError(i18n._(MINETEST_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {'uri': master_page_uri, 'code': "unknown"})
+    except Exception as e:
+        raise ConnectionError(i18n._("Accessing URI %(uri)s failed with error %(msg)s.") % {'uri': master_page_uri, 'msg': e.args[0]})
 
+    server_table = [];
     try:
         server_table = list(json.loads(master_page)["list"])
     except ValueError as e:
-        raise ValueError(i18n._(MINETEST_MSG), i18n._("Error parsing URI %(uri)s.: \n %(exception)s") % {'uri': master_page_uri, 'exception': e})
-    else:
-        return server_table
+        raise ValueError(i18n._("Error parsing URI %(uri)s.: %(msg)s") % {'uri': master_page_uri, 'msg': e.args[0]})
+
+    return server_table
 
 
 def parse_json_entry(entry):
@@ -83,17 +84,15 @@ def parse_json_entry(entry):
 
 
 def stat_master(game: str, game_info: dict, master_list: list):
-    """Stats the master server"""
+  """Stats the master server"""
+  try:
     backend_config_object = helpers.load_table(BACKEND_CONFIG)
 
     server_json_table = []
     server_table = []
 
     for master_uri in master_list:
-        try:
-            server_json_table += get_json(master_uri)
-        except (ConnectionError, ValueError) as e:
-            print(BACKENDCAT_MSG + MINETEST_MSG, e)
+        server_json_table += get_json(master_uri)
 
     for entry in server_json_table:
         entry_dict = parse_json_entry(entry)
@@ -107,4 +106,6 @@ def stat_master(game: str, game_info: dict, master_list: list):
         entry["game_id"] = game
         server_table[i] = entry
 
-    return server_table, None
+    return server_table
+  except Exception as e:
+    raise Exception(helpers.debug_msg_str([BACKENDCAT_MSG + MINETEST_MSG, e.args[0]]))
