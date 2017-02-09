@@ -1,16 +1,13 @@
-![Obozrenie](https://cdn.rawgit.com/obozrenie/obozrenie/master/assets/icons/hicolor/scalable/apps/obozrenie.svg)
+![Obozrenie](https://cdn.rawgit.com/vorot93/obozrenie/master/assets/icons/hicolor/scalable/apps/obozrenie.svg)
 
 Simple and easy to use game server browser for Linux.
 
-[![Gitter](https://img.shields.io/badge/gitter-%23obozrenie%2Fobozrenie-blue.svg)](https://gitter.im/obozrenie/obozrenie?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![GNU GPL](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://gnu.org/licenses/gpl.html)
-[![PyPI](https://img.shields.io/pypi/v/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
-[![PyPI](https://img.shields.io/pypi/dm/Obozrenie.svg)](https://pypi.python.org/pypi/Obozrenie)
-[![Docker Pulls](https://img.shields.io/docker/pulls/obozrenie/obozrenie.svg)](https://hub.docker.com/r/obozrenie/obozrenie/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/vorot93/obozrenie.svg)](https://hub.docker.com/r/vorot93/obozrenie/)
 
-[![Build Status](https://img.shields.io/travis/obozrenie/obozrenie.svg)](https://travis-ci.org/obozrenie/obozrenie)
-[![Climate](https://img.shields.io/codeclimate/github/obozrenie/obozrenie.svg)](https://codeclimate.com/github/obozrenie/obozrenie)
-[![codecov.io](https://img.shields.io/codecov/c/github/obozrenie/obozrenie.svg)](https://codecov.io/github/obozrenie/obozrenie)
+[![Build Status](https://img.shields.io/travis/vorot93/obozrenie.svg)](https://travis-ci.org/vorot93/obozrenie)
+[![Climate](https://img.shields.io/codeclimate/github/vorot93/obozrenie.svg)](https://codeclimate.com/github/vorot93/obozrenie)
+[![codecov.io](https://img.shields.io/codecov/c/github/vorot93/obozrenie.svg)](https://codecov.io/github/vorot93/obozrenie)
 
 ## Project status note (2016-06-13)
 Right now Obozrenie is considered feature-complete and ready for general usage.
@@ -48,11 +45,11 @@ Obozrenie is a game server browser that can be used to access information about 
 ### Docker
 Obozrenie project ships Ubuntu-based Docker image containing Obozrenie browser, runnable out of the box. It is only intended for quick test drive since custom GTK+ theming, game launching or settings storage is not available in this version.
 #### Install / update
-    docker pull obozrenie/obozrenie
+    docker pull vorot93/obozrenie
 #### Run
     docker run -it --rm -e LANG=$LANG -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix obozrenie/obozrenie
 ### Manual
-    git clone https://github.com/obozrenie/obozrenie.git
+    git clone https://github.com/vorot93/obozrenie.git
     cd obozrenie
     ./obozrenie-gtk
 

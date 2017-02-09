@@ -104,12 +104,6 @@ msgstr ""
 msgid "Artem Vorotnikov"
 msgstr ""
 
-#: obozrenie/global_strings.py:31
-msgid ""
-"\n"
-"This is an error. Please file a bug report at "
-msgstr ""
-
 #: obozrenie/global_strings.py:32
 msgid "Core/"
 msgstr ""

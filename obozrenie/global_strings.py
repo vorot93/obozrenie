@@ -20,15 +20,12 @@ import obozrenie.i18n as i18n
 
 PROJECT = i18n._("Obozrenie")
 DESCRIPTION = i18n._("Game Server Browser")
-WEBSITE = "http://obozrenie.vorotnikov.me"
-GIT_WEBSITE = "https://github.com/obozrenie/obozrenie"
-COPYRIGHT = i18n._("© 2015 Artem Vorotnikov")
+COPYRIGHT = i18n._("© 2015-2017 Artem Vorotnikov")
 AUTHORS = [i18n._("Artem Vorotnikov")]
 ARTISTS = [i18n._("Artem Vorotnikov")]
 
 
 SEPARATOR_MSG = ("-------------------------------------------")
-ERROR_MSG = i18n._("This is an error. Please file a bug report at ") + GIT_WEBSITE
 CORECAT_MSG = i18n._("Core/")
 UICAT_MSG = i18n._("UI/")
 BACKENDCAT_MSG = i18n._("Adapter/")

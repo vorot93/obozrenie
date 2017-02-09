@@ -246,7 +246,15 @@ class GUIActions:
 
     def cb_about(self, action, dialog, parent, *args):
         """Opens the About dialog."""
-        kwargs = {'parent': parent, 'program_name': PROJECT, 'comments': DESCRIPTION, 'website': WEBSITE, 'version': VERSION, 'authors': AUTHORS, 'copyright': COPYRIGHT, 'license_type': Gtk.License.GPL_3_0}
+        kwargs = {
+            'parent': parent,
+            'program_name': PROJECT,
+            'comments': DESCRIPTION,
+            'version': VERSION,
+            'authors': AUTHORS,
+            'copyright': COPYRIGHT,
+            'license_type': Gtk.License.GPL_3_0
+        }
         if ICON_NAME:
             kwargs.update({'logo_icon_name': ICON_NAME})
         else:

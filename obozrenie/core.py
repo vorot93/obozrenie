@@ -342,7 +342,7 @@ class Core:
                 temp_list = stat_master_cmd(game, game_info, master_list)
             except Exception as e:
                 helpers.debug_msg([CORE_MSG, e])
-                helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}, ERROR_MSG])
+                helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}])
                 self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.ERROR)
             else:
                 self.game_table.set_servers_data(game, temp_list)
