@@ -1,4 +1,4 @@
-FROM ubuntu:15.10
+FROM ubuntu
 MAINTAINER Artem Vorotnikov <artem@vorotnikov.me>
 
 RUN apt update && \
