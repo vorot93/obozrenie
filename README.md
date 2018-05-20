@@ -47,7 +47,7 @@ Obozrenie project ships Ubuntu-based Docker image containing Obozrenie browser, 
 #### Install / update
     docker pull vorot93/obozrenie
 #### Run
-    docker run -it --rm -e LANG=$LANG -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix obozrenie/obozrenie
+    docker run -it --rm -e LANG=$LANG -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix vorot93/obozrenie
 ### Manual
     git clone https://github.com/vorot93/obozrenie.git
     cd obozrenie
