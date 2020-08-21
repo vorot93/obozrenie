@@ -23,6 +23,7 @@ from xdg import BaseDirectory
 def is_run_from_git_workdir():
     return os.path.exists('assets')
 
+
 APPLICATION_ID = "io.obozrenie"
 VERSION = "1"
 
@@ -43,19 +44,23 @@ ICON_FLAGS_DIR = os.path.join(ICON_DIR, 'flags')
 ICON_GAMES_DIR = os.path.join(ICON_DIR, 'games')
 
 if is_run_from_git_workdir():
-    ICON_PATH = os.path.join(ASSETS_DIR, 'icons', 'hicolor', 'scalable', 'apps', ICON_NAME + '.svg')
+    ICON_PATH = os.path.join(
+        ASSETS_DIR, 'icons', 'hicolor', 'scalable', 'apps', ICON_NAME + '.svg')
     ICON_NAME = None
 
 SETTINGS_DIR = os.path.join(PROJECT_DIR, 'settings')
 SETTINGS_INTERNAL_DIR = os.path.join(SETTINGS_DIR, 'internal')
-SETTINGS_INTERNAL_BACKENDS_DIR = os.path.join(SETTINGS_INTERNAL_DIR, 'backends')
+SETTINGS_INTERNAL_BACKENDS_DIR = os.path.join(
+    SETTINGS_INTERNAL_DIR, 'backends')
 SETTINGS_DEFAULTS_DIR = os.path.join(SETTINGS_DIR, 'defaults')
 
 COMMON_SETTINGS_FILE = "settings.toml"
 GAME_SETTINGS_FILE = "games.toml"
 
-DEFAULT_COMMON_SETTINGS_PATH = os.path.join(SETTINGS_DEFAULTS_DIR, COMMON_SETTINGS_FILE)
-DEFAULT_GAME_SETTINGS_PATH = os.path.join(SETTINGS_DEFAULTS_DIR, GAME_SETTINGS_FILE)
+DEFAULT_COMMON_SETTINGS_PATH = os.path.join(
+    SETTINGS_DEFAULTS_DIR, COMMON_SETTINGS_FILE)
+DEFAULT_GAME_SETTINGS_PATH = os.path.join(
+    SETTINGS_DEFAULTS_DIR, GAME_SETTINGS_FILE)
 
 PROFILE_PATH = os.path.join(BaseDirectory.xdg_config_home, 'obozrenie')
 

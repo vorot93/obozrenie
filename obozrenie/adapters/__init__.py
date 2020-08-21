@@ -32,4 +32,5 @@ adapter_list = ('rigsofrods', 'qstat', 'minetest')
 for adapter in adapter_list:
     adapter_table[adapter] = globals()[adapter]
 
-helpers.debug_msg([CORE_MSG, i18n._("%(adapter_num)i adapters loaded successfully") % {'adapter_num': len(adapter_list)}])
+helpers.debug_msg([CORE_MSG, i18n._("%(adapter_num)i adapters loaded successfully") % {
+                  'adapter_num': len(adapter_list)}])

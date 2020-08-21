@@ -28,7 +28,8 @@ def get_checkbutton(label_text="", tooltip_text=""):
     checkbutton = Gtk.CheckButton.new()
 
     widget_object_dict = {"checkbutton": checkbutton}
-    widget_property_dict = {"checkbutton": {"label": i18n._(label_text), "tooltip-text": i18n._(tooltip_text)}}
+    widget_property_dict = {"checkbutton": {"label": i18n._(
+        label_text), "tooltip-text": i18n._(tooltip_text)}}
 
     gtk_helpers.set_object_properties(widget_object_dict, widget_property_dict)
 
@@ -71,7 +72,8 @@ def get_textview_with_label(label_text="", tooltip_text="Single entry per line",
 
     grid.add(text_view)
 
-    widget_group = {"container": grid, "label": label, "substance": text_buffer}
+    widget_group = {"container": grid,
+                    "label": label, "substance": text_buffer}
 
     return widget_group
 
@@ -83,11 +85,14 @@ def get_option_widget(option_dict):
     if widget_type == "CheckButton":
         widget = get_checkbutton(label_text=name, tooltip_text=description)
     elif widget_type == "Entry with Label":
-        widget = get_entry_with_label(label_text=name+":", tooltip_text=description)
+        widget = get_entry_with_label(
+            label_text=name+":", tooltip_text=description)
     elif widget_type == "Multiline Entry with Label":
-        widget = get_textview_with_label(label_text=name+":", tooltip_text=description)
+        widget = get_textview_with_label(
+            label_text=name+":", tooltip_text=description)
     else:
-        print(i18n._("No widget generated for type %(widget_type)s") % {'widget_type': widget_type})
+        print(i18n._("No widget generated for type %(widget_type)s") %
+              {'widget_type': widget_type})
         widget = None
 
     return widget
@@ -135,17 +140,20 @@ class PreferencesDialog(Gtk.Dialog):
         self.game = game
         self.dynamic_settings_table = dynamic_settings_table
 
-        preferences_grid_info = get_preferences_grid(game, game_settings, dynamic_settings_table)
+        preferences_grid_info = get_preferences_grid(
+            game, game_settings, dynamic_settings_table)
 
         preferences_grid = preferences_grid_info["widget"]
         self.widget_option_mapping = preferences_grid_info["mapping"]
 
         if callback_start is not None:
-            callback_start(self.game, self.widget_option_mapping, self.dynamic_settings_table)
+            callback_start(self.game, self.widget_option_mapping,
+                           self.dynamic_settings_table)
 
         self.set_resizable(False)
         self.set_border_width(10)
-        self.set_title(i18n._("%(game)s preferences") % {'game': game_info["name"]})
+        self.set_title(i18n._("%(game)s preferences") %
+                       {'game': game_info["name"]})
         self.get_content_area().pack_start(preferences_grid, True, True, 0)
 
         button = self.add_button(i18n._("Save"), Gtk.ResponseType.CLOSE)
@@ -155,5 +163,6 @@ class PreferencesDialog(Gtk.Dialog):
 
     def cb_close_button_clicked(self, widget):
         if self.callback_close is not None:
-            self.callback_close(self.game, self.widget_option_mapping, self.dynamic_settings_table)
+            self.callback_close(
+                self.game, self.widget_option_mapping, self.dynamic_settings_table)
         self.destroy()

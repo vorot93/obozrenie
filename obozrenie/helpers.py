@@ -79,8 +79,10 @@ class ThreadSafeList(list):
     def __deepcopy__(self, *args):
         return ThreadSafeList(json.loads(json.dumps(list(self))))
 
+
 def debug_msg_str(msg):
     return " | ".join([time.strftime('%F %T')] + [str(part) for part in msg])
+
 
 def debug_msg(msg=None):
     if msg is not None:
@@ -105,34 +107,35 @@ def deepcopy(foo):
 
 
 def search_table(table, level, value):
-        if level == 0:
-            for i in range(len(table)):
-                if table[i] == value:
-                    return i
-            return None
-        elif level == 1:
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    if table[i][j] == value:
-                        return i, j
-            return None
-        elif level == 2:
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    for k in range(len(table[i][j])):
-                        if table[i][j][k] == value:
-                            return i, j, k
-            return None
-        elif level is (3 or -1):
-            for i in range(len(table)):
-                for j in range(len(table[i])):
-                    for k in range(len(table[i][j])):
-                        for l in range(len(table[i][j][k])):
-                            if table[i][j][k][l] == value:
-                                return i, j, k, l
-            return None
-        else:
-            print("Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
+    if level == 0:
+        for i in range(len(table)):
+            if table[i] == value:
+                return i
+        return None
+    elif level == 1:
+        for i in range(len(table)):
+            for j in range(len(table[i])):
+                if table[i][j] == value:
+                    return i, j
+        return None
+    elif level == 2:
+        for i in range(len(table)):
+            for j in range(len(table[i])):
+                for k in range(len(table[i][j])):
+                    if table[i][j][k] == value:
+                        return i, j, k
+        return None
+    elif level is (3 or -1):
+        for i in range(len(table)):
+            for j in range(len(table[i])):
+                for k in range(len(table[i][j])):
+                    for l in range(len(table[i][j][k])):
+                        if table[i][j][k][l] == value:
+                            return i, j, k, l
+        return None
+    else:
+        print(
+            "Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
 
 
 def search_dict_table(table, key, value):
@@ -155,10 +158,12 @@ def flatten_dict_table(dict_table, leading_key_spec):
 
     return flattened_dict_table
 
+
 def sort_dict_table(dict_table: list, sort_key) -> list:
     sorted_dict_list = sorted(dict_table, key=lambda k: k[sort_key])
 
     return sorted_dict_list
+
 
 def dict_to_list(dict_table, key_list):
     list_table = []
@@ -189,18 +194,19 @@ def flatten_list(nested_list):
     flattened_list = list(flatten(nested_list))
     return flattened_list
 
+
 def remove_all_occurences_from_list(target_list, value):
     return [y for y in target_list if y != value]
 
 
 def load_table(path):
-        """Loads settings table into dict"""
-        try:
-            table_open_object = open(path, 'r')
-        except FileNotFoundError:
-            return None
-        table = pytoml.load(table_open_object)
-        return table
+    """Loads settings table into dict"""
+    try:
+        table_open_object = open(path, 'r')
+    except FileNotFoundError:
+        return None
+    table = pytoml.load(table_open_object)
+    return table
 
 
 def save_table(path, data):

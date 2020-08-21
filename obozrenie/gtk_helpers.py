@@ -28,7 +28,8 @@ def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
     icon_is_set = False
     for icon_format in icon_formats:
         try:
-            icon = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(icon_dir, entry.lower() + "." + icon_format), width, height)
+            icon = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(
+                icon_dir, entry.lower() + "." + icon_format), width, height)
             icon_is_set = True
             break
         except GLib.GError:
@@ -39,17 +40,20 @@ def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
 
     return icon
 
+
 def get_icon_dict(key_list, icon_type, icon_formats, icon_dir, width, height, error_msg=None):
     """Loads icon pixbufs into memory for later usage"""
     icon_dict = {}
     for entry in key_list:
         try:
-            icon_dict[entry] = get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height)
+            icon_dict[entry] = get_icon_for_entry(
+                entry, icon_type, icon_formats, icon_dir, width, height)
         except FileNotFoundError:
             if error_msg is not None:
                 error_msg(entry)
             try:
-                icon_dict[entry] = get_icon_for_entry("unknown", icon_type, icon_formats, icon_dir, width, height)
+                icon_dict[entry] = get_icon_for_entry(
+                    "unknown", icon_type, icon_formats, icon_dir, width, height)
             except FileNotFoundError:
                 icon_dict[entry] = None
 
@@ -71,7 +75,8 @@ def set_object_properties(object_dict, property_dict):
     for entry in property_dict:
         widget = object_dict[entry]
         for property_entry in property_dict[entry]:
-            widget.set_property(property_entry, property_dict[entry][property_entry])
+            widget.set_property(
+                property_entry, property_dict[entry][property_entry])
 
 
 def get_notebook_page_dict(notebook, widget_mapping):

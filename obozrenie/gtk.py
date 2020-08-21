@@ -19,22 +19,21 @@
 """Simple and easy to use game server browser."""
 
 
+import obozrenie.gtk_templates as templates
+import obozrenie.core as core
+import obozrenie.gtk_helpers as gtk_helpers
+import obozrenie.helpers as helpers
+import obozrenie.i18n as i18n
+from obozrenie.global_strings import *
+from obozrenie.global_settings import *
+from gi.repository import GdkPixbuf, GLib, Gio, Gtk
 import ast
 import os
 import signal
 
 import gi
-[gi.require_version(module, version) for module, version in (('GdkPixbuf', '2.0'), ('Gtk', '3.0'))]
-from gi.repository import GdkPixbuf, GLib, Gio, Gtk
-
-from obozrenie.global_settings import *
-from obozrenie.global_strings import *
-
-import obozrenie.i18n as i18n
-import obozrenie.helpers as helpers
-import obozrenie.gtk_helpers as gtk_helpers
-import obozrenie.core as core
-import obozrenie.gtk_templates as templates
+[gi.require_version(module, version)
+ for module, version in (('GdkPixbuf', '2.0'), ('Gtk', '3.0'))]
 
 
 class GUIActions:
@@ -116,7 +115,7 @@ class GUIActions:
                                                                       "serverinfo-players-scrolledview":        "serverinfo-players-scrolledview",
                                                                       "serverinfo-players-treeview":            "serverinfo-players-view",
                                                                       "serverinfo-players-name-treeviewcolumn": "serverinfo-players-name-column",
-                                                                      "serverinfo-players-score-treeviewcolumn":"serverinfo-players-score-column",
+                                                                      "serverinfo-players-score-treeviewcolumn": "serverinfo-players-score-column",
                                                                       "serverinfo-players-ping-treeviewcolumn": "serverinfo-players-ping-column"
                                                                       })
         self.game_list_model_format = ("game_id",
@@ -152,12 +151,18 @@ class GUIActions:
                                    {"id": "False", "text": i18n._("False")})
 
         self.filter_criteria = [{"column": "game_mod",  "type": "in",               "widget": "filter-mod"},
-                                {"column": "game_type", "type": "in",               "widget": "filter-type"},
-                                {"column": "terrain",   "type": "in",               "widget": "filter-terrain"},
-                                {"column": "ping",      "type": "<=",               "widget": "filter-ping"},
-                                {"column": "secure",    "type": "bool is ast bool", "widget": "filter-secure"},
-                                {"column": "full",      "type": "not true if true", "widget": "filter-notfull"},
-                                {"column": "empty",     "type": "not true if true", "widget": "filter-notempty"},
+                                {"column": "game_type", "type": "in",
+                                    "widget": "filter-type"},
+                                {"column": "terrain",   "type": "in",
+                                    "widget": "filter-terrain"},
+                                {"column": "ping",      "type": "<=",
+                                    "widget": "filter-ping"},
+                                {"column": "secure",    "type": "bool is ast bool",
+                                    "widget": "filter-secure"},
+                                {"column": "full",      "type": "not true if true",
+                                    "widget": "filter-notfull"},
+                                {"column": "empty",     "type": "not true if true",
+                                    "widget": "filter-notempty"},
                                 {"column": "password",  "type": "not true if true", "widget": "filter-nopassword"}]
 
         self.serverlist_notebook_pages = gtk_helpers.get_notebook_page_dict(self.gtk_widgets["serverlist-notebook"], {"servers": self.gtk_widgets["serverlist-scrolledwindow"],
@@ -166,17 +171,19 @@ class GUIActions:
                                                                                                                       "error":   self.gtk_widgets["error-grid"]
                                                                                                                       })
 
-        self.gtk_widgets["serverlist-notebook"].set_property("page", self.serverlist_notebook_pages["welcome"])
-
+        self.gtk_widgets["serverlist-notebook"].set_property(
+            "page", self.serverlist_notebook_pages["welcome"])
 
         # Load flags
         try:
             country_db = self.core.geolocation.const.COUNTRY_CODES
-            self.flag_icons = gtk_helpers.get_icon_dict(country_db, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
+            self.flag_icons = gtk_helpers.get_icon_dict(
+                country_db, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
         except TypeError and AttributeError:
             self.flag_icons = {}
         game_list = self.core.game_table.get_game_set()
-        self.game_icons = gtk_helpers.get_icon_dict(game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
+        self.game_icons = gtk_helpers.get_icon_dict(
+            game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
         try:
             self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
         except (NameError, GLib.GError):
@@ -186,8 +193,10 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
         prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
-                                                   self.core.game_table.get_game_info(game),
-                                                   self.core.game_table.get_game_settings(game),
+                                                   self.core.game_table.get_game_info(
+                                                       game),
+                                                   self.core.game_table.get_game_settings(
+                                                       game),
                                                    self.app.settings.dynamic_widget_table,
                                                    callback_start=self.apply_settings_to_preferences_dialog,
                                                    callback_close=self.update_game_settings_table)
@@ -202,23 +211,32 @@ class GUIActions:
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server_list_table = game_table[game]["servers"]
         host = self.app.settings.settings_table["common"]["server-host"]
-        server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
+        server_entry_index = helpers.search_dict_table(
+            server_list_table, "host", host)
         if server_entry_index is not None:
             server_entry = server_list_table[server_entry_index]
             player_model = self.gtk_widgets["player-list-model"]
             player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
 
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-name"], server_entry["name"])
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-host"], server_entry["host"])
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
-            gtk_helpers.set_widget_value(self.gtk_widgets['serverinfo-gameid'], server_entry['game_id'])
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], i18n._("%(player_count)s / %(player_limit)s") % {'player_count': str(server_entry["player_count"]), 'player_limit': str(server_entry["player_limit"])})
-            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets["serverinfo-name"], server_entry["name"])
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets["serverinfo-host"], server_entry["host"])
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets['serverinfo-gameid'], server_entry['game_id'])
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets["serverinfo-terrain"], server_entry["terrain"])
+            gtk_helpers.set_widget_value(self.gtk_widgets["serverinfo-players"], i18n._("%(player_count)s / %(player_limit)s") % {
+                                         'player_count': str(server_entry["player_count"]), 'player_limit': str(server_entry["player_limit"])})
+            gtk_helpers.set_widget_value(
+                self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
 
             player_model.clear()
             try:
-                player_table = helpers.dict_to_list(server_entry["players"], self.player_list_model_format)
+                player_table = helpers.dict_to_list(
+                    server_entry["players"], self.player_list_model_format)
                 for entry in player_table:
                     player_model.append(entry)
                 player_scrolledview.set_property("visible", True)
@@ -235,8 +253,10 @@ class GUIActions:
         self.cb_server_connect(game, server, password)
 
     def cb_serverinfo_connect_button_clicked(self, *args) -> str:
-        game = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-gameid"])
-        server = gtk_helpers.get_widget_value(self.gtk_widgets["serverinfo-host"])
+        game = gtk_helpers.get_widget_value(
+            self.gtk_widgets["serverinfo-gameid"])
+        server = gtk_helpers.get_widget_value(
+            self.gtk_widgets["serverinfo-host"])
         password = self.app.settings.settings_table["common"]["server-pass"]
         self.cb_server_connect(game, server, password)
 
@@ -280,7 +300,8 @@ class GUIActions:
         game_id = gtk_helpers.get_widget_value(combobox)
         game_id_colnum = self.game_list_model_format.index("game_id")
 
-        gtk_helpers.set_widget_value(treeview, game_id, treeview_colnum=game_id_colnum)
+        gtk_helpers.set_widget_value(
+            treeview, game_id, treeview_colnum=game_id_colnum)
 
     def cb_game_treeview_togglebutton_clicked(self, *args):
         """Switches between TreeView and ComboBox game selection."""
@@ -299,7 +320,8 @@ class GUIActions:
         game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
         query_status = self.core.game_table.get_query_status(game_id)
 
-        gtk_helpers.set_widget_value(self.gtk_widgets["game-combobox"], game_id)
+        gtk_helpers.set_widget_value(
+            self.gtk_widgets["game-combobox"], game_id)
         if query_status == self.core.game_table.QUERY_STATUS.EMPTY:  # Refresh server list on first access
             self.cb_update_button_clicked()
         else:
@@ -321,7 +343,8 @@ class GUIActions:
         self.set_loading_state("working")
         self.set_game_state(game, self.core.game_table.QUERY_STATUS.WORKING)
 
-        self.core.update_server_list(game, stat_callback=self.cb_update_server_list)
+        self.core.update_server_list(
+            game, stat_callback=self.cb_update_server_list)
 
     def cb_update_server_list(self, game: str) -> None:
         GLib.idle_add(self.show_game_page, game)
@@ -344,7 +367,8 @@ class GUIActions:
             game_store_table[-1]["game_icon"] = game_icons[entry]
 
         game_store_table = helpers.sort_dict_table(game_store_table, "name")
-        game_store_list = helpers.dict_to_list(game_store_table, self.game_list_model_format)
+        game_store_list = helpers.dict_to_list(
+            game_store_table, self.game_list_model_format)
 
         for list_entry in game_store_list:
             game_model.append(list_entry)
@@ -372,7 +396,8 @@ class GUIActions:
             elif query_status == query_status_enum.ERROR:
                 self.set_loading_state("error")
 
-        self.cb_server_connect_data_changed()  # In case selected server's existence is altered
+        # In case selected server's existence is altered
+        self.cb_server_connect_data_changed()
 
     def set_game_state(self, game: str, state: str) -> None:
         icon = ""
@@ -391,18 +416,21 @@ class GUIActions:
         column = self.game_list_model_format.index("game_id")
         game_index = gtk_helpers.search_model(model, column, game)
 
-        model[game_index][self.game_list_model_format.index("status_icon")] = icon
+        model[game_index][self.game_list_model_format.index(
+            "status_icon")] = icon
 
     def set_loading_state(self, state: str) -> None:
         notebook = self.gtk_widgets["serverlist-notebook"]
 
         if state == "working":
-            notebook.set_property("page", self.serverlist_notebook_pages["loading"])
+            notebook.set_property(
+                "page", self.serverlist_notebook_pages["loading"])
         elif state == "filling list" or state == "ready":
-            notebook.set_property("page", self.serverlist_notebook_pages["servers"])
+            notebook.set_property(
+                "page", self.serverlist_notebook_pages["servers"])
         elif state == "error":
-            notebook.set_property("page", self.serverlist_notebook_pages["error"])
-
+            notebook.set_property(
+                "page", self.serverlist_notebook_pages["error"])
 
     def fill_server_list_model(self, server_table):
         """Fill the server view"""
@@ -420,11 +448,15 @@ class GUIActions:
 
         # UGLY HACK!
         # Workaround for chaotic TreeViewSelection on ListModel erase
-        host_selection = gtk_helpers.get_widget_value(self.gtk_widgets["server-connect-host"])
-        game_selection = gtk_helpers.get_widget_value(self.gtk_widgets["server-connect-game"])
+        host_selection = gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-host"])
+        game_selection = gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-game"])
         model.clear()
-        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-host"], host_selection)
-        gtk_helpers.set_widget_value(self.gtk_widgets["server-connect-game"], game_selection, treeview_colnum=self.game_list_model_format.index("game_id"))
+        gtk_helpers.set_widget_value(
+            self.gtk_widgets["server-connect-host"], host_selection)
+        gtk_helpers.set_widget_value(
+            self.gtk_widgets["server-connect-game"], game_selection, treeview_colnum=self.game_list_model_format.index("game_id"))
 
         # Goodies for GUI
         for entry in view_table:
@@ -457,7 +489,6 @@ class GUIActions:
         for entry in server_list:
             model_append(entry)
 
-
     # Server list filtering
 
     def server_filter_func(self, model: Gtk.TreeModel, treeiter: Gtk.TreeIter, *args) -> bool:
@@ -482,7 +513,8 @@ class GUIActions:
                     elif comparison == "!=":
                         result = entry_value != comparison_value
                     elif comparison == "bool is ast bool":
-                        result = entry_value is ast.literal_eval(comparison_value)
+                        result = entry_value is ast.literal_eval(
+                            comparison_value)
                     elif comparison == "not true if true":
                         if comparison_value is True:
                             result = entry_value != comparison_value
@@ -510,7 +542,8 @@ class GUIActions:
     def cb_server_filters_changed(self, *args):
         filter_criteria = self.filter_criteria
         for criterium in filter_criteria:
-            criterium["value"] = gtk_helpers.get_widget_value(self.gtk_widgets[criterium["widget"]])
+            criterium["value"] = gtk_helpers.get_widget_value(
+                self.gtk_widgets[criterium["widget"]])
 
         self.gtk_widgets["server-list-filter"].refilter()
 
@@ -523,11 +556,14 @@ class GUIActions:
         treeview = self.gtk_widgets["serverlist-view"]
 
         try:
-            text = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("host")]
-            game = gtk_helpers.get_widget_value(treeview)[self.server_list_model_format.index("game_id")]
+            text = gtk_helpers.get_widget_value(
+                treeview)[self.server_list_model_format.index("host")]
+            game = gtk_helpers.get_widget_value(
+                treeview)[self.server_list_model_format.index("game_id")]
 
             gtk_helpers.set_widget_value(entry_field, text)
-            gtk_helpers.set_widget_value(game_selection, game, treeview_colnum=self.game_list_model_format.index("game_id"))
+            gtk_helpers.set_widget_value(
+                game_selection, game, treeview_colnum=self.game_list_model_format.index("game_id"))
         except:
             pass
 
@@ -544,7 +580,8 @@ class GUIActions:
         except (ValueError, KeyError):
             server_list_table = []
         host = self.app.settings.settings_table["common"]["server-host"]
-        server_entry_index = helpers.search_dict_table(server_list_table, "host", host)
+        server_entry_index = helpers.search_dict_table(
+            server_list_table, "host", host)
 
         entry_field = self.gtk_widgets["server-connect-host"]
         info_button = self.gtk_widgets["action-info-button"]
@@ -637,15 +674,19 @@ class App(Gtk.Application):
             self.status = "starting"
             guiactions.fill_game_store()
 
-            self.settings.load(callback_postgenload=self.guiactions.cb_post_settings_genload)
+            self.settings.load(
+                callback_postgenload=self.guiactions.cb_post_settings_genload)
 
             # Connect signals
             self.builder.connect_signals(self.guiactions)
-            guiactions.gtk_widgets["server-list-filter"].set_visible_func(guiactions.server_filter_func)
+            guiactions.gtk_widgets["server-list-filter"].set_visible_func(
+                guiactions.server_filter_func)
 
-            gtk_helpers.set_widget_value(self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
+            gtk_helpers.set_widget_value(
+                self.guiactions.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
             for entry in self.guiactions.filter_secure_list:
-                guiactions.gtk_widgets["filter-secure"].append(entry["id"], entry["text"])
+                guiactions.gtk_widgets["filter-secure"].append(
+                    entry["id"], entry["text"])
             guiactions.cb_game_treeview_togglebutton_clicked()
             guiactions.cb_server_filters_changed()
             try:
@@ -661,7 +702,8 @@ class App(Gtk.Application):
             about_action = Gio.SimpleAction.new("about", None)
             quit_action = Gio.SimpleAction.new("quit", None)
 
-            about_action.connect("activate", self.guiactions.cb_about, main_window)
+            about_action.connect(
+                "activate", self.guiactions.cb_about, main_window)
             quit_action.connect("activate", self.guiactions.cb_quit, self)
 
             self.add_action(about_action)
@@ -669,7 +711,8 @@ class App(Gtk.Application):
 
             self.set_app_menu(self.builder.get_object("app-menu"))
 
-            gtk_helpers.set_object_properties(self.guiactions.gtk_widgets, GTK_STRING_TABLE)
+            gtk_helpers.set_object_properties(
+                self.guiactions.gtk_widgets, GTK_STRING_TABLE)
 
             self.status = "up"
         except Exception as e:
@@ -687,4 +730,5 @@ class App(Gtk.Application):
             helpers.debug_msg([GTK_MSG, i18n._("Shutting down")])
         else:
             self.status = "start failed"
-            helpers.debug_msg([GTK_MSG, i18n._("Initialization failed. Aborting.")])
+            helpers.debug_msg(
+                [GTK_MSG, i18n._("Initialization failed. Aborting.")])

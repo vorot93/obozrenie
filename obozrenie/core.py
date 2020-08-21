@@ -80,6 +80,7 @@ class GameTable:
 
     Please bear in mind that all read accessor methods return deep copies, therefore cleaning up the result is programmer's responsibility.
     """
+
     def __init__(self, gameconfig_object):
         self.QUERY_STATUS = helpers.enum('EMPTY', 'WORKING', 'READY', 'ERROR')
         self.__game_table = self.create_game_table(gameconfig_object)
@@ -98,16 +99,19 @@ class GameTable:
 
                 name = str(gameconfig_object[game_id]["name"])
                 adapter = str(gameconfig_object[game_id]['adapter'])
-                launch_pattern = str(gameconfig_object[game_id]["launch_pattern"])
+                launch_pattern = str(
+                    gameconfig_object[game_id]["launch_pattern"])
                 try:
-                    steam_app_id = str(gameconfig_object[game_id]["steam_app_id"])
+                    steam_app_id = str(
+                        gameconfig_object[game_id]["steam_app_id"])
                 except KeyError:
                     pass
 
                 # Create dict groups
                 with game_table_temp[game_id] as game_table_entry_temp:
                     game_table_entry_temp["info"] = helpers.ThreadSafeDict()
-                    game_table_entry_temp["settings"] = helpers.ThreadSafeDict()
+                    game_table_entry_temp["settings"] = helpers.ThreadSafeDict(
+                    )
                     game_table_entry_temp["servers"] = helpers.ThreadSafeList()
 
                     try:
@@ -169,7 +173,8 @@ class GameTable:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             game_info = helpers.deepcopy(game_entry["info"])
         return game_info
@@ -185,7 +190,8 @@ class GameTable:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             game_settings = helpers.deepcopy(game_entry["settings"])
 
@@ -198,13 +204,15 @@ class GameTable:
         elif option in ('', None):
             faulty_param = i18n._('option')
         if faulty_param is not None:
-            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
+            raise ValueError(
+                i18n._('Invalid %(param)s specified.') % {'param': param})
 
         with self.__game_table as game_table:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             game_entry["settings"][option] = value
 
@@ -216,7 +224,8 @@ class GameTable:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             query_status = helpers.deepcopy(game_entry["query-status"])
         return query_status
@@ -229,7 +238,8 @@ class GameTable:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             game_entry["query-status"] = status
 
@@ -240,16 +250,19 @@ class GameTable:
         elif host in ('', None):
             faulty_param = i18n._('hostname')
         if faulty_param is not None:
-            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
+            raise ValueError(
+                i18n._('Invalid %(param)s specified.') % {'param': param})
 
         with self.__game_table as game_table:
             try:
                 game_entry = game_table[game]
             except KeyError:
-                raise ValueError(i18n._('Game not found: %(game)s') % {'game': game})
+                raise ValueError(
+                    i18n._('Game not found: %(game)s') % {'game': game})
 
             server_table = helpers.deepcopy(game_entry["servers"])
-        server_entry = server_table[helpers.search_dict_table(server_table, "host", host)]
+        server_entry = server_table[helpers.search_dict_table(
+            server_table, "host", host)]
         return server_entry
 
     def set_server_info(self, game: str, host: str, data) -> None:
@@ -261,10 +274,12 @@ class GameTable:
         elif isinstance(data, dict) is False:
             faulty_param = i18n._('server data')
         if faulty_param is not None:
-            raise ValueError(i18n._('Invalid %(param)s specified.') % {'param': param})
+            raise ValueError(
+                i18n._('Invalid %(param)s specified.') % {'param': param})
 
         with self.__game_table as game_table:
-            server_entry_index = game_table[helpers.search_dict_table(helpers.deepcopy(game_table), "host", host)]
+            server_entry_index = game_table[helpers.search_dict_table(
+                helpers.deepcopy(game_table), "host", host)]
             if server_entry_index is None:
                 self.append_server_info(game, data)
             else:
@@ -308,18 +323,22 @@ class Core:
             import pygeoip
             try:
                 open(GEOIP_DATA_FILE)
-                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {'geoip_data_file': GEOIP_DATA_FILE}])
+                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {
+                                  'geoip_data_file': GEOIP_DATA_FILE}])
                 self.geolocation = pygeoip
             except FileNotFoundError:
-                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation.")])
+                helpers.debug_msg(
+                    [CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation.")])
                 self.geolocation = None
         except ImportError:
-            helpers.debug_msg([CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
+            helpers.debug_msg(
+                [CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
             self.geolocation = None
 
     def update_server_list(self, game: str, stat_callback=None) -> None:
         """Updates server lists."""
-        stat_master_thread = threading.Thread(target=self.stat_master_target, args=(game, stat_callback))
+        stat_master_thread = threading.Thread(
+            target=self.stat_master_target, args=(game, stat_callback))
         stat_master_thread.daemon = True
         stat_master_thread.start()
 
@@ -333,8 +352,10 @@ class Core:
 
         # Start query if it's not up already
         if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:
-            self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.WORKING)
-            helpers.debug_msg([CORE_MSG, i18n._("Refreshing server list for %(game)s.") % {'game': game_name}])
+            self.game_table.set_query_status(
+                game, self.game_table.QUERY_STATUS.WORKING)
+            helpers.debug_msg([CORE_MSG, i18n._(
+                "Refreshing server list for %(game)s.") % {'game': game_name}])
             stat_master_cmd = adapters.adapter_table[adapter].stat_master
             temp_list = None
 
@@ -342,8 +363,10 @@ class Core:
                 temp_list = stat_master_cmd(game, game_info, master_list)
             except Exception as e:
                 helpers.debug_msg([CORE_MSG, e])
-                helpers.debug_msg([CORE_MSG, i18n._("Internal backend error for %(game)s.") % {'game': game_name}])
-                self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.ERROR)
+                helpers.debug_msg([CORE_MSG, i18n._(
+                    "Internal backend error for %(game)s.") % {'game': game_name}])
+                self.game_table.set_query_status(
+                    game, self.game_table.QUERY_STATUS.ERROR)
             else:
                 self.game_table.set_servers_data(game, temp_list)
 
@@ -352,10 +375,12 @@ class Core:
                     if self.geolocation is not None:
                         host = entry["host"].split(':')[0]
                         try:
-                            entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_addr(host)
+                            entry['country'] = self.geolocation.GeoIP(
+                                GEOIP_DATA_FILE).country_code_by_addr(host)
                         except OSError:
                             try:
-                                entry['country'] = self.geolocation.GeoIP(GEOIP_DATA_FILE).country_code_by_name(host)
+                                entry['country'] = self.geolocation.GeoIP(
+                                    GEOIP_DATA_FILE).country_code_by_name(host)
                             except:
                                 entry['country'] = ""
                         except:
@@ -363,7 +388,8 @@ class Core:
 
                 self.game_table.set_servers_data(game, temp_list)
 
-                self.game_table.set_query_status(game, self.game_table.QUERY_STATUS.READY)
+                self.game_table.set_query_status(
+                    game, self.game_table.QUERY_STATUS.READY)
 
         # Call post-stat callback
         if callback is not None:
@@ -390,7 +416,8 @@ class Core:
         except:
             pass
 
-        launch_process = threading.Thread(target=launch.launch_game, args=(game, launch_pattern, game_settings, host, port, password, steam_app_id))
+        launch_process = threading.Thread(target=launch.launch_game, args=(
+            game, launch_pattern, game_settings, host, port, password, steam_app_id))
         launch_process.daemon = True
         launch_process.start()
 
@@ -408,8 +435,10 @@ class Settings:
         self.default_game_settings_path = DEFAULT_GAME_SETTINGS_PATH
 
         # User configs
-        self.user_common_settings_path = os.path.join(profile_path, COMMON_SETTINGS_FILE)
-        self.user_game_settings_path = os.path.join(profile_path, GAME_SETTINGS_FILE)
+        self.user_common_settings_path = os.path.join(
+            profile_path, COMMON_SETTINGS_FILE)
+        self.user_game_settings_path = os.path.join(
+            profile_path, GAME_SETTINGS_FILE)
 
         self.dynamic_widget_table = get_game_options()
         self.common_settings_table = get_common_options()
@@ -420,10 +449,13 @@ class Settings:
 
     def load(self, callback_postgenload=None):
         """Loads configuration."""
-        default_common_settings_table = helpers.load_table(self.default_common_settings_path)
-        default_game_settings_table = helpers.load_table(self.default_game_settings_path)
+        default_common_settings_table = helpers.load_table(
+            self.default_common_settings_path)
+        default_game_settings_table = helpers.load_table(
+            self.default_game_settings_path)
 
-        user_common_settings_table = helpers.load_table(self.user_common_settings_path)
+        user_common_settings_table = helpers.load_table(
+            self.user_common_settings_path)
 
         # Load into common settings table
         for group in self.common_settings_table:
@@ -439,10 +471,12 @@ class Settings:
                 self.settings_table[group][option] = value
 
                 if callback_postgenload is not None:
-                    callback_postgenload(self.common_settings_table, group, option, value)
+                    callback_postgenload(
+                        self.common_settings_table, group, option, value)
 
         # Load game settings table
-        user_game_settings_table = helpers.load_table(self.user_game_settings_path)
+        user_game_settings_table = helpers.load_table(
+            self.user_game_settings_path)
 
         # Set game settings
         for game in self.core.game_table.get_game_set():
@@ -463,11 +497,14 @@ class Settings:
         # Compile game settings table
         user_game_settings_table = {}
         for game in self.core.game_table.get_game_set():
-            user_game_settings_table[game] = self.core.game_table.get_game_settings(game)
+            user_game_settings_table[game] = self.core.game_table.get_game_settings(
+                game)
 
         # Save game settings
-        helpers.save_table(self.user_game_settings_path, user_game_settings_table)
+        helpers.save_table(self.user_game_settings_path,
+                           user_game_settings_table)
 
 
 if __name__ == "__main__":
-    helpers.debug_msg([CORE_MSG, i18n._("This is the core module of Obozrenie Game Server Browser. Please run an appropriate UI instead.")])
+    helpers.debug_msg([CORE_MSG, i18n._(
+        "This is the core module of Obozrenie Game Server Browser. Please run an appropriate UI instead.")])

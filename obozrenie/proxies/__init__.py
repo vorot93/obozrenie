@@ -31,4 +31,5 @@ proxy_list = ('qstat_process', 'requests_http')
 for proxy in proxy_list:
     proxy_table[proxy] = globals()[proxy]
 
-helpers.debug_msg([CORE_MSG, "%(proxy_num)i proxies loaded successfully" % {'proxy_num': len(proxy_list)}])
+helpers.debug_msg([CORE_MSG, "%(proxy_num)i proxies loaded successfully" % {
+                  'proxy_num': len(proxy_list)}])
