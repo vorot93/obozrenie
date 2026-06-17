@@ -18,6 +18,8 @@
 
 
 import json
+import os
+import tempfile
 import unittest
 import xmltodict
 
@@ -237,10 +239,6 @@ class RigsofrodsTests(unittest.TestCase):
         from obozrenie.adapters import rigsofrods
         result = rigsofrods.stat_master('rigsofrods', {}, [])
         self.assertIsInstance(result, list)
-
-
-import os
-import tempfile
 
 
 class TomlTableTests(unittest.TestCase):
