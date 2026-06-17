@@ -2,13 +2,6 @@
 
 Simple and easy to use game server browser for Linux.
 
-[![GNU GPL](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://gnu.org/licenses/gpl.html)
-[![Docker Pulls](https://img.shields.io/docker/pulls/vorot93/obozrenie.svg)](https://hub.docker.com/r/vorot93/obozrenie/)
-
-[![Build Status](https://img.shields.io/travis/vorot93/obozrenie.svg)](https://travis-ci.org/vorot93/obozrenie)
-[![Climate](https://img.shields.io/codeclimate/github/vorot93/obozrenie.svg)](https://codeclimate.com/github/vorot93/obozrenie)
-[![codecov.io](https://img.shields.io/codecov/c/github/vorot93/obozrenie.svg)](https://codecov.io/github/vorot93/obozrenie)
-
 ## Project status note (2016-06-13)
 Right now Obozrenie is considered feature-complete and ready for general usage.
 
@@ -29,16 +22,16 @@ Obozrenie is a game server browser that can be used to access information about 
 
 ## Dependencies
 ### Required:
-- [Python 3.2+](https://python.org)
-- [PythonGI with GTK+ 3.10+ and higher](https://wiki.gnome.org/Projects/PyGObject)
-- [PyXDG](http://freedesktop.org/Software/pyxdg)
-- [python-pytoml](https://github.com/avakar/pytoml)
-- [python-xmltodict](https://github.com/martinblech/xmltodict)
-- [python-setuptools](http://pypi.python.org/pypi/setuptools)
+- [Python 3.11+](https://python.org)
+- [PyGObject with GTK+ 3](https://pygobject.gnome.org)
+- [PyXDG](https://www.freedesktop.org/wiki/Software/pyxdg/)
+- [tomli-w](https://github.com/hukkin/tomli-w) (TOML writing; reading uses the standard-library `tomllib`)
+- [xmltodict](https://github.com/martinblech/xmltodict)
+- [requests](https://requests.readthedocs.io)
 
 ### Optional:
 - [QStat](https://github.com/multiplay/qstat) - for QStat backend support
-- [Babel](http://babel.pocoo.org) - for translation support
+- [Babel](https://babel.pocoo.org) - for translation support
 - [pygeoip](https://github.com/appliedsec/pygeoip) with a legacy MaxMind **GeoIP Country** database (`GeoIP.dat`) - for geolocation support. On most distributions this ships in the `geoip-database` package at `/usr/share/GeoIP/GeoIP.dat` and needs no MaxMind account. Override the path via `GEOIP_DATA_FILE` in `obozrenie/global_settings.py`.
 
 ## Get it

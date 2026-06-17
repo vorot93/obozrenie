@@ -2,7 +2,7 @@ FROM ubuntu
 MAINTAINER Artem Vorotnikov <artem@vorotnikov.me>
 
 RUN apt update && \
-    apt install -y python3-pip python3-gi gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 gnome-icon-theme gnome-icon-theme-symbolic geoip-database qstat && \
+    apt install -y python3-pip python3-gi gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 gnome-icon-theme gnome-icon-theme-symbolic qstat && \
     ln -sf /usr/bin/quakestat /usr/bin/qstat
 
 RUN dpkg-reconfigure locales && \
