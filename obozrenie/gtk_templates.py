@@ -18,6 +18,8 @@
 
 """Contains templates for insertion into GUI body"""
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import obozrenie.gtk_helpers as gtk_helpers

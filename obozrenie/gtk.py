@@ -19,6 +19,15 @@
 """Simple and easy to use game server browser."""
 
 
+import ast
+import os
+import signal
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import GdkPixbuf, GLib, Gio, Gtk
+
 import obozrenie.gtk_templates as templates
 import obozrenie.core as core
 import obozrenie.gtk_helpers as gtk_helpers
@@ -26,14 +35,6 @@ import obozrenie.helpers as helpers
 import obozrenie.i18n as i18n
 from obozrenie.global_strings import *
 from obozrenie.global_settings import *
-from gi.repository import GdkPixbuf, GLib, Gio, Gtk
-import ast
-import os
-import signal
-
-import gi
-[gi.require_version(module, version)
- for module, version in (('GdkPixbuf', '2.0'), ('Gtk', '3.0'))]
 
 
 class GUIActions:
