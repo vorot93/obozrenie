@@ -1,3 +1,7 @@
 __pycache__
 *.mo
 .coverage
+
+# Python virtualenv
+.venv/
+*.egg-info/
