@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obozrenie"
+version = "1"
+description = "Simple and easy to use game server browser"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Artem Vorotnikov", email = "artem@vorotnikov.me" }]
+license = { text = "GPL-3.0-only" }
+dependencies = [
+    "xmltodict",
+    "pygeoip",
+    "pyxdg",
+    "tomli-w",
+    "babel",
+    "requests",
+]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Topic :: Games/Entertainment",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/obozrenie/obozrenie"
+
+[tool.setuptools]
+packages = ["obozrenie", "obozrenie.adapters", "obozrenie.proxies"]
+
+[tool.setuptools.data-files]
+"share/applications" = ["assets/applications/*"]
+"share/icons/hicolor/scalable/apps" = ["assets/icons/hicolor/scalable/apps/*"]
+"share/obozrenie/settings/defaults" = ["assets/obozrenie/settings/defaults/*"]
+"share/obozrenie/settings/internal" = ["assets/obozrenie/settings/internal/game_lists.toml"]
+"share/obozrenie/settings/internal/backends" = ["assets/obozrenie/settings/internal/backends/*"]
+"share/obozrenie/ui" = ["assets/obozrenie/ui/*"]
+"share/pixmaps/obozrenie/flags" = ["assets/pixmaps/obozrenie/flags/*"]
+"share/pixmaps/obozrenie/games" = ["assets/pixmaps/obozrenie/games/*"]
+"share" = ["README.md", "requirements.txt", "COPYING"]
