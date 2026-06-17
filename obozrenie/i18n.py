@@ -24,5 +24,5 @@ from obozrenie.global_settings import *
 current_locale, encoding = locale.getdefaultlocale()
 
 t = gettext.translation(APPLICATION_ID, localedir=LOCALE_DIR, languages=[
-                        current_locale], codeset=encoding, fallback=True)
+                        current_locale], fallback=True)
 _ = t.gettext

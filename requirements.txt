@@ -1,6 +1,6 @@
 xmltodict
 pygeoip
 pyxdg
-pytoml
+tomli-w
 babel
 requests

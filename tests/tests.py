@@ -229,5 +229,25 @@ class RigsofrodsTests(unittest.TestCase):
         self.assertTrue(unit['expectation'] == unit['result'])
 
 
+import os
+import tempfile
+
+
+class TomlTableTests(unittest.TestCase):
+    """Tests for TOML load/save round-trip"""
+
+    def test_save_then_load_round_trip(self):
+        data = {"section": {"key": "value", "number": 42, "flag": True}}
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "nested", "table.toml")
+            helpers.save_table(path, data)
+            self.assertEqual(helpers.load_table(path), data)
+
+    def test_load_missing_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "does-not-exist.toml")
+            self.assertIsNone(helpers.load_table(path))
+
+
 if __name__ == "__main__":
     unittest.main()

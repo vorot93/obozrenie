@@ -22,7 +22,8 @@ import collections
 import copy
 import json
 import os
-import pytoml
+import tomllib
+import tomli_w
 import threading
 import time
 
@@ -202,21 +203,16 @@ def remove_all_occurences_from_list(target_list, value):
 def load_table(path):
     """Loads settings table into dict"""
     try:
-        table_open_object = open(path, 'r')
+        with open(path, 'rb') as table_open_object:
+            return tomllib.load(table_open_object)
     except FileNotFoundError:
         return None
-    table = pytoml.load(table_open_object)
-    return table
 
 
 def save_table(path, data):
     """Saves settings to a file"""
-    try:
-        table_open_object = open(path, 'w')
-    except FileNotFoundError:
-        try:
-            os.makedirs(os.path.dirname(path))
-        except OSError:
-            pass
-        table_open_object = open(path, 'x')
-    pytoml.dump(table_open_object, data)
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    with open(path, 'wb') as table_open_object:
+        tomli_w.dump(data, table_open_object)
