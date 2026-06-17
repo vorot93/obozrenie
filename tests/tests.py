@@ -228,6 +228,16 @@ class RigsofrodsTests(unittest.TestCase):
         unit = self.unit_adapt_server_list()
         self.assertTrue(unit['expectation'] == unit['result'])
 
+    def test_stat_master_returns_list_not_tuple(self):
+        """Adapter contract: stat_master returns a flat list of server dicts, not a (list, None) tuple.
+
+        Regression: the tuple return caused TypeError in Core.stat_master_target's
+        geolocation loop. Empty master_list => no network access.
+        """
+        from obozrenie.adapters import rigsofrods
+        result = rigsofrods.stat_master('rigsofrods', {}, [])
+        self.assertIsInstance(result, list)
+
 
 import os
 import tempfile

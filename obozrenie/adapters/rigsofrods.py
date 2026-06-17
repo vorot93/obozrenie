@@ -100,4 +100,4 @@ def stat_master(game: str, game_info: dict, master_list: list):
 
     ping.add_rtt_info(server_table)
 
-    return server_table, None
+    return server_table
