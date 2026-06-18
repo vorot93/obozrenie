@@ -175,13 +175,13 @@ class GUIActions:
         self.gtk_widgets["serverlist-notebook"].set_property(
             "page", self.serverlist_notebook_pages["welcome"])
 
-        # Load flags
+        # Load flags (independent of whether a geolocation DB is present)
         try:
-            import pygeoip
-            country_db = pygeoip.const.COUNTRY_CODES
+            import pycountry
+            country_codes = [country.alpha_2 for country in pycountry.countries]
             self.flag_icons = gtk_helpers.get_icon_dict(
-                country_db, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
-        except (ImportError, TypeError, AttributeError):
+                country_codes, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
+        except (ImportError, AttributeError):
             self.flag_icons = {}
         game_list = self.core.game_table.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(
