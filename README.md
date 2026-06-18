@@ -39,7 +39,7 @@ Obozrenie is a game server browser that can be used to access information about 
 ### Optional:
 - [QStat](https://github.com/multiplay/qstat) - for QStat backend support
 - [Babel](http://babel.pocoo.org) - for translation support
-- [PyGeoIP](https://github.com/appliedsec/pygeoip) with GeoIP database - for geolocation support
+- [pygeoip](https://github.com/appliedsec/pygeoip) with a legacy MaxMind **GeoIP Country** database (`GeoIP.dat`) - for geolocation support. On most distributions this ships in the `geoip-database` package at `/usr/share/GeoIP/GeoIP.dat` and needs no MaxMind account. Override the path via `GEOIP_DATA_FILE` in `obozrenie/global_settings.py`.
 
 ## Get it
 ### Docker

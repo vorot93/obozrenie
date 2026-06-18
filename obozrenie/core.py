@@ -19,6 +19,7 @@
 """Core functions for Obozrenie Game Server Browser."""
 
 import os
+import socket
 import threading
 
 from obozrenie.global_settings import *
@@ -322,18 +323,31 @@ class Core:
         try:
             import pygeoip
             try:
-                open(GEOIP_DATA_FILE)
+                self.geolocation = pygeoip.GeoIP(GEOIP_DATA_FILE, pygeoip.MEMORY_CACHE)
                 helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {
                                   'geoip_data_file': GEOIP_DATA_FILE}])
-                self.geolocation = pygeoip
-            except FileNotFoundError:
+            except (FileNotFoundError, OSError):
                 helpers.debug_msg(
                     [CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation.")])
                 self.geolocation = None
         except ImportError:
             helpers.debug_msg(
-                [CORE_MSG, i18n._("PyGeoIP not found. Disabling geolocation.")])
+                [CORE_MSG, i18n._("pygeoip not found. Disabling geolocation.")])
             self.geolocation = None
+
+    def _lookup_country(self, host: str) -> str:
+        """Resolve a host to an ISO country code.
+
+        Returns "unknown" when geolocation is disabled, the ISO country
+        code on success, or "" when the host cannot be resolved or located.
+        """
+        if self.geolocation is None:
+            return "unknown"
+        import pygeoip
+        try:
+            return self.geolocation.country_code_by_name(host) or ""
+        except (socket.gaierror, pygeoip.GeoIPError):
+            return ""
 
     def update_server_list(self, game: str, stat_callback=None) -> None:
         """Updates server lists."""
@@ -371,20 +385,8 @@ class Core:
                 self.game_table.set_servers_data(game, temp_list)
 
                 for entry in temp_list:
-                    entry['country'] = "unknown"
-                    if self.geolocation is not None:
-                        host = entry["host"].split(':')[0]
-                        try:
-                            entry['country'] = self.geolocation.GeoIP(
-                                GEOIP_DATA_FILE).country_code_by_addr(host)
-                        except OSError:
-                            try:
-                                entry['country'] = self.geolocation.GeoIP(
-                                    GEOIP_DATA_FILE).country_code_by_name(host)
-                            except:
-                                entry['country'] = ""
-                        except:
-                            pass
+                    host = entry["host"].split(':')[0]
+                    entry['country'] = self._lookup_country(host)
 
                 self.game_table.set_servers_data(game, temp_list)
 
