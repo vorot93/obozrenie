@@ -335,8 +335,11 @@ class GUIActions:
             return False
 
         def worker():
-            path = geoip.download_database(cancel_event, on_progress)
-            GLib.idle_add(on_done, path)
+            path = None
+            try:
+                path = geoip.download_database(cancel_event, on_progress)
+            finally:
+                GLib.idle_add(on_done, path)
 
         def on_response(dlg, response):
             if response == Gtk.ResponseType.ACCEPT:
