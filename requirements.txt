@@ -1,5 +1,4 @@
 xmltodict
-pygeoip
 geoip2
 pycountry
 pyxdg
