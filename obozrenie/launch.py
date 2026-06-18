@@ -137,10 +137,14 @@ def launch_game(game: str, launch_pattern: str, game_settings: dict, host: str, 
     try:
         path = os.path.expanduser(str(game_settings["path"]))
 
+        # Shared context passed to the launch pattern and the pre/post-launch hooks.
+        context = {"game": game, "path": path, "game_settings": game_settings,
+                   "host": host, "port": port, "password": password,
+                   "steam_app_id": steam_app_id}
+
         # Pre-launch
         try:
-            launch_cmd = globals()[launch_pattern + "_launch_pattern"](game=game, path=path,
-                                                                       game_settings=game_settings, host=host, port=port, password=password, steam_app_id=steam_app_id)
+            launch_cmd = globals()[launch_pattern + "_launch_pattern"](**context)
         except KeyError:
             raise Exception(
                 " ".join([LAUNCHER_MSG, i18n._("Launch pattern does not exist")]))
@@ -150,13 +154,13 @@ def launch_game(game: str, launch_pattern: str, game_settings: dict, host: str, 
         return e
     else:
         try:
-            globals()[launch_pattern + "_prelaunch_hook"]()
+            globals()[launch_pattern + "_prelaunch_hook"](**context)
         except KeyError:
             pass
 
         do_launch(launch_cmd)
 
         try:
-            globals()[launch_pattern + "_postlaunch_hook"]()
+            globals()[launch_pattern + "_postlaunch_hook"](**context)
         except KeyError:
             pass
