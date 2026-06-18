@@ -27,21 +27,56 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import GLib, GdkPixbuf, Gtk
 
 
+def _scale_keeping_aspect(loader, image_width, image_height, box):
+    """size-prepared handler: fit within box, preserving aspect ratio."""
+    box_width, box_height = box
+    scale = min(box_width / image_width, box_height / image_height)
+    loader.set_size(max(1, round(image_width * scale)),
+                    max(1, round(image_height * scale)))
+
+
+def _read_icon_bytes(path, icon_format):
+    """Read an icon file, normalising problematic SVGs.
+
+    Several bundled flag SVGs place a large comment/RDF metadata block
+    before the <svg> root element. That trips both gdk-pixbuf format
+    detection (which only sniffs the first ~1 KiB) and the SVG decoder
+    itself. Dropping everything before <svg> makes them load.
+    """
+    with open(path, "rb") as handle:
+        data = handle.read()
+    if icon_format == "svg":
+        start = data.find(b"<svg")
+        if start > 0:
+            data = b'<?xml version="1.0" encoding="UTF-8"?>\n' + data[start:]
+    return data
+
+
 def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
-    icon_is_set = False
+    """Load an icon pixbuf scaled to fit within width x height.
+
+    Uses an explicitly-typed PixbufLoader fed normalised bytes rather than
+    Pixbuf.new_from_file_at_size, so SVGs with a leading metadata block
+    still load. Aspect ratio is preserved, matching the previous behaviour.
+    """
     for icon_format in icon_formats:
+        path = os.path.join(icon_dir, entry.lower() + "." + icon_format)
+        if not os.path.isfile(path):
+            continue
         try:
-            icon = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(
-                icon_dir, entry.lower() + "." + icon_format), width, height)
-            icon_is_set = True
-            break
-        except GLib.GError:
-            pass
+            data = _read_icon_bytes(path, icon_format)
+            loader = GdkPixbuf.PixbufLoader.new_with_type(icon_format)
+            loader.connect("size-prepared", _scale_keeping_aspect,
+                           (width, height))
+            loader.write(data)
+            loader.close()
+            icon = loader.get_pixbuf()
+        except (GLib.GError, OSError):
+            continue
+        if icon is not None:
+            return icon
 
-    if icon_is_set is False:
-        raise FileNotFoundError
-
-    return icon
+    raise FileNotFoundError
 
 
 def get_icon_dict(key_list, icon_type, icon_formats, icon_dir, width, height, error_msg=None):

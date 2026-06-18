@@ -423,5 +423,36 @@ class CoreGeoIPTests(unittest.TestCase):
             self.assertEqual(c._lookup_country("nope.invalid"), "")
 
 
+class IconLoadingTests(unittest.TestCase):
+    """Tests for icon/flag pixbuf loading."""
+
+    def _gtk_helpers(self):
+        try:
+            from obozrenie import gtk_helpers
+        except (ImportError, ValueError):
+            self.skipTest("GTK/GdkPixbuf not available")
+        return gtk_helpers
+
+    def test_flag_svg_with_leading_comment_loads(self):
+        """Flag SVGs have a large comment/RDF block before <svg>; the loader
+        must still decode them (Pixbuf.new_from_file_at_size cannot)."""
+        gtk_helpers = self._gtk_helpers()
+        from obozrenie.global_settings import ICON_FLAGS_DIR
+        icon = gtk_helpers.get_icon_for_entry(
+            "US", "flag", ["svg"], ICON_FLAGS_DIR, 24, 18)
+        self.assertIsNotNone(icon)
+        # Scaled to fit within the 24x18 box, preserving aspect ratio.
+        self.assertLessEqual(icon.get_width(), 24)
+        self.assertLessEqual(icon.get_height(), 18)
+        self.assertTrue(icon.get_width() == 24 or icon.get_height() == 18)
+
+    def test_missing_icon_raises_file_not_found(self):
+        gtk_helpers = self._gtk_helpers()
+        from obozrenie.global_settings import ICON_FLAGS_DIR
+        with self.assertRaises(FileNotFoundError):
+            gtk_helpers.get_icon_for_entry(
+                "zz", "flag", ["svg"], ICON_FLAGS_DIR, 24, 18)
+
+
 if __name__ == "__main__":
     unittest.main()
