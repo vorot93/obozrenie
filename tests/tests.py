@@ -20,8 +20,11 @@
 import json
 import os
 import tempfile
+import threading
+import types
 import unittest
 import xmltodict
+from unittest import mock
 
 from obozrenie import helpers, adapters, i18n, launch
 
@@ -302,6 +305,62 @@ class TomlTableTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "does-not-exist.toml")
             self.assertIsNone(helpers.load_table(path))
+
+
+class GeoIPModuleTests(unittest.TestCase):
+    """Tests for the geoip discovery/download module."""
+
+    def test_find_database_prefers_system_path(self):
+        from obozrenie import geoip
+        with tempfile.TemporaryDirectory() as d:
+            sys_db = os.path.join(d, "system.mmdb")
+            cache_db = os.path.join(d, "cache.mmdb")
+            open(sys_db, "wb").close()
+            open(cache_db, "wb").close()
+            with mock.patch.object(geoip, "KNOWN_SYSTEM_PATHS", [sys_db]), \
+                 mock.patch.object(geoip, "CACHE_DB_PATH", cache_db):
+                self.assertEqual(geoip.find_database(), sys_db)
+
+    def test_find_database_falls_back_to_cache(self):
+        from obozrenie import geoip
+        with tempfile.TemporaryDirectory() as d:
+            cache_db = os.path.join(d, "cache.mmdb")
+            open(cache_db, "wb").close()
+            with mock.patch.object(geoip, "KNOWN_SYSTEM_PATHS",
+                                   [os.path.join(d, "missing.mmdb")]), \
+                 mock.patch.object(geoip, "CACHE_DB_PATH", cache_db):
+                self.assertEqual(geoip.find_database(), cache_db)
+
+    def test_find_database_returns_none_when_absent(self):
+        from obozrenie import geoip
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(geoip, "KNOWN_SYSTEM_PATHS",
+                                   [os.path.join(d, "a.mmdb")]), \
+                 mock.patch.object(geoip, "CACHE_DB_PATH",
+                                   os.path.join(d, "b.mmdb")):
+                self.assertIsNone(geoip.find_database())
+
+    def test_download_cancel_cleans_up_and_returns_none(self):
+        from obozrenie import geoip
+
+        class _FakeResp:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def raise_for_status(self): pass
+            headers = {"Content-Length": "100"}
+            def iter_content(self, chunk_size): yield b"x" * 10
+
+        with tempfile.TemporaryDirectory() as d:
+            cache_db = os.path.join(d, "cache.mmdb")
+            cancel = threading.Event()
+            cancel.set()
+            with mock.patch.object(geoip, "CACHE_DB_PATH", cache_db), \
+                 mock.patch.object(geoip.requests, "get",
+                                   return_value=_FakeResp()):
+                result = geoip.download_database(cancel)
+            self.assertIsNone(result)
+            self.assertFalse(os.path.exists(cache_db + ".part"))
+            self.assertFalse(os.path.exists(cache_db))
 
 
 if __name__ == "__main__":
