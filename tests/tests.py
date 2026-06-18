@@ -210,13 +210,29 @@ class QStatTests(unittest.TestCase):
 
 class RigsofrodsTests(unittest.TestCase):
     module = adapters.rigsofrods
+
     @classmethod
     def unit_parse_server_entry(cls):
-        spec_entry = [{'#text': '1 / 10', '@valign': 'middle'},
-                      {'#text': 'password', '@valign': 'middle'},
-                      {'@valign': 'middle', 'a': {'#text': 'My Little Server', '@href': 'rorserver://user:pass@localhost:12345/'}},
-                      {'#text': 'any', '@valign': 'middle'}]
-        spec_server_dict = {'player_count': 1, 'player_limit': 10, 'password': True, 'host': 'localhost:12345', 'name': 'My Little Server', 'terrain': 'any'}
+        """Check Rigs of Rods JSON server entry parsing (incl. player list)."""
+        spec_entry = {"has-password": True,
+                      "current-users": 1,
+                      "max-clients": 16,
+                      "verified": 1,
+                      "is-official": 0,
+                      "ip": "1.2.3.4",
+                      "port": 12000,
+                      "version": "RoRnet_2.45",
+                      "terrain-name": "Terrain A",
+                      "name": "My Little Server",
+                      "json-userlist": [{"username": "PlayerA", "is_bot": 0},
+                                        {"username": "RoRBot", "is_bot": 8}]}
+        spec_server_dict = {'player_count': 1,
+                            'player_limit': 16,
+                            'password': True,
+                            'name': 'My Little Server',
+                            'host': '1.2.3.4:12000',
+                            'terrain': 'Terrain A',
+                            'players': [{'name': 'PlayerA'}, {'name': 'RoRBot'}]}
 
         func = cls.module.parse_server_entry
         spec_args = {'entry': spec_entry}
@@ -231,19 +247,33 @@ class RigsofrodsTests(unittest.TestCase):
 
     @classmethod
     def unit_adapt_server_list(cls):
-        spec_html_string = "<table border='1'><tr><td><b>Players</b></td><td><b>Type</b></td><td><b>Name</b></td><td><b>Terrain</b></td></tr><tr><td valign='middle'>3 / 16</td><td valign='middle'>password</td><td valign='middle'><a href='rorserver://localhost:12345/'>My Little Server 1</a></td><td valign='middle'>Terrain A</td></tr><tr><td valign='middle'>1 / 9</td><td valign='middle'></td><td valign='middle'><a href='rorserver://localhost:54321/'>My Little Server 2</a></td><td valign='middle'>Terrain B</td></tr></table>"
-        spec_server_list = [{'player_count': 3, 'player_limit': 16, 'password': True, 'secure': False, 'game_id': 'rigsofrods', 'game_type': 'rigsofrods', 'host': 'localhost:12345', 'name': 'My Little Server 1', 'terrain': 'Terrain A'},
-                            {'player_count': 1, 'player_limit': 9, 'password': False, 'secure': False, 'game_id': 'rigsofrods', 'game_type': 'rigsofrods', 'host': 'localhost:54321', 'name': 'My Little Server 2', 'terrain': 'Terrain B'}]
+        """Check Rigs of Rods JSON list parsing and game tagging."""
+        spec_json_string = json.dumps([
+            {"has-password": False, "current-users": 3, "max-clients": 16,
+             "ip": "1.2.3.4", "port": 12000, "terrain-name": "Terrain A",
+             "name": "Server 1", "json-userlist": []},
+            {"has-password": True, "current-users": 1, "max-clients": 9,
+             "ip": "5.6.7.8", "port": 12001, "terrain-name": "Terrain B",
+             "name": "Server 2", "json-userlist": [{"username": "PlayerA"}]}])
+        spec_server_list = [
+            {'player_count': 3, 'player_limit': 16, 'password': False,
+             'name': 'Server 1', 'host': '1.2.3.4:12000', 'terrain': 'Terrain A',
+             'players': [], 'game_id': 'rigsofrods', 'game_type': 'rigsofrods',
+             'secure': False},
+            {'player_count': 1, 'player_limit': 9, 'password': True,
+             'name': 'Server 2', 'host': '5.6.7.8:12001', 'terrain': 'Terrain B',
+             'players': [{'name': 'PlayerA'}], 'game_id': 'rigsofrods',
+             'game_type': 'rigsofrods', 'secure': False}]
         spec_game = 'rigsofrods'
 
         func = cls.module.adapt_server_list
-        spec_args = {'game': spec_game, 'html_string': spec_html_string}
+        spec_args = {'game': spec_game, 'json_string': spec_json_string}
         spec_result = spec_server_list
 
         result = func(**spec_args)
         return {'expectation': spec_result, 'result': result}
 
-    def test_parse_server_entry(self):
+    def test_adapt_server_list(self):
         unit = self.unit_adapt_server_list()
         self.assertTrue(unit['expectation'] == unit['result'])
 

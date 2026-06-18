@@ -16,87 +16,69 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
 import json
-import requests
-import xmltodict
 
-from obozrenie.global_settings import *
+import requests
+
 from obozrenie.global_strings import *
 
 import obozrenie.i18n as i18n
-import obozrenie.helpers as helpers
 import obozrenie.ping as ping
 
-BACKEND_CONFIG = os.path.join(
-    SETTINGS_INTERNAL_BACKENDS_DIR, "rigsofrods.toml")
 RIGSOFRODS_MSG = BACKENDCAT_MSG + i18n._("Rigs of Rods:")
 
-
-def parse_server_entry(entry: list) -> dict:
-    players = entry[0]['#text'].split('/')
-
-    try:
-        password = bool(entry[1]['#text'].strip())
-    except KeyError:
-        password = False
-
-    server_dict = {'player_count': int(players[0]),
-                   'player_limit': int(players[1]),
-                   'password': password,
-                   'name': str(entry[2]['a']['#text']),
-                   'host': str(entry[2]['a']['@href']).replace('rorserver://', '').replace('user:pass@', '').strip('/'),
-                   'terrain': str(entry[3]['#text'])}
-
-    return server_dict
+HTTP_TIMEOUT = 10
 
 
-def adapt_server_list(game: str, html_string: str) -> list:
-    html_dict = json.loads(json.dumps(xmltodict.parse(html_string)))
+def parse_server_entry(entry: dict) -> dict:
+    """Map one Rigs of Rods JSON server object to a server dict."""
+    return {'player_count': int(entry['current-users']),
+            'player_limit': int(entry['max-clients']),
+            'password': bool(entry['has-password']),
+            'name': str(entry['name']),
+            'host': '%s:%s' % (entry['ip'], entry['port']),
+            'terrain': str(entry['terrain-name']),
+            'players': [{'name': str(player['username'])}
+                        for player in (entry.get('json-userlist') or [])]}
 
+
+def adapt_server_list(game: str, json_string: str) -> list:
+    """Parse a Rigs of Rods JSON server-list response into a list of server dicts."""
     server_list = []
 
-    for html_entry in html_dict['table']['tr'][1:]:
+    for json_entry in json.loads(json_string):
         try:
-            entry = parse_server_entry(html_entry['td'])
+            entry = parse_server_entry(json_entry)
             entry['game_id'] = game
             entry['game_type'] = game
             entry['secure'] = False
 
             server_list.append(entry)
-        except:
+        except (KeyError, TypeError, ValueError):
             continue
 
     return server_list
 
 
-def stat_master(game: str, game_info: dict, master_list: list):
+def stat_master(game: str, game_info: dict, master_list: list) -> list:
     """Stats the master server"""
     server_table = []
 
-    backend_config_object = helpers.load_table(BACKEND_CONFIG)
-
-    protocol = backend_config_object["protocol"]["version"]
-
     for master_uri in master_list:
-        master_page_uri = master_uri.strip('/') + '/?version=' + protocol
         try:
-            master_page_object = requests.get(master_page_uri)
-            master_page = master_page_object.text
-        except:
+            response = requests.get(master_uri, timeout=HTTP_TIMEOUT)
+            response.raise_for_status()
+        except requests.RequestException:
             print(i18n._(RIGSOFRODS_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {
-                  'uri': master_page_uri, 'code': "unknown"})
+                  'uri': master_uri, 'code': "unknown"})
             continue
 
         try:
-            temp_table = adapt_server_list(game, master_page)
-        except:
+            server_table += adapt_server_list(game, response.text)
+        except ValueError:
             print(i18n._(RIGSOFRODS_MSG), i18n._(
-                "Error parsing URI %(uri)s.") % {'uri': master_page_uri})
+                "Error parsing URI %(uri)s.") % {'uri': master_uri})
             continue
-
-        server_table += temp_table
 
     ping.add_rtt_info(server_table)
 

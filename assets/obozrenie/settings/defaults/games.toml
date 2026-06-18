@@ -1,6 +1,6 @@
 [rigsofrods]
 path = "RoR"
-master_uri = ["http://multiplayer.rigsofrods.com/server-list"]
+master_uri = ["https://api.rigsofrods.org/server-list?json=true"]
 
 [minetest]
 path = "minetest"
