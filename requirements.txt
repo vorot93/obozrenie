@@ -1,6 +1,5 @@
 xmltodict
 maxminddb
-pycountry
 pyxdg
 tomli-w
 babel

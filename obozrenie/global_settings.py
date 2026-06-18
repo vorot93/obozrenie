@@ -40,7 +40,6 @@ PROJECT_DIR = os.path.join(ASSETS_DIR, 'obozrenie')
 ICON_NAME = "obozrenie-short"
 
 ICON_DIR = os.path.join(ASSETS_DIR, 'pixmaps', 'obozrenie')
-ICON_FLAGS_DIR = os.path.join(ICON_DIR, 'flags')
 ICON_GAMES_DIR = os.path.join(ICON_DIR, 'games')
 
 if is_run_from_git_workdir():

@@ -32,7 +32,7 @@ Obozrenie is a game server browser that can be used to access information about 
 ### Optional:
 - [QStat](https://github.com/multiplay/qstat) - for QStat backend support
 - [Babel](https://babel.pocoo.org) - for translation support
-- [maxminddb](https://github.com/maxmind/MaxMind-DB-Reader-python) and [pycountry](https://github.com/pycountry/pycountry) - for geolocation support. Obozrenie reads a MaxMind DB country database (`.mmdb`). It probes common system locations (e.g. `/usr/share/GeoIP/`); if none is found, the GTK frontend offers to download a free [DB-IP](https://db-ip.com/) country database into your user cache. No MaxMind account is required.
+- [maxminddb](https://github.com/maxmind/MaxMind-DB-Reader-python) - for geolocation support. Obozrenie reads a MaxMind DB country database (`.mmdb`) and shows server locations as country flag emoji. It probes common system locations (e.g. `/usr/share/GeoIP/`); if none is found, the GTK frontend offers to download a free [DB-IP](https://db-ip.com/) country database into your user cache. No MaxMind account is required.
 
 ## Get it
 ### Docker

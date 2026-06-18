@@ -13,7 +13,6 @@ license = { text = "GPL-3.0-only" }
 dependencies = [
     "xmltodict",
     "maxminddb",
-    "pycountry",
     "pyxdg",
     "tomli-w",
     "babel",
@@ -40,6 +39,5 @@ packages = ["obozrenie", "obozrenie.adapters", "obozrenie.proxies"]
 "share/obozrenie/settings/internal" = ["assets/obozrenie/settings/internal/game_lists.toml"]
 "share/obozrenie/settings/internal/backends" = ["assets/obozrenie/settings/internal/backends/*"]
 "share/obozrenie/ui" = ["assets/obozrenie/ui/*"]
-"share/pixmaps/obozrenie/flags" = ["assets/pixmaps/obozrenie/flags/*"]
 "share/pixmaps/obozrenie/games" = ["assets/pixmaps/obozrenie/games/*"]
 "share" = ["README.md", "requirements.txt", "COPYING"]

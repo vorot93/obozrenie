@@ -424,7 +424,16 @@ class CoreGeoIPTests(unittest.TestCase):
 
 
 class IconLoadingTests(unittest.TestCase):
-    """Tests for icon/flag pixbuf loading."""
+    """Tests for icon pixbuf loading (get_icon_for_entry)."""
+
+    # An SVG whose <svg> root is preceded by a >1 KiB comment block, like
+    # the bundled assets that broke gdk-pixbuf format sniffing.
+    _SVG_WITH_LEADING_COMMENT = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<!-- ' + 'x' * 1200 + ' -->\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480">'
+        '<rect width="640" height="480" fill="red"/></svg>'
+    )
 
     def _gtk_helpers(self):
         try:
@@ -433,25 +442,23 @@ class IconLoadingTests(unittest.TestCase):
             self.skipTest("GTK/GdkPixbuf not available")
         return gtk_helpers
 
-    def test_flag_svg_with_leading_comment_loads(self):
-        """Flag SVGs have a large comment/RDF block before <svg>; the loader
-        must still decode them (Pixbuf.new_from_file_at_size cannot)."""
+    def test_svg_with_leading_comment_loads(self):
         gtk_helpers = self._gtk_helpers()
-        from obozrenie.global_settings import ICON_FLAGS_DIR
-        icon = gtk_helpers.get_icon_for_entry(
-            "US", "flag", ["svg"], ICON_FLAGS_DIR, 24, 18)
-        self.assertIsNotNone(icon)
-        # Scaled to fit within the 24x18 box, preserving aspect ratio.
-        self.assertLessEqual(icon.get_width(), 24)
-        self.assertLessEqual(icon.get_height(), 18)
-        self.assertTrue(icon.get_width() == 24 or icon.get_height() == 18)
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "xx.svg"), "w") as handle:
+                handle.write(self._SVG_WITH_LEADING_COMMENT)
+            icon = gtk_helpers.get_icon_for_entry(
+                "xx", "flag", ["svg"], d, 24, 18)
+            self.assertIsNotNone(icon)
+            self.assertLessEqual(icon.get_width(), 24)
+            self.assertLessEqual(icon.get_height(), 18)
+            self.assertTrue(icon.get_width() == 24 or icon.get_height() == 18)
 
     def test_missing_icon_raises_file_not_found(self):
         gtk_helpers = self._gtk_helpers()
-        from obozrenie.global_settings import ICON_FLAGS_DIR
-        with self.assertRaises(FileNotFoundError):
-            gtk_helpers.get_icon_for_entry(
-                "zz", "flag", ["svg"], ICON_FLAGS_DIR, 24, 18)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(FileNotFoundError):
+                gtk_helpers.get_icon_for_entry("zz", "flag", ["svg"], d, 24, 18)
 
 
 class CountryEmojiTests(unittest.TestCase):
