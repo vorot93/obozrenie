@@ -22,6 +22,7 @@
 import ast
 import os
 import signal
+import threading
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -30,6 +31,7 @@ from gi.repository import GdkPixbuf, GLib, Gio, Gtk
 
 import obozrenie.gtk_templates as templates
 import obozrenie.core as core
+from obozrenie import geoip
 import obozrenie.gtk_helpers as gtk_helpers
 import obozrenie.helpers as helpers
 import obozrenie.i18n as i18n
@@ -286,6 +288,72 @@ class GUIActions:
         about_dialog = Gtk.AboutDialog(**kwargs)
         about_dialog.run()
         about_dialog.destroy()
+
+    def prompt_geoip_download(self, parent):
+        """Offer to download a GeoIP database when none is present.
+
+        Modal dialog. On agreement, downloads on a background thread with
+        a cancellable progress bar, then loads the DB into the core.
+        """
+        if self.core.geolocation is not None:
+            return
+
+        dialog = Gtk.Dialog(
+            title=i18n._("Download GeoIP database?"),
+            transient_for=parent,
+            modal=True)
+        dialog.add_button(i18n._("Not now"), Gtk.ResponseType.CANCEL)
+        download_button = dialog.add_button(
+            i18n._("Download"), Gtk.ResponseType.ACCEPT)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_border_width(12)
+        label = Gtk.Label(
+            label=i18n._("Server geolocation needs a country database. "
+                         "Download it now (a few megabytes)?"))
+        label.set_line_wrap(True)
+        content.add(label)
+        progress = Gtk.ProgressBar(show_text=True)
+        content.add(progress)
+        content.show_all()
+        progress.hide()
+
+        cancel_event = threading.Event()
+
+        def on_progress(downloaded, total):
+            if total > 0:
+                fraction = downloaded / total
+                GLib.idle_add(progress.set_fraction, fraction)
+            else:
+                GLib.idle_add(progress.pulse)
+
+        def on_done(path):
+            if path is not None:
+                self.core.load_geoip(path)
+            dialog.destroy()
+            return False
+
+        def worker():
+            path = geoip.download_database(cancel_event, on_progress)
+            GLib.idle_add(on_done, path)
+
+        def on_response(dlg, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                # Enter download mode: swap buttons for a single Cancel.
+                download_button.set_sensitive(False)
+                dlg.set_response_sensitive(Gtk.ResponseType.CANCEL, True)
+                label.set_text(i18n._("Downloading GeoIP database…"))
+                progress.show()
+                thread = threading.Thread(target=worker, daemon=True)
+                thread.start()
+            else:
+                # Cancel: abort any in-flight download and close.
+                cancel_event.set()
+                dlg.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show()
 
     @staticmethod
     def cb_hide(widget, *args):
@@ -724,6 +792,7 @@ class App(Gtk.Application):
     def on_activate(self, app):
         window = self.guiactions.gtk_widgets["main-window"]
         window.show_all()
+        GLib.idle_add(self.guiactions.prompt_geoip_download, window)
 
     def on_shutdown(self, app):
         if self.status == "up":
