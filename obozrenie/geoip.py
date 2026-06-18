@@ -19,7 +19,6 @@
 """GeoIP database discovery and download for Obozrenie."""
 
 import os
-import threading
 
 import requests
 from xdg import BaseDirectory
@@ -85,7 +84,8 @@ def download_database(cancel_event, progress_cb=None):
                     downloaded += len(chunk)
                     if progress_cb is not None:
                         progress_cb(downloaded, total)
-        geoip2.database.Reader(tmp_path).close()
+        with geoip2.database.Reader(tmp_path):
+            pass
         os.replace(tmp_path, CACHE_DB_PATH)
         return CACHE_DB_PATH
     except (requests.RequestException, OSError,
