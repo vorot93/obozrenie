@@ -177,14 +177,6 @@ class GUIActions:
         self.gtk_widgets["serverlist-notebook"].set_property(
             "page", self.serverlist_notebook_pages["welcome"])
 
-        # Load flags (independent of whether a geolocation DB is present)
-        try:
-            import pycountry
-            country_codes = [country.alpha_2 for country in pycountry.countries]
-            self.flag_icons = gtk_helpers.get_icon_dict(
-                country_codes, 'flag', ['svg'], ICON_FLAGS_DIR, 24, 18)
-        except (ImportError, AttributeError):
-            self.flag_icons = {}
         game_list = self.core.game_table.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(
             game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
@@ -515,7 +507,6 @@ class GUIActions:
         model_format = self.server_list_model_format
 
         game_icons = self.game_icons
-        flag_icons = self.flag_icons
 
         # Clears the model
 
@@ -549,8 +540,8 @@ class GUIActions:
             else:
                 entry["secure_icon"] = None
 
-            # Country flags
-            entry["country_icon"] = flag_icons.get(country)
+            # Country flag (emoji derived from the ISO country code)
+            entry["country_icon"] = gtk_helpers.country_code_to_flag_emoji(country)
 
             # Filtering stuff
             entry["full"] = entry["player_count"] >= entry["player_limit"]

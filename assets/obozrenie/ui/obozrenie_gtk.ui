@@ -115,7 +115,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
       <!-- column-name secure_icon -->
       <column type="gchararray"/>
       <!-- column-name country_icon -->
-      <column type="GdkPixbuf"/>
+      <column type="gchararray"/>
       <!-- column-name full -->
       <column type="gboolean"/>
       <!-- column-name empty -->
@@ -406,9 +406,9 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="title" translatable="yes">serverlist-view-host-column</property>
                         <property name="sort_column_id">0</property>
                         <child>
-                          <object class="GtkCellRendererPixbuf" id="CountryIcon_CellRenderer"/>
+                          <object class="GtkCellRendererText" id="CountryIcon_CellRenderer"/>
                           <attributes>
-                            <attribute name="pixbuf">15</attribute>
+                            <attribute name="text">15</attribute>
                           </attributes>
                         </child>
                         <child>
