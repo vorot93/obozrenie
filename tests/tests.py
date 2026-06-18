@@ -363,5 +363,41 @@ class GeoIPModuleTests(unittest.TestCase):
             self.assertFalse(os.path.exists(cache_db))
 
 
+class CoreGeoIPTests(unittest.TestCase):
+    """Tests for Core geolocation lookups."""
+
+    def _make_core(self):
+        from obozrenie import core
+        c = core.Core()
+        c.geolocation = None
+        return c
+
+    def test_lookup_country_disabled_returns_unknown(self):
+        c = self._make_core()
+        self.assertEqual(c._lookup_country("example.com"), "unknown")
+
+    def test_lookup_country_success_returns_iso_code(self):
+        import socket
+        from obozrenie import core
+
+        class _FakeReader:
+            def country(self, ip):
+                return types.SimpleNamespace(
+                    country=types.SimpleNamespace(iso_code="US"))
+
+        c = self._make_core()
+        c.geolocation = _FakeReader()
+        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
+            self.assertEqual(c._lookup_country("example.com"), "US")
+
+    def test_lookup_country_unresolvable_returns_empty(self):
+        import socket
+        c = self._make_core()
+        c.geolocation = object()  # never called; resolution fails first
+        with mock.patch.object(socket, "gethostbyname",
+                               side_effect=socket.gaierror):
+            self.assertEqual(c._lookup_country("nope.invalid"), "")
+
+
 if __name__ == "__main__":
     unittest.main()

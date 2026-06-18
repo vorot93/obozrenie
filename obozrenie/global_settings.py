@@ -66,8 +66,6 @@ PROFILE_PATH = os.path.join(BaseDirectory.xdg_config_home, 'obozrenie')
 
 GAME_CONFIG_FILE = os.path.join(SETTINGS_INTERNAL_DIR, "game_lists.toml")
 
-GEOIP_DATA_FILE = os.path.join(SYSTEM_DATA_DIR, 'GeoIP', 'GeoIP.dat')
-
 UI_DIR = os.path.join(PROJECT_DIR, "ui")
 GTK_UI_FILE = os.path.join(UI_DIR, "obozrenie_gtk.ui")
 GTK_APPMENU_FILE = os.path.join(UI_DIR, "obozrenie_gtk_appmenu.ui")

@@ -26,7 +26,7 @@ from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 from obozrenie.option_lists import *
 
-from obozrenie import i18n, helpers, adapters, launch
+from obozrenie import i18n, helpers, adapters, launch, geoip
 
 
 class GameTable:
@@ -320,19 +320,24 @@ class Core:
     def __init__(self):
         self.game_table = GameTable(helpers.load_table(GAME_CONFIG_FILE))
 
-        try:
-            import pygeoip
-            try:
-                self.geolocation = pygeoip.GeoIP(GEOIP_DATA_FILE, pygeoip.MEMORY_CACHE)
-                helpers.debug_msg([CORE_MSG, i18n._("GeoIP data file %(geoip_data_file)s opened successfully.") % {
-                                  'geoip_data_file': GEOIP_DATA_FILE}])
-            except (FileNotFoundError, OSError):
-                helpers.debug_msg(
-                    [CORE_MSG, i18n._("GeoIP data file not found. Disabling geolocation.")])
-                self.geolocation = None
-        except ImportError:
+        self.geolocation = None
+        path = geoip.find_database()
+        if path is not None:
+            self.load_geoip(path)
+        else:
             helpers.debug_msg(
-                [CORE_MSG, i18n._("pygeoip not found. Disabling geolocation.")])
+                [CORE_MSG, i18n._("GeoIP database not found. Disabling geolocation.")])
+
+    def load_geoip(self, path: str) -> None:
+        """Open a geoip2 database and enable geolocation."""
+        import geoip2.database
+        try:
+            self.geolocation = geoip2.database.Reader(path)
+            helpers.debug_msg([CORE_MSG, i18n._("GeoIP database %(path)s opened successfully.") % {
+                              'path': path}])
+        except (OSError, ValueError):
+            helpers.debug_msg(
+                [CORE_MSG, i18n._("Failed to open GeoIP database. Disabling geolocation.")])
             self.geolocation = None
 
     def _lookup_country(self, host: str) -> str:
@@ -343,10 +348,11 @@ class Core:
         """
         if self.geolocation is None:
             return "unknown"
-        import pygeoip
+        import geoip2.errors
         try:
-            return self.geolocation.country_code_by_name(host) or ""
-        except (socket.gaierror, pygeoip.GeoIPError):
+            ip = socket.gethostbyname(host)
+            return self.geolocation.country(ip).country.iso_code or ""
+        except (socket.gaierror, geoip2.errors.AddressNotFoundError):
             return ""
 
     def update_server_list(self, game: str, stat_callback=None) -> None:
