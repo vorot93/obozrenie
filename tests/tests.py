@@ -190,6 +190,23 @@ class QStatTests(unittest.TestCase):
         unit = self.unit_parse_server_entry()
         self.assertTrue(unit['expectation'] == unit['result'])
 
+    def test_build_host_list_preserves_order_and_dedupes(self):
+        """Masters must keep their configured order and be de-duplicated.
+
+        qstat returns zero servers when the *last* master in its input times out,
+        so the configured order (reachable masters listed last) must survive.
+        Regression: list(set(...)) shuffled the order per process (hash seed),
+        intermittently moving a dead master last -> Quake III showed no servers.
+        """
+        master_list = ["master://dead1.example.net:27950",
+                       "master://dead2.example.net:27950",
+                       "master://live.example.net:27950",
+                       "master://dead1.example.net:27950"]  # duplicate dropped, order kept
+        result = adapters.qstat.build_host_list(master_list)
+        self.assertEqual(result, ["dead1.example.net:27950",
+                                  "dead2.example.net:27950",
+                                  "live.example.net:27950"])
+
 
 class RigsofrodsTests(unittest.TestCase):
     module = adapters.rigsofrods

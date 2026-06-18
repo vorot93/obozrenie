@@ -195,9 +195,24 @@ def adapt_server_list(qstat_string, game, game_name, qstat_master_type, qstat_se
     return server_table
 
 
-def stat_master(game: str, game_info: dict, master_list: list):
-    hosts_array = []
+def build_host_list(master_list: list):
+    """Strip protocol prefixes from master URIs and de-duplicate, preserving order.
 
+    Order is significant: qstat returns zero servers if the *last* master in its
+    input list times out, so the configured order (which lists reachable masters
+    last) must be preserved. Using a set here shuffled the order per process and
+    intermittently moved a dead master last, yielding empty Quake III lists.
+    """
+    hosts = []
+    for entry in master_list:
+        entry = entry.strip()
+        if '://' in entry:
+            entry = entry.split('://', 1)[1]
+        hosts.append(entry)
+    return list(dict.fromkeys(hosts))
+
+
+def stat_master(game: str, game_info: dict, master_list: list):
     qstat_stdin_object = ""
 
     master_server_uri = None
@@ -221,16 +236,7 @@ def stat_master(game: str, game_info: dict, master_list: list):
     if "server_gametype" in backend_config_object['game'][game].keys():
         server_game_type = backend_config_object['game'][game]['server_gametype']
 
-    for entry in master_list:
-        entry = entry.strip()
-        if '://' in entry:
-            entry_protocol, entry_host = entry.split('://')
-        else:
-            entry_protocol = 'master'
-            entry_host = entry
-        hosts_array.append(entry_host)
-
-    hosts_array = list(set(hosts_array))
+    hosts_array = build_host_list(master_list)
 
     qstat_cmd = ["qstat", "-xml", "-utf8", "-maxsim", "9999", "-sendinterval", "1", "-R", "-P", "-f", "-"]
 
