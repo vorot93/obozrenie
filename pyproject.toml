@@ -12,7 +12,7 @@ authors = [{ name = "Artem Vorotnikov", email = "artem@vorotnikov.me" }]
 license = { text = "GPL-3.0-only" }
 dependencies = [
     "xmltodict",
-    "geoip2",
+    "maxminddb",
     "pycountry",
     "pyxdg",
     "tomli-w",

@@ -1,5 +1,5 @@
 xmltodict
-geoip2
+maxminddb
 pycountry
 pyxdg
 tomli-w

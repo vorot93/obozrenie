@@ -329,13 +329,13 @@ class Core:
                 [CORE_MSG, i18n._("GeoIP database not found. Disabling geolocation.")])
 
     def load_geoip(self, path: str) -> None:
-        """Open a geoip2 database and enable geolocation."""
-        import geoip2.database
+        """Open a MaxMind DB country database and enable geolocation."""
+        import maxminddb
         try:
-            self.geolocation = geoip2.database.Reader(path)
+            self.geolocation = maxminddb.open_database(path)
             helpers.debug_msg([CORE_MSG, i18n._("GeoIP database %(path)s opened successfully.") % {
                               'path': path}])
-        except (OSError, ValueError):
+        except (OSError, maxminddb.InvalidDatabaseError):
             helpers.debug_msg(
                 [CORE_MSG, i18n._("Failed to open GeoIP database. Disabling geolocation.")])
             self.geolocation = None
@@ -348,12 +348,18 @@ class Core:
         """
         if self.geolocation is None:
             return "unknown"
-        import geoip2.errors
         try:
             ip = socket.gethostbyname(host)
-            return self.geolocation.country(ip).country.iso_code or ""
-        except (socket.gaierror, geoip2.errors.AddressNotFoundError):
+        except socket.gaierror:
             return ""
+        record = self.geolocation.get(ip)
+        if not record:
+            return ""
+        # Flat ip-location-db format vs. nested MaxMind/DB-IP format.
+        code = record.get("country_code")
+        if code is None:
+            code = (record.get("country") or {}).get("iso_code")
+        return code or ""
 
     def update_server_list(self, game: str, stat_callback=None) -> None:
         """Updates server lists."""

@@ -21,7 +21,6 @@ import json
 import os
 import tempfile
 import threading
-import types
 import unittest
 import xmltodict
 from unittest import mock
@@ -376,19 +375,44 @@ class CoreGeoIPTests(unittest.TestCase):
         c = self._make_core()
         self.assertEqual(c._lookup_country("example.com"), "unknown")
 
-    def test_lookup_country_success_returns_iso_code(self):
+    def test_lookup_country_flat_record_returns_iso_code(self):
+        """ip-location-db DBs return a flat {'country_code': ...} record."""
         import socket
-        from obozrenie import core
 
-        class _FakeReader:
-            def country(self, ip):
-                return types.SimpleNamespace(
-                    country=types.SimpleNamespace(iso_code="US"))
+        class _FakeDB:
+            def get(self, ip):
+                return {"country_code": "US"}
 
         c = self._make_core()
-        c.geolocation = _FakeReader()
+        c.geolocation = _FakeDB()
         with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
             self.assertEqual(c._lookup_country("example.com"), "US")
+
+    def test_lookup_country_nested_record_returns_iso_code(self):
+        """MaxMind/DB-IP DBs return a nested {'country': {'iso_code': ...}}."""
+        import socket
+
+        class _FakeDB:
+            def get(self, ip):
+                return {"country": {"iso_code": "DE"}}
+
+        c = self._make_core()
+        c.geolocation = _FakeDB()
+        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
+            self.assertEqual(c._lookup_country("example.com"), "DE")
+
+    def test_lookup_country_not_in_db_returns_empty(self):
+        """maxminddb returns None for an IP absent from the database."""
+        import socket
+
+        class _FakeDB:
+            def get(self, ip):
+                return None
+
+        c = self._make_core()
+        c.geolocation = _FakeDB()
+        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
+            self.assertEqual(c._lookup_country("example.com"), "")
 
     def test_lookup_country_unresolvable_returns_empty(self):
         import socket

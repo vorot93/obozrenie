@@ -62,10 +62,9 @@ def download_database(cancel_event, progress_cb=None):
 
     Streams to a temporary file. Checks ``cancel_event`` on each chunk;
     if set, deletes the partial file and returns None. On success, the
-    file is validated as a geoip2 database, moved into place, and its
+    file is validated as a MaxMind DB database, moved into place, and its
     path returned. Returns None on any network/IO/validation error.
     """
-    import geoip2.database
     import maxminddb
 
     os.makedirs(os.path.dirname(CACHE_DB_PATH), exist_ok=True)
@@ -84,8 +83,13 @@ def download_database(cancel_event, progress_cb=None):
                     downloaded += len(chunk)
                     if progress_cb is not None:
                         progress_cb(downloaded, total)
-        with geoip2.database.Reader(tmp_path):
-            pass
+        # Validate by opening as a real MaxMind DB and reading metadata —
+        # a truncated or non-mmdb body raises InvalidDatabaseError here.
+        db = maxminddb.open_database(tmp_path)
+        try:
+            db.metadata()
+        finally:
+            db.close()
         os.replace(tmp_path, CACHE_DB_PATH)
         return CACHE_DB_PATH
     except (requests.RequestException, OSError,
