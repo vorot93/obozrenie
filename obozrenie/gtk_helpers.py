@@ -98,6 +98,18 @@ def get_icon_dict(key_list, icon_type, icon_formats, icon_dir, width, height, er
     return icon_dict
 
 
+def country_code_to_flag_emoji(code):
+    """Convert an ISO 3166-1 alpha-2 country code to a flag emoji.
+
+    Returns "" for empty, None, "unknown", or otherwise invalid input, so
+    the result can be used directly as cell text (an empty string shows no
+    flag).
+    """
+    if not code or len(code) != 2 or not code.isalpha():
+        return ""
+    return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code.upper())
+
+
 def get_object_dict(builder, object_mapping):
     object_dict = {}
 

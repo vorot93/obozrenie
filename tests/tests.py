@@ -454,5 +454,34 @@ class IconLoadingTests(unittest.TestCase):
                 "zz", "flag", ["svg"], ICON_FLAGS_DIR, 24, 18)
 
 
+class CountryEmojiTests(unittest.TestCase):
+    """Tests for country_code_to_flag_emoji."""
+
+    def _fn(self):
+        try:
+            from obozrenie import gtk_helpers
+        except (ImportError, ValueError):
+            self.skipTest("GTK/GdkPixbuf not available")
+        return gtk_helpers.country_code_to_flag_emoji
+
+    def test_two_letter_code(self):
+        self.assertEqual(self._fn()("US"), "\U0001F1FA\U0001F1F8")
+
+    def test_lowercase_is_upper_cased(self):
+        self.assertEqual(self._fn()("gb"), "\U0001F1EC\U0001F1E7")
+
+    def test_empty_returns_empty(self):
+        self.assertEqual(self._fn()(""), "")
+
+    def test_none_returns_empty(self):
+        self.assertEqual(self._fn()(None), "")
+
+    def test_unknown_returns_empty(self):
+        self.assertEqual(self._fn()("unknown"), "")
+
+    def test_non_alpha_returns_empty(self):
+        self.assertEqual(self._fn()("U1"), "")
+
+
 if __name__ == "__main__":
     unittest.main()
