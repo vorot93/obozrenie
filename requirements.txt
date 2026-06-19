@@ -1,6 +1,0 @@
-xmltodict
-maxminddb
-pyxdg
-tomli-w
-babel
-requests

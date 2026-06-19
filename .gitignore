@@ -5,3 +5,4 @@ __pycache__
 # Python virtualenv
 .venv/
 *.egg-info/
+uv.lock

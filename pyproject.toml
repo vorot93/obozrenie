@@ -17,6 +17,8 @@ dependencies = [
     "tomli-w",
     "babel",
     "requests",
+    "pygobject",
+    "pycairo",
 ]
 classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -29,6 +31,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/obozrenie/obozrenie"
 
+[project.scripts]
+obozrenie-gtk = "obozrenie.launch_gtk:main"
+
 [tool.setuptools]
 packages = ["obozrenie", "obozrenie.adapters", "obozrenie.proxies"]
 
@@ -40,4 +45,4 @@ packages = ["obozrenie", "obozrenie.adapters", "obozrenie.proxies"]
 "share/obozrenie/settings/internal/backends" = ["assets/obozrenie/settings/internal/backends/*"]
 "share/obozrenie/ui" = ["assets/obozrenie/ui/*"]
 "share/pixmaps/obozrenie/games" = ["assets/pixmaps/obozrenie/games/*"]
-"share" = ["README.md", "requirements.txt", "COPYING"]
+"share" = ["README.md", "COPYING"]

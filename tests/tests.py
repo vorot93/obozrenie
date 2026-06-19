@@ -19,8 +19,11 @@
 
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import threading
+import tomllib
 import unittest
 import xmltodict
 from unittest import mock
@@ -488,6 +491,95 @@ class CountryEmojiTests(unittest.TestCase):
 
     def test_non_alpha_returns_empty(self):
         self.assertEqual(self._fn()("U1"), "")
+
+
+class EntryPointTests(unittest.TestCase):
+    def test_import_is_side_effect_free_and_exposes_main(self):
+        # Importing the launcher must not start the GUI or import GTK; it must
+        # expose a callable main(). Run in a subprocess (with a timeout) so a
+        # regression that launches on import fails fast instead of hanging.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import obozrenie.launch_gtk as m; "
+                "assert callable(m.main), 'main() entry point missing'",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_macos_library_dir_none_off_darwin(self):
+        # Run in a subprocess so that, before the refactor, importing the
+        # launch-on-import module cannot hang this test runner (the timeout
+        # contains it). After the refactor, import is side-effect-free and the
+        # off-darwin branch returns None.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys; sys.platform = 'linux'; "
+                "import obozrenie.launch_gtk as m; "
+                "assert m._macos_library_dir() is None",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_ensure_reexecs_when_libdir_missing(self):
+        # When a Homebrew lib dir is found and not yet on the loader path,
+        # _ensure_macos_library_path adds it and re-execs (os.execv) so dyld
+        # picks it up. os.execv is mocked so nothing is actually replaced.
+        from obozrenie import launch_gtk
+        with mock.patch.object(launch_gtk, "_macos_library_dir",
+                               return_value="/fake/brew/lib"), \
+                mock.patch.dict(os.environ,
+                                {"DYLD_FALLBACK_LIBRARY_PATH": ""}, clear=False), \
+                mock.patch.object(launch_gtk.os, "execv") as execv:
+            launch_gtk._ensure_macos_library_path()
+            self.assertIn(
+                "/fake/brew/lib",
+                os.environ["DYLD_FALLBACK_LIBRARY_PATH"].split(os.pathsep))
+            execv.assert_called_once()
+            exe, argv = execv.call_args.args
+            self.assertEqual(exe, sys.executable)
+            self.assertEqual(argv[:3],
+                             [sys.executable, "-m", "obozrenie.launch_gtk"])
+
+    def test_ensure_noop_when_libdir_already_present(self):
+        # When the lib dir is already on DYLD_FALLBACK_LIBRARY_PATH, the guard
+        # prevents a second re-exec (no infinite loop after the first one).
+        from obozrenie import launch_gtk
+        with mock.patch.object(launch_gtk, "_macos_library_dir",
+                               return_value="/fake/brew/lib"), \
+                mock.patch.dict(os.environ,
+                                {"DYLD_FALLBACK_LIBRARY_PATH": "/fake/brew/lib"},
+                                clear=False), \
+                mock.patch.object(launch_gtk.os, "execv") as execv:
+            launch_gtk._ensure_macos_library_path()
+            execv.assert_not_called()
+
+
+class PackagingTests(unittest.TestCase):
+    def _project(self):
+        with open("pyproject.toml", "rb") as handle:
+            return tomllib.load(handle)["project"]
+
+    def test_gtk_dependencies_declared(self):
+        deps = self._project()["dependencies"]
+        self.assertIn("pygobject", deps)
+        self.assertIn("pycairo", deps)
+
+    def test_console_script_declared(self):
+        scripts = self._project().get("scripts", {})
+        self.assertEqual(scripts.get("obozrenie-gtk"), "obozrenie.launch_gtk:main")
+
+    def test_no_requirements_txt(self):
+        self.assertFalse(os.path.exists("requirements.txt"))
 
 
 if __name__ == "__main__":
