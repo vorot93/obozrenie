@@ -55,17 +55,13 @@ def add_rtt_info(array):
 
 
 class Pinger():
-    status = {}  # Populated while we are running
-    hosts = []  # List of all hosts/ips in our input queue
-
-    action = "ping"
-    options = []
-
-    # How many ping process at the time.
-    thread_count = 100
-
-    # Lock object to keep track the threads in loops, where it can potentially be race conditions.
-    lock = threading.Lock()
+    def __init__(self):
+        self.status = {}
+        self.hosts = []
+        self.action = "ping"
+        self.options = []
+        self.thread_count = 100
+        self.lock = threading.Lock()
 
     def ping(self, entry):
         """Pings the requested server. Note: this function is not threaded yet, therefore pinging may take up to a second."""

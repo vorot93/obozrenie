@@ -125,7 +125,8 @@ def do_launch(launch_cmd: list) -> Exception:
                           'launch_cmd': " ".join(launch_cmd)}])
         env_dict = dict(os.environ)
         pid = subprocess.Popen(
-            launch_cmd, cwd=env_dict['PWD'], env=env_dict, start_new_session=True)
+            launch_cmd, cwd=env_dict.get("PWD") or os.getcwd(),
+            env=env_dict, start_new_session=True)
         return None
     except OSError as e:
         helpers.debug_msg([LAUNCHER_MSG, e])

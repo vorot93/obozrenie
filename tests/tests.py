@@ -332,6 +332,25 @@ class GameTableTests(unittest.TestCase):
         self.assertIn("get_game_table_copy()", source)
 
 
+class PingerTests(unittest.TestCase):
+    def test_status_is_per_instance(self):
+        from obozrenie import ping
+        a = ping.Pinger()
+        b = ping.Pinger()
+        a.status["host"] = 12
+        self.assertNotIn("host", b.status)
+
+
+class DoLaunchTests(unittest.TestCase):
+    def test_do_launch_without_pwd_uses_cwd(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop("PWD", None)
+            with mock.patch.object(launch.subprocess, "Popen") as popen:
+                launch.do_launch(["true"])
+        kwargs = popen.call_args.kwargs
+        self.assertEqual(kwargs["cwd"], os.getcwd())
+
+
 class TomlTableTests(unittest.TestCase):
     """Tests for TOML load/save round-trip"""
 
