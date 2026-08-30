@@ -671,5 +671,24 @@ class PackagingTests(unittest.TestCase):
             importlib.import_module("obozrenie.proxies")
 
 
+class DataPathTests(unittest.TestCase):
+    def test_assets_dir_is_absolute_and_exists(self):
+        from obozrenie import global_settings
+        self.assertTrue(os.path.isabs(global_settings.ASSETS_DIR))
+        self.assertTrue(os.path.isdir(global_settings.ASSETS_DIR))
+
+    def test_assets_resolve_independent_of_cwd(self):
+        from obozrenie.global_settings import ASSETS_DIR, _SOURCE_ROOT
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            filter(None, [_SOURCE_ROOT, env.get("PYTHONPATH")]))
+        with tempfile.TemporaryDirectory() as d:
+            result = subprocess.run(
+                [sys.executable, "-c",
+                 "from obozrenie.global_settings import ASSETS_DIR; print(ASSETS_DIR)"],
+                cwd=d, env=env, capture_output=True, text=True, check=True)
+        self.assertEqual(result.stdout.strip(), ASSETS_DIR)
+
+
 if __name__ == "__main__":
     unittest.main()

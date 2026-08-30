@@ -17,34 +17,38 @@
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 from xdg import BaseDirectory
 
 
-def is_run_from_git_workdir():
-    return os.path.exists('assets')
+_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
+_SOURCE_ROOT = os.path.dirname(_PACKAGE_DIR)
+
+
+def _running_from_source():
+    return os.path.isdir(os.path.join(_SOURCE_ROOT, "assets"))
 
 
 APPLICATION_ID = "me.vorotnikov.Obozrenie"
 VERSION = "1"
 
-SYSTEM_DATA_DIR = '/usr/share'
-ASSETS_DIR = SYSTEM_DATA_DIR
-LOCALE_DIR = os.path.join(SYSTEM_DATA_DIR, 'locale')
+if _running_from_source():
+    ASSETS_DIR = os.path.join(_SOURCE_ROOT, "assets")
+    LOCALE_DIR = os.path.join(_SOURCE_ROOT, "locale")
+else:
+    ASSETS_DIR = os.path.join(sys.prefix, "share")
+    LOCALE_DIR = os.path.join(sys.prefix, "share", "locale")
 
-if is_run_from_git_workdir():
-    ASSETS_DIR = 'assets'
-    LOCALE_DIR = 'locale'
-
-PROJECT_DIR = os.path.join(ASSETS_DIR, 'obozrenie')
+PROJECT_DIR = os.path.join(ASSETS_DIR, "obozrenie")
 
 ICON_NAME = "obozrenie-short"
 
-ICON_DIR = os.path.join(ASSETS_DIR, 'pixmaps', 'obozrenie')
-ICON_GAMES_DIR = os.path.join(ICON_DIR, 'games')
+ICON_DIR = os.path.join(ASSETS_DIR, "pixmaps", "obozrenie")
+ICON_GAMES_DIR = os.path.join(ICON_DIR, "games")
 
-if is_run_from_git_workdir():
+if _running_from_source():
     ICON_PATH = os.path.join(
-        ASSETS_DIR, 'icons', 'hicolor', 'scalable', 'apps', ICON_NAME + '.svg')
+        ASSETS_DIR, "icons", "hicolor", "scalable", "apps", ICON_NAME + ".svg")
     ICON_NAME = None
 
 SETTINGS_DIR = os.path.join(PROJECT_DIR, 'settings')
