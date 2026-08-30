@@ -35,7 +35,7 @@ Homepage = "https://github.com/obozrenie/obozrenie"
 obozrenie-gtk = "obozrenie.launch_gtk:main"
 
 [tool.setuptools]
-packages = ["obozrenie", "obozrenie.adapters", "obozrenie.proxies"]
+packages = ["obozrenie", "obozrenie.adapters"]
 
 [tool.setuptools.data-files]
 "share/applications" = ["assets/applications/*"]

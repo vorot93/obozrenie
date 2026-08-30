@@ -659,6 +659,17 @@ class PackagingTests(unittest.TestCase):
     def test_no_requirements_txt(self):
         self.assertFalse(os.path.exists("requirements.txt"))
 
+    def test_game_lists_have_no_proxy_keys(self):
+        from obozrenie.global_settings import GAME_CONFIG_FILE
+        table = helpers.load_table(GAME_CONFIG_FILE)
+        for game, entry in table.items():
+            self.assertNotIn("proxy", entry, game)
+
+    def test_proxy_package_is_gone(self):
+        import importlib
+        with self.assertRaises(ModuleNotFoundError):
+            importlib.import_module("obozrenie.proxies")
+
 
 if __name__ == "__main__":
     unittest.main()
