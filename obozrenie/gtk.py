@@ -419,7 +419,7 @@ class GUIActions:
         Loads game list into a list store
         """
 
-        game_table = self.core.game_table.copy
+        game_table = self.core.game_table.get_game_table_copy()
         game_icons = self.game_icons
         game_model = self.gtk_widgets["game-list-model"]
 

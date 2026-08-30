@@ -102,6 +102,7 @@ class GameTable:
                 adapter = str(gameconfig_object[game_id]['adapter'])
                 launch_pattern = str(
                     gameconfig_object[game_id]["launch_pattern"])
+                steam_app_id = None
                 try:
                     steam_app_id = str(
                         gameconfig_object[game_id]["steam_app_id"])
@@ -128,23 +129,11 @@ class GameTable:
                         game_table_entry_info_temp["name"] = name
                         game_table_entry_info_temp['adapter'] = adapter
                         game_table_entry_info_temp["launch_pattern"] = launch_pattern
-                        try:
+                        if steam_app_id is not None:
                             game_table_entry_info_temp["steam_app_id"] = steam_app_id
-                        except NameError:
-                            pass
                     game_table_entry_temp["query-status"] = self.QUERY_STATUS.EMPTY
 
         return game_table
-
-    @property
-    def copy(self):
-        """
-        Returns a deep copy of the Game Table.
-        It is the slowest accessor method. Please try to query for specific information.
-        """
-        with self.__game_table as game_table:
-            game_table_copy = helpers.deepcopy(game_table)
-        return game_table_copy
 
     def get_game_table_copy(self):
         """
@@ -206,7 +195,7 @@ class GameTable:
             faulty_param = i18n._('option')
         if faulty_param is not None:
             raise ValueError(
-                i18n._('Invalid %(param)s specified.') % {'param': param})
+                i18n._('Invalid %(param)s specified.') % {'param': faulty_param})
 
         with self.__game_table as game_table:
             try:
@@ -252,7 +241,7 @@ class GameTable:
             faulty_param = i18n._('hostname')
         if faulty_param is not None:
             raise ValueError(
-                i18n._('Invalid %(param)s specified.') % {'param': param})
+                i18n._('Invalid %(param)s specified.') % {'param': faulty_param})
 
         with self.__game_table as game_table:
             try:
@@ -265,26 +254,6 @@ class GameTable:
         server_entry = server_table[helpers.search_dict_table(
             server_table, "host", host)]
         return server_entry
-
-    def set_server_info(self, game: str, host: str, data) -> None:
-        faulty_param = None
-        if game in ('', None):
-            faulty_param = i18n._('game id')
-        elif host in ('', None):
-            faulty_param = i18n._('hostname')
-        elif isinstance(data, dict) is False:
-            faulty_param = i18n._('server data')
-        if faulty_param is not None:
-            raise ValueError(
-                i18n._('Invalid %(param)s specified.') % {'param': param})
-
-        with self.__game_table as game_table:
-            server_entry_index = game_table[helpers.search_dict_table(
-                helpers.deepcopy(game_table), "host", host)]
-            if server_entry_index is None:
-                self.append_server_info(game, data)
-            else:
-                game_table[server_entry_index] = data
 
     def get_servers_data(self, game: str) -> dict:
         if game in ('', None):

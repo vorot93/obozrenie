@@ -293,6 +293,45 @@ class RigsofrodsTests(unittest.TestCase):
         self.assertIsInstance(result, list)
 
 
+class GameTableTests(unittest.TestCase):
+    def _table(self, config):
+        from obozrenie.core import GameTable
+        return GameTable(config)
+
+    def test_invalid_set_game_setting_names_the_param(self):
+        table = self._table({
+            "q3a": {"name": "Quake III", "adapter": "qstat",
+                    "launch_pattern": "quake", "settings": ["path"]},
+        })
+        with self.assertRaises(ValueError) as ctx:
+            table.set_game_setting("", "path", "/bin/quake")
+        self.assertIn("game id", str(ctx.exception))
+
+    def test_steam_app_id_does_not_leak_to_later_games(self):
+        table = self._table({
+            "tf": {"name": "TF2", "adapter": "qstat", "launch_pattern": "hl2",
+                   "steam_app_id": "440", "settings": ["path"]},
+            "gesource": {"name": "GoldenEye", "adapter": "qstat",
+                         "launch_pattern": "hl2", "settings": ["path"]},
+        })
+        self.assertEqual(table.get_game_info("tf")["steam_app_id"], "440")
+        self.assertNotIn("steam_app_id", table.get_game_info("gesource"))
+
+    def test_set_server_info_is_gone(self):
+        from obozrenie.core import GameTable
+        self.assertFalse(hasattr(GameTable, "set_server_info"))
+
+    def test_copy_property_is_gone(self):
+        from obozrenie.core import GameTable
+        self.assertFalse(hasattr(GameTable, "copy"))
+
+    def test_gtk_fills_game_store_via_get_game_table_copy(self):
+        with open("obozrenie/gtk.py", encoding="utf-8") as handle:
+            source = handle.read()
+        self.assertNotIn("game_table.copy", source)
+        self.assertIn("get_game_table_copy()", source)
+
+
 class TomlTableTests(unittest.TestCase):
     """Tests for TOML load/save round-trip"""
 
