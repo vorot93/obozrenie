@@ -41,36 +41,6 @@ def rigsofrods_launch_pattern(path: str, **kwargs) -> list:
     return launch_cmd
 
 
-def rigsofrods_prelaunch_hook(game_settings: dict, host: str, port: str, password: str, **kwargs) -> None:
-    config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
-
-    if os.path.exists(config_file):
-        subprocess.call(
-            ["sed", "-i", "s/Network enable.*/Network enable=Yes/", config_file])
-        subprocess.call(
-            ["sed", "-i", "s/Server name.*/Server name=" + host + "/", config_file])
-        subprocess.call(
-            ["sed", "-i", "s/Server port.*/Server port=" + port + "/", config_file])
-        subprocess.call(
-            ["sed", "-i", "s/Server password.*/Server password=" + password + "/", config_file])
-    else:
-        if os.path.exists(os.path.dirname(config_file)) is False:
-            os.makedirs(os.path.dirname(config_file))
-        with open(config_file, "x") as f:
-            f.write("Network enable=Yes" + "\n")
-            f.write("Server name=" + host + "\n")
-            f.write("Server port=" + port + "\n")
-            f.write("Server password=" + password + "\n")
-            f.close()
-
-
-def rigsofrods_postlaunch_hook(**kwargs) -> None:
-    config_file = os.path.expanduser("~/.rigsofrods/config/RoR.cfg")
-
-    subprocess.call(
-        ["sed", "-i", "s/Network enable.*/Network enable=No/", config_file])
-
-
 def quake_launch_pattern(path: str, host: str, port: str, password: str, **kwargs) -> list:
     launch_cmd = [path, "+connect", host + ":" + port]
     if password:

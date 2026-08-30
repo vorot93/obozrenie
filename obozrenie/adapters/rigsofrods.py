@@ -30,6 +30,13 @@ RIGSOFRODS_MSG = BACKENDCAT_MSG + i18n._("Rigs of Rods:")
 HTTP_TIMEOUT = 10
 
 
+def master_request_url(master_uri: str) -> str:
+    if "json=" in master_uri:
+        return master_uri
+    sep = "&" if "?" in master_uri else "?"
+    return master_uri + sep + "json=true"
+
+
 def parse_server_entry(entry: dict) -> dict:
     """Map one Rigs of Rods JSON server object to a server dict."""
     return {'player_count': int(entry['current-users']),
@@ -39,7 +46,11 @@ def parse_server_entry(entry: dict) -> dict:
             'host': '%s:%s' % (entry['ip'], entry['port']),
             'terrain': str(entry['terrain-name']),
             'players': [{'name': str(player['username'])}
-                        for player in (entry.get('json-userlist') or [])]}
+                        for player in (entry.get('json-userlist') or [])],
+            'rules': {
+                'verified': int(entry.get('verified') or 0),
+                'is_official': int(entry.get('is-official') or 0),
+            }}
 
 
 def adapt_server_list(game: str, json_string: str) -> list:
@@ -66,7 +77,8 @@ def stat_master(game: str, game_info: dict, master_list: list) -> list:
 
     for master_uri in master_list:
         try:
-            response = requests.get(master_uri, timeout=HTTP_TIMEOUT)
+            response = requests.get(
+                master_request_url(master_uri), timeout=HTTP_TIMEOUT)
             response.raise_for_status()
         except requests.RequestException:
             print(i18n._(RIGSOFRODS_MSG), i18n._("Accessing URI %(uri)s failed with error code %(code)s.") % {

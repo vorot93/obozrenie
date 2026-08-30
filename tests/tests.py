@@ -232,12 +232,13 @@ class RigsofrodsTests(unittest.TestCase):
                       "json-userlist": [{"username": "PlayerA", "is_bot": 0},
                                         {"username": "RoRBot", "is_bot": 8}]}
         spec_server_dict = {'player_count': 1,
-                            'player_limit': 16,
-                            'password': True,
-                            'name': 'My Little Server',
-                            'host': '1.2.3.4:12000',
-                            'terrain': 'Terrain A',
-                            'players': [{'name': 'PlayerA'}, {'name': 'RoRBot'}]}
+                             'player_limit': 16,
+                             'password': True,
+                             'name': 'My Little Server',
+                             'host': '1.2.3.4:12000',
+                             'terrain': 'Terrain A',
+                             'players': [{'name': 'PlayerA'}, {'name': 'RoRBot'}],
+                             'rules': {'verified': 1, 'is_official': 0}}
 
         func = cls.module.parse_server_entry
         spec_args = {'entry': spec_entry}
@@ -264,11 +265,12 @@ class RigsofrodsTests(unittest.TestCase):
             {'player_count': 3, 'player_limit': 16, 'password': False,
              'name': 'Server 1', 'host': '1.2.3.4:12000', 'terrain': 'Terrain A',
              'players': [], 'game_id': 'rigsofrods', 'game_type': 'rigsofrods',
-             'secure': False},
+             'secure': False, 'rules': {'verified': 0, 'is_official': 0}},
             {'player_count': 1, 'player_limit': 9, 'password': True,
              'name': 'Server 2', 'host': '5.6.7.8:12001', 'terrain': 'Terrain B',
              'players': [{'name': 'PlayerA'}], 'game_id': 'rigsofrods',
-             'game_type': 'rigsofrods', 'secure': False}]
+             'game_type': 'rigsofrods', 'secure': False,
+             'rules': {'verified': 0, 'is_official': 0}}]
         spec_game = 'rigsofrods'
 
         func = cls.module.adapt_server_list
@@ -291,6 +293,24 @@ class RigsofrodsTests(unittest.TestCase):
         from obozrenie.adapters import rigsofrods
         result = rigsofrods.stat_master('rigsofrods', {}, [])
         self.assertIsInstance(result, list)
+
+    def test_master_request_url_appends_json_true(self):
+        from obozrenie.adapters import rigsofrods
+        self.assertEqual(
+            rigsofrods.master_request_url(
+                "https://api.rigsofrods.org/server-list"),
+            "https://api.rigsofrods.org/server-list?json=true")
+
+    def test_master_request_url_keeps_existing_json_true(self):
+        from obozrenie.adapters import rigsofrods
+        self.assertEqual(
+            rigsofrods.master_request_url(
+                "https://api.rigsofrods.org/server-list?json=true"),
+            "https://api.rigsofrods.org/server-list?json=true")
+
+    def test_launch_has_no_ror_sed_hooks(self):
+        self.assertFalse(hasattr(launch, "rigsofrods_prelaunch_hook"))
+        self.assertFalse(hasattr(launch, "rigsofrods_postlaunch_hook"))
 
 
 class GameTableTests(unittest.TestCase):
