@@ -16,21 +16,47 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-import obozrenie.helpers as helpers
+import importlib
+import threading
 
-from obozrenie.global_settings import *
-from obozrenie.global_strings import *
 
-from . import rigsofrods
-from . import qstat
-from . import minetest
-
+_BUILTIN_ADAPTERS = frozenset({"minetest", "qstat", "rigsofrods"})
+_REGISTRATION_LOCK = threading.Lock()
 adapter_table = {}
 
-adapter_list = ('rigsofrods', 'qstat', 'minetest')
 
-for adapter in adapter_list:
-    adapter_table[adapter] = globals()[adapter]
+class UnknownAdapterError(LookupError):
+    def __init__(self, name):
+        self.name = name
+        super().__init__(f"unknown adapter: {name!r}")
 
-helpers.debug_msg([CORE_MSG, i18n._("%(adapter_num)i adapters loaded successfully") % {
-                  'adapter_num': len(adapter_list)}])
+
+def resolve_adapter(name):
+    with _REGISTRATION_LOCK:
+        try:
+            return adapter_table[name]
+        except KeyError:
+            pass
+
+    if name not in _BUILTIN_ADAPTERS:
+        raise UnknownAdapterError(name)
+
+    adapter = importlib.import_module(f"{__name__}.{name}")
+    # A loader's same-thread recursive import returns its in-progress module.
+    if getattr(getattr(adapter, "__spec__", None), "_initializing", False):
+        return adapter
+
+    with _REGISTRATION_LOCK:
+        return adapter_table.setdefault(name, adapter)
+
+
+def __getattr__(name):
+    try:
+        return adapter_table[name]
+    except KeyError:
+        pass
+    if name not in _BUILTIN_ADAPTERS:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}"
+        ) from None
+    return resolve_adapter(name)

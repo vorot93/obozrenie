@@ -18,15 +18,83 @@
 
 """Core functions for Obozrenie Game Server Browser."""
 
+import contextlib
+import ipaddress
 import os
 import socket
 import threading
+import time
+from collections.abc import Mapping
+from dataclasses import replace
+from enum import Enum, auto
+
+import filelock
+import maxminddb
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 from obozrenie.option_lists import *
 
-from obozrenie import i18n, helpers, adapters, launch, geoip
+from obozrenie import adapters, geoip, helpers, i18n, launch, ping, resources
+from obozrenie.diagnostics import (
+    SafeDiagnostic,
+    SafeDiagnosticError,
+    diagnostic_for_exception,
+)
+from obozrenie.models import Endpoint, Server
+from obozrenie.network_calls import (
+    CallDeadlineExceeded,
+    PoolSaturatedError,
+    PoolUnavailableError,
+    getaddrinfo_many_until,
+    validate_deadline,
+)
+
+
+_GEOIP_DNS_BATCH_TIMEOUT_SECONDS = 5.0
+_PROFILE_LOCK_TIMEOUT_SECONDS = 5.0
+
+
+class QueryStatus(Enum):
+    EMPTY = auto()
+    WORKING = auto()
+    READY = auto()
+    ERROR = auto()
+
+
+def _validated_server_batch(servers) -> list[Server]:
+    """Materialize a server batch, rejecting anything but exact records."""
+    server_batch = list(servers)
+    for index, server in enumerate(server_batch):
+        if type(server) is not Server:
+            raise TypeError(
+                f"GameTable servers[{index}] must be an exact Server record."
+            )
+    return server_batch
+
+
+def _query_failure_message() -> str:
+    """Render the one message every failed query publishes."""
+    return i18n._("Unable to refresh the server list.")
+
+
+def _log_safe_diagnostic(error: BaseException) -> None:
+    """Log one exception as fixed safe text, never as its stringification."""
+    try:
+        helpers.debug_msg([CORE_MSG, diagnostic_for_exception(error)])
+    except Exception:
+        # Diagnostics are best effort and cannot change terminal query state.
+        pass
+
+
+def _log_cleanup_diagnostic(error: BaseException) -> None:
+    """Report a cleanup failure that must never reach a primary exception."""
+    try:
+        _log_safe_diagnostic(error)
+    except BaseException:
+        # A primary exception is re-raised right after this call and has to
+        # keep its identity, so nothing at all may escape a failing report.
+        pass
 
 
 class GameTable:
@@ -79,113 +147,88 @@ class GameTable:
 
     Instead this class holds the Game Table and provides read and write accessor methods.
 
-    Please bear in mind that all read accessor methods return deep copies, therefore cleaning up the result is programmer's responsibility.
+    Read accessors never expose mutable internal state; mutable results are deep copies.
     """
 
+    QUERY_STATUS = QueryStatus
+
     def __init__(self, gameconfig_object):
-        self.QUERY_STATUS = helpers.enum('EMPTY', 'WORKING', 'READY', 'ERROR')
-        self.__game_table = self.create_game_table(gameconfig_object)
+        self._lock = threading.RLock()
+        with self._lock:
+            self._game_table = self.create_game_table(gameconfig_object)
 
     def __repr__(self):
-        return i18n._("<Game Table - games: %(game_num)i, id: %(gt_id)i>") % {'game_num': len(self.__game_table), 'gt_id': id(self)}
+        with self._lock:
+            game_num = len(self._game_table)
+        return i18n._("<Game Table - games: %(game_num)i, id: %(gt_id)i>") % {
+            'game_num': game_num,
+            'gt_id': id(self),
+        }
 
-    def create_game_table(self, gameconfig_object) -> helpers.ThreadSafeDict:
+    def create_game_table(self, gameconfig_object) -> dict:
         """
         Loads game list into a table.
         """
-        game_table = helpers.ThreadSafeDict()
-        with game_table as game_table_temp:
-            for game_id in gameconfig_object:
-                game_table_temp[game_id] = helpers.ThreadSafeDict()
+        game_table = {}
+        for game_id, game_config in gameconfig_object.items():
+            info = {
+                "name": str(game_config["name"]),
+                "adapter": str(game_config["adapter"]),
+                "launch_pattern": str(game_config["launch_pattern"]),
+            }
+            if "steam_app_id" in game_config:
+                info["steam_app_id"] = str(game_config["steam_app_id"])
 
-                name = str(gameconfig_object[game_id]["name"])
-                adapter = str(gameconfig_object[game_id]['adapter'])
-                launch_pattern = str(
-                    gameconfig_object[game_id]["launch_pattern"])
-                steam_app_id = None
-                try:
-                    steam_app_id = str(
-                        gameconfig_object[game_id]["steam_app_id"])
-                except KeyError:
-                    pass
-
-                # Create dict groups
-                with game_table_temp[game_id] as game_table_entry_temp:
-                    game_table_entry_temp["info"] = helpers.ThreadSafeDict()
-                    game_table_entry_temp["settings"] = helpers.ThreadSafeDict(
-                    )
-                    game_table_entry_temp["servers"] = helpers.ThreadSafeList()
-
-                    try:
-                        with game_table_entry_temp["settings"] as game_table_entry_settings_temp:
-                            # Create setting groups
-                            for j in range(len(gameconfig_object[game_id]["settings"])):
-                                option_name = gameconfig_object[game_id]["settings"][j]
-                                game_table_entry_settings_temp[option_name] = ""
-                    except KeyError:
-                        pass
-
-                    with game_table_entry_temp["info"] as game_table_entry_info_temp:
-                        game_table_entry_info_temp["name"] = name
-                        game_table_entry_info_temp['adapter'] = adapter
-                        game_table_entry_info_temp["launch_pattern"] = launch_pattern
-                        if steam_app_id is not None:
-                            game_table_entry_info_temp["steam_app_id"] = steam_app_id
-                    game_table_entry_temp["query-status"] = self.QUERY_STATUS.EMPTY
-
+            settings = {
+                option_name: "" for option_name in game_config.get("settings", [])
+            }
+            game_table[game_id] = {
+                "info": info,
+                "settings": settings,
+                "servers": [],
+                "query-status": QueryStatus.EMPTY,
+                "query-error": None,
+                "query-token": None,
+            }
         return game_table
+
+    def _get_game_entry(self, game: str) -> dict:
+        if game in ('', None):
+            raise ValueError(i18n._('Invalid game specified.'))
+        try:
+            return self._game_table[game]
+        except KeyError:
+            raise ValueError(
+                i18n._('Game not found: %(game)s') % {'game': game})
 
     def get_game_table_copy(self):
         """
         Returns a deep copy of the Game Table.
         It is the slowest accessor method. Please try to query for specific information.
         """
-        with self.__game_table as game_table:
-            game_table_copy = helpers.deepcopy(game_table)
-        return game_table_copy
+        with self._lock:
+            return helpers.deepcopy(self._game_table)
 
     def get_game_set(self):
         """
         Returns the set of games held by Game Table.
         """
-        with self.__game_table as game_table:
-            game_set = set(game_table.keys())
-        return game_set
+        with self._lock:
+            return set(self._game_table)
 
     def get_game_info(self, game):
         """
         Returns information about the specified game.
         """
-        if game in ('', None):
-            raise ValueError(i18n._('Invalid game specified.'))
-
-        with self.__game_table as game_table:
-            try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
-
-            game_info = helpers.deepcopy(game_entry["info"])
-        return game_info
+        with self._lock:
+            return helpers.deepcopy(self._get_game_entry(game)["info"])
 
     def get_game_settings(self, game):
         """
         Returns settings for the specified game.
         """
-        if game in ('', None):
-            raise ValueError(i18n._('Invalid game specified.'))
-
-        with self.__game_table as game_table:
-            try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
-
-            game_settings = helpers.deepcopy(game_entry["settings"])
-
-        return game_settings
+        with self._lock:
+            return helpers.deepcopy(self._get_game_entry(game)["settings"])
 
     def set_game_setting(self, game, option, value):
         faulty_param = None
@@ -197,43 +240,69 @@ class GameTable:
             raise ValueError(
                 i18n._('Invalid %(param)s specified.') % {'param': faulty_param})
 
-        with self.__game_table as game_table:
-            try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
+        with self._lock:
+            self._get_game_entry(game)["settings"][option] = helpers.deepcopy(value)
 
-            game_entry["settings"][option] = value
+    def get_query_status(self, game: str) -> QueryStatus:
+        with self._lock:
+            # Enum members are immutable singletons, so returning one cannot leak state.
+            return self._get_game_entry(game)["query-status"]
 
-    def get_query_status(self, game: str):
-        if game in ('', None):
-            raise ValueError(i18n._('Invalid game specified.'))
+    def get_query_error(self, game: str) -> str | None:
+        with self._lock:
+            return helpers.deepcopy(self._get_game_entry(game)["query-error"])
 
-        with self.__game_table as game_table:
-            try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
+    def begin_query(self, game: str) -> object | None:
+        """Admit one query and return its token, or None if one is running."""
+        with self._lock:
+            game_entry = self._get_game_entry(game)
+            if game_entry["query-status"] is QueryStatus.WORKING:
+                return None
+            token = object()
+            game_entry["query-token"] = token
+            game_entry["query-status"] = QueryStatus.WORKING
+            game_entry["query-error"] = None
+            return token
 
-            query_status = helpers.deepcopy(game_entry["query-status"])
-        return query_status
+    def _owns_query(self, game_entry: dict, attempt_token: object) -> bool:
+        """Report whether this exact attempt still owns the running query."""
+        return (
+            game_entry["query-status"] is QueryStatus.WORKING
+            and game_entry["query-token"] is attempt_token
+        )
 
-    def set_query_status(self, game, status):
-        if game in ('', None):
-            raise ValueError(i18n._('Invalid game specified.'))
+    def finish_query(
+        self,
+        game: str,
+        attempt_token: object,
+        servers,
+    ) -> bool:
+        """Publish one attempt's servers; report whether it still owned them."""
+        server_batch = _validated_server_batch(servers)
+        with self._lock:
+            game_entry = self._get_game_entry(game)
+            if not self._owns_query(game_entry, attempt_token):
+                return False
+            game_entry["servers"] = server_batch
+            game_entry["query-error"] = None
+            game_entry["query-status"] = QueryStatus.READY
+            game_entry["query-token"] = None
+            return True
 
-        with self.__game_table as game_table:
-            try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
+    def fail_query(self, game: str, attempt_token: object, error: str) -> bool:
+        """Publish one attempt's failure; report whether it still owned it."""
+        if type(error) is not str:
+            raise TypeError("GameTable error must be an exact str.")
+        with self._lock:
+            game_entry = self._get_game_entry(game)
+            if not self._owns_query(game_entry, attempt_token):
+                return False
+            game_entry["query-error"] = error
+            game_entry["query-status"] = QueryStatus.ERROR
+            game_entry["query-token"] = None
+            return True
 
-            game_entry["query-status"] = status
-
-    def get_server_info(self, game: str, host: str) -> dict:
+    def get_server_info(self, game: str, host: str) -> Server:
         faulty_param = None
         if game in ('', None):
             faulty_param = i18n._('game id')
@@ -243,51 +312,193 @@ class GameTable:
             raise ValueError(
                 i18n._('Invalid %(param)s specified.') % {'param': faulty_param})
 
-        with self.__game_table as game_table:
+        with self._lock:
+            server_table = self._get_game_entry(game)["servers"]
+            for server in server_table:
+                if str(server.endpoint) == host:
+                    return helpers.deepcopy(server)
+        raise ValueError(i18n._('Server not found: %(host)s') % {'host': host})
+
+    def get_servers_data(self, game: str) -> list[Server]:
+        with self._lock:
+            return helpers.deepcopy(self._get_game_entry(game)["servers"])
+
+
+class _AttemptState(Enum):
+    """Who may still complete one admitted query."""
+
+    STARTING = auto()
+    WORKER = auto()
+    COMPLETE = auto()
+
+
+class _QueryAttempt:
+    """One admitted query, completed and reported exactly once.
+
+    The caller that admitted the query and the worker thread it launches race
+    for ownership through one lock-protected handoff. The worker claims
+    `STARTING -> WORKER` before it may report an outcome, and whichever side
+    reaches `COMPLETE` first performs the only token-aware GameTable
+    transition and invokes the only callback. Both happen after the attempt
+    lock is released, so no callback ever runs while a lock is held.
+
+    Core close overrides that owner: once it has begun, a completion that the
+    close could no longer cancel still publishes nothing and calls nobody.
+
+    Every `complete_*` and `cancel_for_close` call reports whether it took
+    that single completion, never whether it published: a winner that finds
+    Core closing publishes nothing and calls nobody, and its caller only
+    needs to know that no other owner will report the query.
+
+    A publish ignores the ownership `GameTable` reports back: the game minted
+    this token for this admission alone, the attempt performs exactly one
+    transition, and a close that consumed the token had to win the completion
+    first, so the attempt and the table cannot disagree.
+    """
+
+    def __init__(self, core: "Core", game: str, token: object, callback=None):
+        self._core = core
+        self.game = game
+        self.token = token
+        # Written under the attempt lock before the worker starts; read by
+        # Core to release this attempt's thread registration.
+        self.thread = None
+        self._callback = callback
+        self._lock = threading.Lock()
+        self._state = _AttemptState.STARTING
+
+    def bind_thread(self, thread: threading.Thread) -> None:
+        """Record the worker thread that will run this attempt."""
+        with self._lock:
+            self.thread = thread
+
+    def claim_worker(self) -> bool:
+        """Take worker ownership; False once the attempt is terminal."""
+        with self._lock:
+            if self._state is not _AttemptState.STARTING:
+                return False
+            self._state = _AttemptState.WORKER
+            return True
+
+    def complete_start_failure(self, error: BaseException) -> bool:
+        """Complete a query whose worker never claimed it; False once it did."""
+        with self._lock:
+            if self._state is not _AttemptState.STARTING:
+                return False
+            self._state = _AttemptState.COMPLETE
+        self._report_failure(error)
+        return True
+
+    def complete_success(self, servers) -> bool:
+        """Complete this attempt with its servers; False if already complete."""
+        server_batch = _validated_server_batch(servers)
+        if not self._take_completion():
+            return False
+        published = self._core._commit_unless_closing(
+            lambda: self._publish_success(server_batch)
+        )
+        if published:
+            self._invoke_callback()
+        return True
+
+    def complete_failure(self, error: BaseException) -> bool:
+        """Complete this attempt with its failure; False if already complete."""
+        if not self._take_completion():
+            return False
+        self._report_failure(error)
+        return True
+
+    def cancel_for_close(self) -> bool:
+        """Terminalize this attempt for shutdown; False if already complete."""
+        if not self._take_completion():
+            return False
+        # Close publishes its own terminal state and suppresses the callback:
+        # no UI work may follow it.
+        self._publish_failure(_query_failure_message())
+        return True
+
+    def run_worker(self) -> None:
+        """Worker thread entry point for one admitted query."""
+        try:
+            self._run_query()
+        finally:
+            self._core._untrack_worker(self)
+
+    def _run_query(self) -> None:
+        if not self.claim_worker():
+            return
+        try:
+            self.complete_success(self._core._query_master_servers(self.game))
+        except Exception as error:
+            if not self.complete_failure(error):
+                # Already terminal: a close cancelled the attempt, or the
+                # callback itself failed. Report it without losing it.
+                _log_safe_diagnostic(error)
+        except BaseException as error:
             try:
-                game_entry = game_table[game]
-            except KeyError:
-                raise ValueError(
-                    i18n._('Game not found: %(game)s') % {'game': game})
+                self.complete_failure(error)
+            except BaseException as cleanup_error:
+                # A failing completion is reported but never replaces the
+                # worker's own failure, which keeps its identity through the
+                # re-raise below.
+                _log_cleanup_diagnostic(cleanup_error)
+            raise
 
-            server_table = helpers.deepcopy(game_entry["servers"])
-        server_entry = server_table[helpers.search_dict_table(
-            server_table, "host", host)]
-        return server_entry
+    def _take_completion(self) -> bool:
+        with self._lock:
+            if self._state is _AttemptState.COMPLETE:
+                return False
+            self._state = _AttemptState.COMPLETE
+            return True
 
-    def get_servers_data(self, game: str) -> dict:
-        if game in ('', None):
-            raise ValueError(i18n._('Please specify a valid game id.'))
+    def _report_failure(self, error: BaseException) -> None:
+        # Rendering the message is this thread's work, not the lifecycle
+        # lock's: the commit below holds that lock for one transition only.
+        message = _query_failure_message()
+        published = self._core._commit_unless_closing(
+            lambda: self._publish_failure(message)
+        )
+        # Close may own the outcome, but the failure is still worth reporting.
+        _log_safe_diagnostic(error)
+        if published:
+            self._invoke_callback()
 
-        with self.__game_table as game_table:
-            servers_data = helpers.deepcopy(game_table[game]["servers"])
-        return servers_data
+    def _publish_success(self, server_batch) -> None:
+        self._core.game_table.finish_query(self.game, self.token, server_batch)
 
-    def set_servers_data(self, game: str, servers_data) -> None:
-        if game in ('', None):
-            raise ValueError(i18n._('Please specify a valid game id.'))
+    def _publish_failure(self, message: str) -> None:
+        self._core.game_table.fail_query(self.game, self.token, message)
 
-        with self.__game_table as game_table:
-            self.clear_servers_data(game)
-            for entry in servers_data:
-                game_table[game]["servers"].append(entry)
-
-    def clear_servers_data(self, game: str) -> None:
-        if game in ('', None):
-            raise ValueError(i18n._('Please specify a valid game id.'))
-
-        with self.__game_table as game_table:
-            with game_table[game]["servers"] as server_list:
-                server_list.clear()
+    def _invoke_callback(self) -> None:
+        """Invoke this attempt's single callback, reporting its failure."""
+        if self._callback is None:
+            return
+        try:
+            self._callback(self.game)
+        except Exception as error:
+            # The published outcome stands; a failing callback only reports.
+            _log_safe_diagnostic(error)
 
 
 class Core:
     """
     Contains core logic of Obozrenie server browser.
+
+    Core owns every query it admits. The lifecycle lock guards the closing
+    flag, the attempts that may still complete, and the worker threads that
+    may still be running, so close can reject new admissions, terminalize what
+    is in flight, and join what it launched.
     """
 
     def __init__(self):
-        self.game_table = GameTable(helpers.load_table(GAME_CONFIG_FILE))
+        self._lifecycle_lock = threading.Lock()
+        self._closing = False
+        self._active_attempts = set()
+        self._tracked_threads = set()
+
+        self.game_table = GameTable(resources.load_toml(
+            "settings", "internal", "game_lists.toml"
+        ))
 
         self.geolocation = None
         path = geoip.find_database()
@@ -299,7 +510,6 @@ class Core:
 
     def load_geoip(self, path: str) -> None:
         """Open a MaxMind DB country database and enable geolocation."""
-        import maxminddb
         try:
             self.geolocation = maxminddb.open_database(path)
             helpers.debug_msg([CORE_MSG, i18n._("GeoIP database %(path)s opened successfully.") % {
@@ -309,119 +519,390 @@ class Core:
                 [CORE_MSG, i18n._("Failed to open GeoIP database. Disabling geolocation.")])
             self.geolocation = None
 
-    def _lookup_country(self, host: str) -> str:
-        """Resolve a host to an ISO country code.
-
-        Returns "unknown" when geolocation is disabled, the ISO country
-        code on success, or "" when the host cannot be resolved or located.
-        """
+    def _lookup_countries(
+        self,
+        hosts,
+        deadline: float | None = None,
+    ) -> dict[str, str]:
+        """Resolve one host batch to ISO country codes."""
+        unique_hosts = tuple(dict.fromkeys(hosts))
         if self.geolocation is None:
-            return "unknown"
-        try:
-            ip = socket.gethostbyname(host)
-        except socket.gaierror:
-            return ""
-        record = self.geolocation.get(ip)
-        if not record:
-            return ""
-        # Flat ip-location-db format vs. nested MaxMind/DB-IP format.
-        code = record.get("country_code")
-        if code is None:
-            code = (record.get("country") or {}).get("iso_code")
-        return code or ""
+            return {host: "unknown" for host in unique_hosts}
 
-    def update_server_list(self, game: str, stat_callback=None) -> None:
-        """Updates server lists."""
-        stat_master_thread = threading.Thread(
-            target=self.stat_master_target, args=(game, stat_callback))
-        stat_master_thread.daemon = True
-        stat_master_thread.start()
-
-    def stat_master_target(self, game: str, callback=None) -> None:
-        """Separate update thread. Strictly per-game."""
-        game_info = self.game_table.get_game_info(game)
-        game_settings = self.game_table.get_game_settings(game)
-        game_name = game_info["name"]
-        master_list = list(game_settings["master_uri"])
-        adapter = game_info["adapter"]
-
-        # Start query if it's not up already
-        if self.game_table.get_query_status(game) != self.game_table.QUERY_STATUS.WORKING:
-            self.game_table.set_query_status(
-                game, self.game_table.QUERY_STATUS.WORKING)
-            helpers.debug_msg([CORE_MSG, i18n._(
-                "Refreshing server list for %(game)s.") % {'game': game_name}])
-            stat_master_cmd = adapters.adapter_table[adapter].stat_master
-            temp_list = None
-
+        addresses = {}
+        hostnames = []
+        for host in unique_hosts:
             try:
-                temp_list = stat_master_cmd(game, game_info, master_list)
-            except Exception as e:
-                helpers.debug_msg([CORE_MSG, e])
-                helpers.debug_msg([CORE_MSG, i18n._(
-                    "Internal backend error for %(game)s.") % {'game': game_name}])
-                self.game_table.set_query_status(
-                    game, self.game_table.QUERY_STATUS.ERROR)
+                ipaddress.ip_address(host)
+            except ValueError:
+                hostnames.append(host)
             else:
-                self.game_table.set_servers_data(game, temp_list)
+                addresses[host] = host
 
-                for entry in temp_list:
-                    host = entry["host"].split(':')[0]
-                    entry['country'] = self._lookup_country(host)
+        if hostnames:
+            if deadline is None:
+                deadline = (
+                    time.monotonic() + _GEOIP_DNS_BATCH_TIMEOUT_SECONDS
+                )
+            outcomes = getaddrinfo_many_until(hostnames, deadline)
+            for host, outcome in zip(hostnames, outcomes, strict=True):
+                try:
+                    candidates = outcome.result()
+                except (
+                    CallDeadlineExceeded,
+                    PoolSaturatedError,
+                    PoolUnavailableError,
+                ) as error:
+                    if type(error) not in (
+                        CallDeadlineExceeded,
+                        PoolSaturatedError,
+                        PoolUnavailableError,
+                    ):
+                        raise
+                    continue
+                except (socket.gaierror, UnicodeError):
+                    continue
 
-                self.game_table.set_servers_data(game, temp_list)
+                for candidate in candidates:
+                    try:
+                        family = candidate[0]
+                        address = candidate[4][0]
+                    except (IndexError, TypeError):
+                        continue
+                    if family not in (socket.AF_INET, socket.AF_INET6):
+                        continue
+                    if type(address) is not str:
+                        continue
+                    try:
+                        parsed = ipaddress.ip_address(address)
+                    except ValueError:
+                        continue
+                    expected_version = 4 if family == socket.AF_INET else 6
+                    if parsed.version == expected_version:
+                        addresses[host] = address
+                        break
 
-                self.game_table.set_query_status(
-                    game, self.game_table.QUERY_STATUS.READY)
+        countries = {}
+        for host in unique_hosts:
+            address = addresses.get(host)
+            if address is None:
+                countries[host] = ""
+                continue
+            try:
+                record = self.geolocation.get(address)
+            except (ValueError, maxminddb.InvalidDatabaseError):
+                countries[host] = ""
+                continue
+            if not isinstance(record, Mapping):
+                countries[host] = ""
+                continue
 
-        # Call post-stat callback
-        if callback is not None:
-            callback(game)
+            # Flat ip-location-db format vs. nested MaxMind/DB-IP format.
+            missing = object()
+            code = record.get("country_code", missing)
+            if code is not missing:
+                countries[host] = code if type(code) is str else ""
+                continue
+            country = record.get("country")
+            if not isinstance(country, Mapping):
+                countries[host] = ""
+                continue
+            code = country.get("iso_code")
+            countries[host] = code if type(code) is str else ""
+        return countries
 
-    def start_game(self, game: str, server: str, password: str) -> None:
-        """Start game"""
+    def _lookup_country(self, host: str) -> str:
+        return self._lookup_countries((host,))[host]
+
+    def _enrich_servers(self, servers: list[Server]) -> list[Server]:
+        snapshot = list(servers)
+        try:
+            rtt_servers = list(ping.add_rtt_info(list(snapshot)))
+        except Exception as error:
+            # RTT is optional; retain adapter-provided values if the service fails.
+            _log_safe_diagnostic(error)
+            rtt_servers = list(snapshot)
+
+        if any(type(server) is not Server for server in rtt_servers):
+            raise TypeError("RTT enrichment must return exact Server records.")
+        countries = self._lookup_countries(
+            server.endpoint.host for server in rtt_servers
+        )
+        return [
+            replace(
+                server,
+                country=countries[server.endpoint.host],
+            )
+            for server in rtt_servers
+        ]
+
+    def _query_master_servers(self, game: str) -> list[Server]:
+        """Query one game's adapter and return enriched server records."""
+        game_info = self.game_table.get_game_info(game)
+        settings = self.game_table.get_game_settings(game)
+        adapter = adapters.resolve_adapter(game_info["adapter"])
+        servers = list(
+            adapter.stat_master(game, game_info, list(settings["master_uri"]))
+        )
+        if any(type(server) is not Server for server in servers):
+            raise TypeError("Adapters must return exact Server records.")
+        return self._enrich_servers(servers)
+
+    def update_server_list(self, game: str, stat_callback=None) -> bool:
+        """Admit one query for a game and hand it to a worker thread."""
+        attempt = self._admit_query(game, stat_callback)
+        if attempt is None:
+            return False
+        try:
+            self._launch_worker(attempt)
+        except Exception as error:
+            self._abandon_launch(attempt, error)
+        except BaseException as error:
+            try:
+                self._abandon_launch(attempt, error)
+            except BaseException as cleanup_error:
+                # Cleanup is reported but never replaces the caller's own
+                # interruption, which keeps its identity through the re-raise.
+                _log_cleanup_diagnostic(cleanup_error)
+            raise
+        return True
+
+    def _admit_query(self, game: str, stat_callback) -> _QueryAttempt | None:
+        """Admit one query, or report that Core is closing or already busy."""
+        with self._lifecycle_lock:
+            if self._closing:
+                return None
+            token = self.game_table.begin_query(game)
+            if token is None:
+                return None
+            # Registering before the worker exists keeps close from missing an
+            # attempt that is only part way into its launch.
+            attempt = _QueryAttempt(self, game, token, stat_callback)
+            self._active_attempts.add(attempt)
+            return attempt
+
+    def _launch_worker(self, attempt: _QueryAttempt) -> None:
+        """Construct, register and start one attempt's worker thread."""
+        thread = threading.Thread(target=attempt.run_worker, daemon=True)
+        attempt.bind_thread(thread)
+        with self._lifecycle_lock:
+            self._tracked_threads.add(thread)
+        thread.start()
+
+    def _abandon_launch(
+        self,
+        attempt: _QueryAttempt,
+        error: BaseException,
+    ) -> None:
+        """Clean up a failed launch for whoever now owns the query.
+
+        Ownership is decided before any registration is released: a launch
+        that failed while its worker was already claiming the attempt cannot
+        prove the thread never ran, and an unpublished identity is no proof
+        either, because the new thread publishes its own.
+        """
+        if attempt.complete_start_failure(error):
+            # The caller took the attempt's single completion, so no worker
+            # will ever report it and nothing else will untrack it. Whether
+            # that completion also published is Core close's business, not
+            # this bookkeeping's.
+            self._untrack_unstarted_thread(attempt)
+            self._untrack_attempt(attempt)
+            return
+        # A worker that already claimed the attempt owns its completion and
+        # its registrations, so a post-claim startup failure is only a safe
+        # diagnostic.
+        _log_safe_diagnostic(error)
+
+    def _untrack_attempt(self, attempt: _QueryAttempt) -> None:
+        """Stop tracking one attempt that can no longer complete."""
+        with self._lifecycle_lock:
+            self._active_attempts.discard(attempt)
+
+    def _untrack_worker(self, attempt: _QueryAttempt) -> None:
+        """Release one exited worker's attempt and thread registrations."""
+        with self._lifecycle_lock:
+            self._active_attempts.discard(attempt)
+            self._tracked_threads.discard(attempt.thread)
+
+    def _untrack_unstarted_thread(self, attempt: _QueryAttempt) -> None:
+        """Release a worker thread that provably never launched.
+
+        A thread that failed to launch has no identity and no target that
+        could release it. A thread that failed its caller after launching has
+        one, and stays tracked until its target exits or a join observes it.
+        """
+        thread = attempt.thread
+        if thread is None or thread.ident is not None:
+            return
+        with self._lifecycle_lock:
+            self._tracked_threads.discard(thread)
+
+    def _commit_unless_closing(self, transition) -> bool:
+        """Run one query transition unless close has already begun.
+
+        The closing check and the `GameTable` transition share the lifecycle
+        lock, so a commit either lands entirely before close began or never
+        lands at all; `begin_close` cannot return while one is in flight.
+        The caller learns here whether it may call back, and then does so
+        outside this critical section: no callback runs under a lock.
+        """
+        with self._lifecycle_lock:
+            if self._closing:
+                return False
+            transition()
+            return True
+
+    @property
+    def is_closing(self) -> bool:
+        """Report whether close has begun; no query may commit after it."""
+        with self._lifecycle_lock:
+            return self._closing
+
+    def begin_close(self) -> None:
+        """Reject new queries and terminalize every attempt still in flight."""
+        with self._lifecycle_lock:
+            self._closing = True
+            attempts = tuple(self._active_attempts)
+        # Cancellation publishes a terminal state and takes the GameTable
+        # lock, so it happens outside this Core's own lock. One attempt that
+        # fails to cancel must not strand the rest, and an attempt is
+        # forgotten only once its cancellation has returned, so a close that
+        # an interruption cut short leaves the remainder for the next one.
+        for attempt in attempts:
+            try:
+                attempt.cancel_for_close()
+            except Exception as error:
+                _log_safe_diagnostic(error)
+            self._untrack_attempt(attempt)
+
+    def join_until(self, deadline: float) -> None:
+        """Join tracked worker threads against one absolute deadline."""
+        deadline = validate_deadline(deadline)
+        with self._lifecycle_lock:
+            threads = tuple(self._tracked_threads)
+
+        exited = []
+        for thread in threads:
+            if thread.ident is None:
+                # Registered but not launched yet: it cannot be joined, and
+                # only its admitting caller can prove it never will be.
+                continue
+            remaining = deadline - time.monotonic()
+            if remaining > 0:
+                thread.join(remaining)
+            if not thread.is_alive():
+                exited.append(thread)
+
+        if exited:
+            with self._lifecycle_lock:
+                self._tracked_threads.difference_update(exited)
+
+    def close_until(self, deadline: float) -> None:
+        """Close Core and join its workers against one absolute deadline."""
+        # Validate first: a malformed deadline must not half-close Core.
+        deadline = validate_deadline(deadline)
+        self.begin_close()
+        self.join_until(deadline)
+
+    def start_game(
+        self,
+        game: str,
+        server: str,
+        password: str,
+        callback=None,
+    ) -> bool:
+        """Validate and start a game in a background worker.
+
+        Game metadata, settings, endpoint, activation directory and the
+        complete launch specification are all captured here, on the calling
+        thread. The worker only spawns what this snapshot already describes,
+        so it never has to read a process-wide value such as the working
+        directory that the caller alone can observe reliably.
+        """
         if game in ('', None):
             raise ValueError(i18n._('Please specify a valid game id.'))
 
-        host = ":".join(server.split(":")[0:-1])
-        port = server.split(":")[-1]
         game_info = self.game_table.get_game_info(game)
         game_settings = self.game_table.get_game_settings(game)
         launch_pattern = game_info["launch_pattern"]
-        steam_app_id = None  # type: Union[None, str]
-        try:
-            if game_settings["steam_launch"] is True:
-                try:
-                    steam_app_id = game_info["steam_app_id"]
-                    launch_pattern = "steam"
-                except KeyError:
-                    pass
-        except:
-            pass
+        steam_app_id = None
+        if game_settings.get("steam_launch") is True:
+            steam_app_id = game_info.get("steam_app_id")
+            if steam_app_id is not None:
+                launch_pattern = "steam"
+        endpoint = Endpoint.parse(server)
+        # `build_launch_spec` re-checks the same setting by game id as an
+        # invariant guard; checking it here first, through the same
+        # pattern-to-setting accessor, only changes the message to name the
+        # game the user recognizes.
+        executable_setting = launch.executable_setting_name(launch_pattern)
+        if not str(game_settings.get(executable_setting, "")).strip():
+            raise ValueError(
+                i18n._("Please configure the executable path for %(game)s.")
+                % {"game": game_info["name"]}
+            )
+        spec = launch.build_launch_spec(
+            game,
+            launch_pattern,
+            game_settings,
+            endpoint,
+            password,
+            steam_app_id,
+            activation_directory=os.getcwd(),
+        )
 
-        launch_process = threading.Thread(target=launch.launch_game, args=(
-            game, launch_pattern, game_settings, host, port, password, steam_app_id))
-        launch_process.daemon = True
+        def launch_target():
+            error = None
+            try:
+                error = launch.do_launch(spec)
+            except Exception as launch_error:
+                error = launch_error
+            finally:
+                if callback is not None:
+                    callback(error)
+
+        launch_process = threading.Thread(target=launch_target, daemon=True)
         launch_process.start()
+        return True
+
+
+class SettingsLockError(SafeDiagnosticError):
+    def __init__(self) -> None:
+        super().__init__(SafeDiagnostic(
+            "Another process holds the settings profile lock."
+        ))
 
 
 class Settings:
 
     """Settings main class.
     Contains methods for saving and loading user settings and setting lists.
+
+    One bounded cross-process lock per profile serializes the user-table reads
+    in `load` against the atomic writes in `save`, and is always released
+    before a caller's callbacks run.
     """
 
-    def __init__(self, core: Core, profile_path: str):
+    def __init__(
+        self,
+        core: Core,
+        profile_path: str,
+        resource_loader=resources.load_toml,
+    ):
         """Loads base variables into the class."""
-        # Default configs
-        self.default_common_settings_path = DEFAULT_COMMON_SETTINGS_PATH
-        self.default_game_settings_path = DEFAULT_GAME_SETTINGS_PATH
+        self._resource_loader = resource_loader
 
         # User configs
         self.user_common_settings_path = os.path.join(
             profile_path, COMMON_SETTINGS_FILE)
         self.user_game_settings_path = os.path.join(
             profile_path, GAME_SETTINGS_FILE)
+        self._profile_lock = filelock.FileLock(
+            f"{profile_path}.lock",
+            timeout=_PROFILE_LOCK_TIMEOUT_SECONDS,
+            mode=0o600,
+        )
 
         self.dynamic_widget_table = get_game_options()
         self.common_settings_table = get_common_options()
@@ -430,21 +911,50 @@ class Settings:
 
         self.core = core
 
-    def load(self, callback_postgenload=None):
+    @contextlib.contextmanager
+    def _hold_profile_lock(self):
+        """Hold the profile lock for the duration of one settings operation.
+
+        Acquisition is bounded, so contention becomes the payload-free
+        `SettingsLockError` instead of an unbounded wait. The `filelock`
+        timeout is suppressed rather than chained: its own message names the
+        lock file, which an uncaught traceback would otherwise print.
+        """
+        try:
+            self._profile_lock.acquire()
+        except filelock.Timeout:
+            raise SettingsLockError from None
+        try:
+            yield
+        finally:
+            self._profile_lock.release()
+
+    def load(self, callback_postgenload=None) -> list[str]:
         """Loads configuration."""
-        default_common_settings_table = helpers.load_table(
-            self.default_common_settings_path)
-        default_game_settings_table = helpers.load_table(
-            self.default_game_settings_path)
+        default_common_settings_table = self._resource_loader(
+            "settings", "defaults", "settings.toml"
+        )
+        default_game_settings_table = self._resource_loader(
+            "settings", "defaults", "games.toml"
+        )
 
-        user_common_settings_table = helpers.load_table(
-            self.user_common_settings_path)
+        # One acquisition covers both reads, so a concurrent save cannot land
+        # between them; it is released well before the callbacks below run.
+        with self._hold_profile_lock():
+            user_common_settings_table, common_warning = helpers.load_user_table(
+                self.user_common_settings_path)
+            user_game_settings_table, game_warning = helpers.load_user_table(
+                self.user_game_settings_path)
 
-        # Load into common settings table
+        warnings = [
+            warning
+            for warning in (common_warning, game_warning)
+            if warning is not None
+        ]
+
         for group in self.common_settings_table:
             self.settings_table[group] = {}  # type: dict
             for option in self.common_settings_table[group]:
-                # Define variables
                 value = default_common_settings_table[group][option]
                 try:
                     value = user_common_settings_table[group][option]
@@ -453,15 +963,6 @@ class Settings:
 
                 self.settings_table[group][option] = value
 
-                if callback_postgenload is not None:
-                    callback_postgenload(
-                        self.common_settings_table, group, option, value)
-
-        # Load game settings table
-        user_game_settings_table = helpers.load_table(
-            self.user_game_settings_path)
-
-        # Set game settings
         for game in self.core.game_table.get_game_set():
             for option in self.core.game_table.get_game_settings(game):
                 value = default_game_settings_table[game][option]
@@ -472,20 +973,62 @@ class Settings:
 
                 self.core.game_table.set_game_setting(game, option, value)
 
+        self.normalize_game_selection()
+
+        if callback_postgenload is not None:
+            for group in self.common_settings_table:
+                for option in self.common_settings_table[group]:
+                    callback_postgenload(
+                        self.common_settings_table,
+                        group,
+                        option,
+                        self.settings_table[group][option],
+                    )
+
+        return warnings
+
+    def normalize_game_selection(self) -> None:
+        """Replace invalid selectors with the first configured game."""
+        games = self.core.game_table.get_game_set()
+        first_game = ""
+        if games:
+            first_game = min(
+                games,
+                key=lambda game_id: (
+                    self.core.game_table.get_game_info(game_id)["name"].casefold(),
+                    game_id,
+                ),
+            )
+
+        common_settings = self.settings_table["common"]
+        for option in ("selected-game-browser", "selected-game-connect"):
+            if common_settings.get(option) not in games:
+                common_settings[option] = first_game
+
     def save(self) -> None:
         """Saves configuration."""
-        # Save common settings table
-        helpers.save_table(self.user_common_settings_path, self.settings_table)
-
+        persistent_common_settings = {
+            group: {
+                option: self.settings_table[group][option]
+                for option in options
+            }
+            for group, options in self.common_settings_table.items()
+        }
         # Compile game settings table
         user_game_settings_table = {}
         for game in self.core.game_table.get_game_set():
             user_game_settings_table[game] = self.core.game_table.get_game_settings(
                 game)
 
-        # Save game settings
-        helpers.save_table(self.user_game_settings_path,
-                           user_game_settings_table)
+        # Both atomic replacements happen under one acquisition, so a reader
+        # never observes a half-updated profile.
+        with self._hold_profile_lock():
+            helpers.save_table(
+                self.user_common_settings_path,
+                persistent_common_settings,
+            )
+            helpers.save_table(self.user_game_settings_path,
+                               user_game_settings_table)
 
 
 if __name__ == "__main__":

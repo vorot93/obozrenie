@@ -18,67 +18,50 @@
 
 """Helper functions for processing data."""
 
-import collections
+import contextlib
 import copy
-import json
 import os
+import tempfile
 import tomllib
 import tomli_w
-import threading
 import time
+from dataclasses import dataclass
 
+from obozrenie.diagnostics import SafeDiagnostic, SafeDiagnosticError
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
-
-class Bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
+from obozrenie import i18n
 
 
-class ThreadSafeBunch(Bunch):
-    def __init__(self, * p_arg, ** n_arg):
-        super().__init__(* p_arg, ** n_arg)
-        self.__lock = threading.RLock()
-
-    def __enter__(self):
-        self.__lock.acquire()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.__lock.release()
+# A non-cooperating writer can replace the user table while it is being
+# recovered; recovery inspects at most this many snapshots before giving up.
+_RECOVERY_SNAPSHOT_LIMIT = 3
 
 
-class ThreadSafeDict(dict):
-    def __init__(self, * p_arg, ** n_arg):
-        super().__init__(* p_arg, ** n_arg)
-        self.__lock = threading.RLock()
+class SettingsReadError(SafeDiagnosticError, OSError):
+    """A user settings file exists but could not be read.
 
-    def __enter__(self):
-        self.__lock.acquire()
-        return self
+    The original names the file and carries `errno`/`strerror`, none of which
+    may reach a log the payload-free policy governs; a signal handler cannot
+    re-raise either, so this fixed text is the only thing the user is shown.
+    It stays an `OSError` so callers keep reading these as the failure family
+    they have always been.
+    """
 
-    def __exit__(self, type, value, traceback):
-        self.__lock.release()
-
-    def __deepcopy__(self, *args):
-        return ThreadSafeDict(json.loads(json.dumps(dict(self))))
+    def __init__(self) -> None:
+        super().__init__(SafeDiagnostic("Settings file could not be read."))
 
 
-class ThreadSafeList(list):
-    def __init__(self, * p_arg, ** n_arg):
-        super().__init__(* p_arg, ** n_arg)
-        self.__lock = threading.RLock()
+class SettingsWriteError(SafeDiagnosticError, OSError):
+    """A user settings file could not be written or replaced.
 
-    def __enter__(self):
-        self.__lock.acquire()
-        return self
+    Declared, suppressed and typed exactly as `SettingsReadError` is, and for
+    the same reasons.
+    """
 
-    def __exit__(self, type, value, traceback):
-        self.__lock.release()
-
-    def __deepcopy__(self, *args):
-        return ThreadSafeList(json.loads(json.dumps(list(self))))
+    def __init__(self) -> None:
+        super().__init__(SafeDiagnostic("Settings file could not be written."))
 
 
 def debug_msg_str(msg):
@@ -90,74 +73,14 @@ def debug_msg(msg=None):
         print(debug_msg_str(msg))
 
 
-def enum(*args):
-    return collections.namedtuple('Enum', args)._make(range(len(args)))
-
-
 def enforce_array(entry_array):
     if not isinstance(entry_array, list):
         entry_array = [entry_array]
     return entry_array
 
 
-def deepcopy(foo):
-    try:
-        return foo.__deepcopy__()
-    except AttributeError:
-        return copy.deepcopy(foo)
-
-
-def search_table(table, level, value):
-    if level == 0:
-        for i in range(len(table)):
-            if table[i] == value:
-                return i
-        return None
-    elif level == 1:
-        for i in range(len(table)):
-            for j in range(len(table[i])):
-                if table[i][j] == value:
-                    return i, j
-        return None
-    elif level == 2:
-        for i in range(len(table)):
-            for j in range(len(table[i])):
-                for k in range(len(table[i][j])):
-                    if table[i][j][k] == value:
-                        return i, j, k
-        return None
-    elif level is (3 or -1):
-        for i in range(len(table)):
-            for j in range(len(table[i])):
-                for k in range(len(table[i][j])):
-                    for l in range(len(table[i][j][k])):
-                        if table[i][j][k][l] == value:
-                            return i, j, k, l
-        return None
-    else:
-        print(
-            "Please specify correct search level: 0, 1, 2, 3, or -1 for deepest possible.")
-
-
-def search_dict_table(table, key, value):
-    result = None
-    for i in range(len(table)):
-        if table[i][key] == value:
-            result = i
-            break
-    return result
-
-
-def flatten_dict_table(dict_table, leading_key_spec):
-    flattened_dict_table = []
-    for leading_key in sorted(dict_table):
-        flattened_dict_table.append({})
-
-        flattened_dict_table[-1][leading_key_spec] = leading_key
-        for key in dict_table[leading_key]:
-            flattened_dict_table[-1][key] = dict_table[leading_key][key]
-
-    return flattened_dict_table
+def deepcopy(value):
+    return copy.deepcopy(value)
 
 
 def sort_dict_table(dict_table: list, sort_key) -> list:
@@ -182,37 +105,198 @@ def dict_to_list(dict_table, key_list):
     return list_table
 
 
-def flatten(container):
-    for i in container:
-        if isinstance(i, list) or isinstance(i, tuple):
-            for j in flatten(i):
-                yield j
-        else:
-            yield i
+@dataclass(frozen=True, slots=True)
+class _FileSnapshot:
+    """One complete read of a file with the identity it was read from."""
+
+    payload: bytes
+    identity: tuple[int, int, int, int, int]
+
+    @staticmethod
+    def identify(status: os.stat_result) -> tuple[int, int, int, int, int]:
+        """Device, inode, mode, size, and nanosecond modification time."""
+        return (
+            status.st_dev,
+            status.st_ino,
+            status.st_mode,
+            status.st_size,
+            status.st_mtime_ns,
+        )
 
 
-def flatten_list(nested_list):
-    flattened_list = list(flatten(nested_list))
-    return flattened_list
-
-
-def remove_all_occurences_from_list(target_list, value):
-    return [y for y in target_list if y != value]
-
-
-def load_table(path):
-    """Loads settings table into dict"""
+def _read_file_snapshot(path: str) -> _FileSnapshot | None:
+    """Read one file completely, identifying it from its own descriptor."""
     try:
-        with open(path, 'rb') as table_open_object:
-            return tomllib.load(table_open_object)
+        with open(path, "rb") as table_open_object:
+            # Identity is taken before the read, so a writer that changes the
+            # file underneath it contradicts this snapshot instead of being
+            # silently absorbed into it.
+            identity = _FileSnapshot.identify(
+                os.fstat(table_open_object.fileno())
+            )
+            payload = table_open_object.read()
     except FileNotFoundError:
         return None
+    except OSError:
+        # An unreadable file is a failure this run reports rather than
+        # recovers, and the exception it fails with is declared so that the
+        # report carries a reason instead of only a type name.
+        raise SettingsReadError from None
+    return _FileSnapshot(payload=payload, identity=identity)
+
+
+def _snapshot_is_current(path: str, snapshot: _FileSnapshot) -> bool:
+    """Report whether the live path still resolves to the snapshot's file."""
+    try:
+        status = os.stat(path)
+    except OSError:
+        return False
+    return _FileSnapshot.identify(status) == snapshot.identity
+
+
+@contextlib.contextmanager
+def _private_sibling_writer(directory: str, prefix: str):
+    """Open a fresh, private ``0600`` sibling file in `directory` for writing.
+
+    `mkstemp`'s descriptor is `fstat`'d (identifying the exact file this call
+    owns, for a caller that needs an identity-checked cleanup), `fchmod`'d to
+    0600, and wrapped for buffered binary writing before this yields
+    ``(sibling_path, sibling_file, reservation)``. The caller writes through
+    `sibling_file` and alone decides how to finalize a completed write (a
+    rename onto a fixed path, or simply keeping the random name) and, on its
+    own failure once writing has started, how to roll back — this function
+    never removes the sibling for a failure the caller could itself react to.
+
+    The one failure this *does* handle itself is one in this shared setup,
+    before the caller ever sees a path to roll back with: it then removes the
+    file `mkstemp` just made, matching the stronger of the two current
+    callers' guarantees against a dangling temporary file.
+    """
+    descriptor, sibling_path = tempfile.mkstemp(dir=directory, prefix=prefix)
+    entered = False
+    try:
+        reservation = os.fstat(descriptor)
+        os.fchmod(descriptor, 0o600)
+        sibling_file = os.fdopen(descriptor, "wb")
+        descriptor = None
+        entered = True
+        with sibling_file:
+            yield sibling_path, sibling_file, reservation
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if not entered:
+            try:
+                os.unlink(sibling_path)
+            except FileNotFoundError:
+                pass
+
+
+def _write_invalid_backup(path: str, payload: bytes) -> str:
+    """Archive malformed bytes in a private sibling of their source."""
+    directory = os.path.dirname(path) or "."
+    installed = False
+    with _private_sibling_writer(
+        directory, f"{os.path.basename(path)}.invalid-"
+    ) as (backup_path, backup_open_object, reservation):
+        try:
+            backup_open_object.write(payload)
+            backup_open_object.flush()
+            os.fsync(backup_open_object.fileno())
+            # The archive is durable from here on, so a failure in the
+            # implicit close below must not take it away again.
+            installed = True
+        finally:
+            if not installed:
+                # Remove a partial archive only while the name still holds the
+                # very file this call created.
+                try:
+                    partial = os.lstat(backup_path)
+                except FileNotFoundError:
+                    pass
+                else:
+                    if (partial.st_dev, partial.st_ino) == (
+                        reservation.st_dev,
+                        reservation.st_ino,
+                    ):
+                        os.unlink(backup_path)
+    return backup_path
+
+
+def load_user_table(path: str | os.PathLike[str]) -> tuple[dict, str | None]:
+    """Load a user TOML table, archiving malformed input beside it.
+
+    Only one immutable snapshot is parsed, and malformed bytes are copied into
+    a uniquely allocated private sibling: the live pathname is never renamed,
+    unlinked, chmodded, or otherwise mutated, so a valid replacement another
+    process installs survives and is loaded instead of being destroyed. A
+    source that keeps changing is abandoned after a fixed snapshot budget
+    rather than retried forever.
+    """
+    path = os.fspath(path)
+    for _ in range(_RECOVERY_SNAPSHOT_LIMIT):
+        snapshot = _read_file_snapshot(path)
+        if snapshot is None:
+            return {}, None
+        try:
+            return tomllib.loads(snapshot.payload.decode("utf-8")), None
+        except (tomllib.TOMLDecodeError, UnicodeDecodeError):
+            pass
+
+        if not _snapshot_is_current(path, snapshot):
+            continue
+        _write_invalid_backup(path, snapshot.payload)
+        if not _snapshot_is_current(path, snapshot):
+            # A replacement landed while those bytes were being archived. It
+            # stays live and the next snapshot loads it.
+            continue
+        return {}, i18n._(
+            "Invalid user settings were backed up and defaults were restored."
+        )
+    raise RuntimeError("User settings changed during bounded recovery.")
 
 
 def save_table(path, data):
-    """Saves settings to a file"""
+    """Write one settings table, publishing it with an atomic replacement.
+
+    The private sibling is `fchmod`ded to `0600` through its own descriptor
+    before anything is written, so the installed file carries that mode from
+    the instant it appears under this name and no umask can widen it. Nothing
+    then touches the live pathname but the replacement itself: a `chmod` on a
+    name could only ever act on whatever occupies it at that moment — a file
+    another process installed, or the target of a symlink it left there.
+
+    Every filesystem failure here is declared as `SettingsWriteError` so the
+    reason survives a log that may not print the exception's own text. The
+    rollback below is a `finally`, so it still removes an unpublished sibling
+    on the way out of a declared failure.
+    """
+    path = os.fspath(path)
     directory = os.path.dirname(path)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-    with open(path, 'wb') as table_open_object:
-        tomli_w.dump(data, table_open_object)
+
+    temporary_path = None
+    try:
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        else:
+            directory = "."
+
+        with _private_sibling_writer(
+            directory, f".{os.path.basename(path)}."
+        ) as (temporary_path, table_open_object, _reservation):
+            tomli_w.dump(data, table_open_object)
+            table_open_object.flush()
+            os.fsync(table_open_object.fileno())
+
+        os.replace(temporary_path, path)
+        temporary_path = None
+    except OSError:
+        # Every one of these names the path it failed on, so the declaration
+        # replaces it rather than chaining it into a printable traceback.
+        raise SettingsWriteError from None
+    finally:
+        if temporary_path is not None:
+            try:
+                os.unlink(temporary_path)
+            except FileNotFoundError:
+                pass

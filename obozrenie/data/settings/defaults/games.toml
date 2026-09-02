@@ -1,0 +1,175 @@
+[rigsofrods]
+path = "RoR"
+master_uri = ["https://api.rigsofrods.org/server-list?json=true"]
+
+[minetest]
+path = "minetest"
+master_uri = ["https://servers.minetest.net/list"]
+nickname = "Player"
+
+[freeminer]
+path = "freeminer"
+master_uri = ["https://servers.freeminer.org/list"]
+nickname = "Player"
+
+[csgo]
+path = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive/csgo_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Global Offensive"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[cstrike]
+path = "~/.local/share/Steam/steamapps/common/Counter-Strike Source/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Counter-Strike Source"
+master_uri = ["master://hl2master.steampowered.com:27011", "master://46.165.194.16:27011", "master://46.4.71.67:27011", "master://46.165.194.14:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[dod]
+path = "~/.local/share/Steam/steamapps/common/Day of Defeat Source/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Day of Defeat Source"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[garrysmod]
+path = "~/.local/share/Steam/steamapps/common/GarrysMod/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/GarrysMod"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[gesource]
+path = ""
+workdir = ""
+master_uri = ["master://hl2master.steampowered.com:27011"]
+
+[hl1mp]
+path = "~/.local/share/Steam/steamapps/common/Half-Life 1 Source Deathmatch/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Half-Life 1 Source Deathmatch"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[hl2mp]
+path = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Half-Life 2 Deathmatch"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[left4dead2]
+path = "~/.local/share/Steam/steamapps/common/Left 4 Dead 2/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Left 4 Dead 2"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[portal2]
+path = "~/.local/share/Steam/steamapps/common/Portal 2/portal2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Portal 2"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[tf]
+path = "~/.local/share/Steam/steamapps/common/Team Fortress 2/hl2_linux"
+workdir = "~/.local/share/Steam/steamapps/common/Team Fortress 2"
+master_uri = ["master://hl2master.steampowered.com:27011"]
+steam_launch = true
+steam_path = "steam"
+
+[alienarena]
+workdir = ""
+path = "alienarena"
+master_uri = ["master://master.corservers.com:27900", "master://master2.corservers.com:27900"]
+
+[doom3]
+workdir = ""
+path = "doom3"
+master_uri = ["master://idnet.ua-corp.com:27650"]
+
+[jediacademy]
+workdir = ""
+path = "jamp"
+master_uri = ["master://masterjk3.ravensoft.com:29060"]
+
+[jedioutcast]
+workdir = ""
+path = "jk2mp"
+master_uri = ["master://masterjk2.ravensoft.com:28060", "master://master.ouned.de:28060"]
+
+[q2]
+workdir = ""
+path = "quake2"
+master_uri = ["master://netdome.biz:27900"]
+
+[q3a]
+workdir = ""
+path = "quake3"
+master_uri = ["master://master3.idsoftware.com:27950", "master://master.quake3arena.com:27950", "master://master.ioquake3.org:27950", "master://dpmaster.deathmask.net:27950", "master://master.maverickservers.com:27950"]
+
+[q4]
+workdir = ""
+path = "quake4"
+master_uri = ["master://q4master.idsoftware.com:27650"]
+
+[qw]
+workdir = ""
+path = "qwcl"
+master_uri = ["master://qwmaster.ocrana.de:27000"]
+
+[rtcw]
+workdir = ""
+path = "rtcwmp"
+master_uri = ["master://107.161.23.68:27950"]
+
+[et]
+workdir = ""
+path = "et"
+master_uri = ["master://etmaster.idsoftware.com:27950"]
+
+[openarena]
+workdir = ""
+path = "openarena"
+master_uri = ["master://master.ioquake3.org:27950", "master://dpmaster.deathmask.net:27950"]
+
+[openttd]
+path = "openttd"
+master_uri = ["master://master.openttd.org:3978"]
+
+[stef1]
+workdir = ""
+path = "iostvoyHM"
+master_uri = ["master://master.stef1.ravensoft.com:27953"]
+
+[turtlearena]
+workdir = ""
+path = "turtle_arena"
+master_uri = ["master://master.ioquake3.org:27950", "master://dpmaster.deathmask.net:27950"]
+
+[unvanquished]
+workdir = ""
+path = "unvanquished"
+master_uri = ["master://unvanquished.net:27950"]
+
+[warsow]
+workdir = ""
+path = "warsow"
+master_uri = ["master://eu.master.warsow.net:27950", "master://ghdigital.com:27950", "master://dpmaster.deathmask.net:27950"]
+
+[wop]
+workdir = ""
+path = "wop"
+master_uri = ["master://master.worldofpadman.com:27955"]
+
+[urbanterror]
+workdir = ""
+path = "urbanterror"
+master_uri = ["master://master.urbanterror.info:27900", "master://master2.urbanterror.info:27900"]
+
+[xonotic]
+workdir = ""
+path = "xonotic-sdl"
+master_uri = ["master://ghdigital.com:27950", "master://dpmaster.deathmask.net:27950", "master://dpmaster.tchr.no:27950"]

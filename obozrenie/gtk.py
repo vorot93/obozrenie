@@ -20,23 +20,71 @@
 
 
 import ast
-import os
-import signal
 import threading
+import time
+from collections.abc import Callable
 
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkPixbuf', '2.0')
-from gi.repository import GdkPixbuf, GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk
 
 import obozrenie.gtk_templates as templates
 import obozrenie.core as core
-from obozrenie import geoip
+from obozrenie import geoip, resources
+from obozrenie.diagnostics import diagnostic_for_exception
 import obozrenie.gtk_helpers as gtk_helpers
 import obozrenie.helpers as helpers
 import obozrenie.i18n as i18n
 from obozrenie.global_strings import *
 from obozrenie.global_settings import *
+from obozrenie.models import Endpoint
+from obozrenie.network_calls import validate_deadline
+
+
+_BUILDER_RESOURCES = (
+    "obozrenie_gtk.ui",
+    "obozrenie_gtk_appmenu.ui",
+)
+
+
+def load_builder_resources(builder, translations=None):
+    for filename in _BUILDER_RESOURCES:
+        builder.add_from_string(i18n.translate_builder_xml(
+            resources.read_text("ui", filename),
+            translations,
+        ))
+
+
+def derive_action_sensitivity(
+    browser_game_valid: bool,
+    connect_game_valid: bool,
+    endpoint_valid: bool,
+    query_status: core.QueryStatus | None,
+    selected_server_present: bool,
+) -> dict[str, bool]:
+    """Derive action availability without reading or mutating GTK state."""
+    return {
+        "preferences": browser_game_valid,
+        "refresh": (
+            browser_game_valid
+            and query_status is not core.QueryStatus.WORKING
+        ),
+        "connect": connect_game_valid and endpoint_valid,
+        "info": (
+            connect_game_valid
+            and endpoint_valid
+            and selected_server_present
+        ),
+    }
+
+
+def _parse_endpoint(value: object) -> Endpoint | None:
+    if type(value) is not str:
+        return None
+    try:
+        return Endpoint.parse(value)
+    except ValueError:
+        return None
 
 
 class GUIActions:
@@ -92,10 +140,11 @@ class GUIActions:
                                                                       "ServerList_Notebook":                    "serverlist-notebook",
                                                                       "ServerList_ScrolledWindow":              "serverlist-scrolledwindow",
                                                                       "ServerList_Welcome_Label":               "serverlist-welcome-label",
-                                                                      "ServerList_Refresh_Spinner":             "serverlist-refresh-spinner",
-                                                                      "Error_Grid":                             "error-grid",
-                                                                      "Error_Message_Label":                    "error-message-label",
-                                                                      "server-connect-game":                    "server-connect-game",
+                                                                       "ServerList_Refresh_Spinner":             "serverlist-refresh-spinner",
+                                                                       "Error_Grid":                             "error-grid",
+                                                                       "Error_Message_Label":                    "error-message-label",
+                                                                       "Error_Message_Content_Label":            "error-message-content-label",
+                                                                       "server-connect-game":                    "server-connect-game",
                                                                       "server-connect-host":                    "server-connect-host",
                                                                       "server-connect-pass":                    "server-connect-pass",
                                                                       "serverinfo-dialog":                      "serverinfo-dialog",
@@ -179,14 +228,27 @@ class GUIActions:
 
         game_list = self.core.game_table.get_game_set()
         self.game_icons = gtk_helpers.get_icon_dict(
-            game_list, 'game', ['png', 'svg'], ICON_GAMES_DIR, 24, 24)
-        try:
-            self.logo = GdkPixbuf.Pixbuf.new_from_file(ICON_PATH)
-        except (NameError, GLib.GError):
-            pass
+            game_list,
+            ('png', 'svg'),
+            resources.resource("icons", "games"),
+            24,
+            24,
+        )
+        self.logo = gtk_helpers.load_icon(
+            resources.resource(
+                "icons",
+                "hicolor",
+                "scalable",
+                "apps",
+                "obozrenie-short.svg",
+            ),
+            "svg",
+        )
 
     def cb_game_preferences_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
+        if game not in self.core.game_table.get_game_set():
+            return
         prefs_dialog = templates.PreferencesDialog(self.gtk_widgets["main-window"],
                                                    game,
                                                    self.core.game_table.get_game_info(
@@ -203,23 +265,25 @@ class GUIActions:
         """Shows server information window."""
         dialog = self.gtk_widgets["serverinfo-dialog"]
 
-        game_table = self.core.game_table.get_game_table_copy()
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
-        server_list_table = game_table[game]["servers"]
         host = self.app.settings.settings_table["common"]["server-host"]
-        server_entry_index = helpers.search_dict_table(
-            server_list_table, "host", host)
-        if server_entry_index is not None:
-            server_entry = server_list_table[server_entry_index]
+        endpoint = _parse_endpoint(host)
+        if game not in self.core.game_table.get_game_set() or endpoint is None:
+            return
+        server = self._find_selected_server(game, endpoint)
+        if server is not None:
+            server_entry = server.to_mapping()
             player_model = self.gtk_widgets["player-list-model"]
-            player_scrolledview = self.gtk_widgets["serverinfo-players-scrolledview"]
 
             gtk_helpers.set_widget_value(
                 self.gtk_widgets["serverinfo-name"], server_entry["name"])
             gtk_helpers.set_widget_value(
                 self.gtk_widgets["serverinfo-host"], server_entry["host"])
             gtk_helpers.set_widget_value(
-                self.gtk_widgets["serverinfo-game"], game_table[server_entry["game_id"]]["info"]["name"])
+                self.gtk_widgets["serverinfo-game"],
+                self.core.game_table.get_game_info(
+                    server_entry["game_id"])["name"],
+            )
             gtk_helpers.set_widget_value(
                 self.gtk_widgets['serverinfo-gameid'], server_entry['game_id'])
             gtk_helpers.set_widget_value(
@@ -230,14 +294,17 @@ class GUIActions:
                 self.gtk_widgets["serverinfo-ping"], server_entry["ping"])
 
             player_model.clear()
-            try:
-                player_table = helpers.dict_to_list(
-                    server_entry["players"], self.player_list_model_format)
-                for entry in player_table:
-                    player_model.append(entry)
-                player_scrolledview.set_property("visible", True)
-            except:
-                player_scrolledview.set_property("visible", False)
+            # Nothing here can fail on a server's account: `players` is a
+            # tuple of validated `Player` records, `dict_to_list` supplies
+            # `None` for a key a record lacks, and the store accepts every
+            # value those records can hold — a missing score included, which
+            # it stores as zero. A failure would therefore be a programming
+            # error, and hiding the whole player list is the last thing that
+            # should happen to one. This view's visibility belongs to the
+            # GtkBuilder document, exactly like every other widget's.
+            for entry in helpers.dict_to_list(
+                    server_entry["players"], self.player_list_model_format):
+                player_model.append(entry)
 
             dialog.run()
             dialog.hide()
@@ -245,20 +312,59 @@ class GUIActions:
     def cb_connect_button_clicked(self, *args):
         game = self.app.settings.settings_table["common"]["selected-game-connect"]
         server = self.app.settings.settings_table["common"]["server-host"]
-        password = self.app.settings.settings_table["common"]["server-pass"]
-        self.cb_server_connect(game, server, password)
+        endpoint = _parse_endpoint(server)
+        if game not in self.core.game_table.get_game_set() or endpoint is None:
+            return
+        password = gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-pass"])
+        self.cb_server_connect(game, str(endpoint), password)
 
-    def cb_serverinfo_connect_button_clicked(self, *args) -> str:
+    def cb_serverinfo_connect_button_clicked(self, *args):
         game = gtk_helpers.get_widget_value(
             self.gtk_widgets["serverinfo-gameid"])
         server = gtk_helpers.get_widget_value(
             self.gtk_widgets["serverinfo-host"])
-        password = self.app.settings.settings_table["common"]["server-pass"]
-        self.cb_server_connect(game, server, password)
+        endpoint = _parse_endpoint(server)
+        if game not in self.core.game_table.get_game_set() or endpoint is None:
+            return
+        if self._find_selected_server(game, endpoint) is None:
+            return
+        password = gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-pass"])
+        self.cb_server_connect(game, str(endpoint), password)
+
+    def show_error_dialog(self, message: str) -> bool:
+        """Show a reusable modal error dialog on the GTK main thread."""
+        dialog = Gtk.MessageDialog(
+            transient_for=self.gtk_widgets["main-window"],
+            modal=True,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.CLOSE,
+            text=message,
+        )
+        try:
+            dialog.run()
+        finally:
+            dialog.destroy()
+        return False
 
     def cb_server_connect(self, game, server, password):
         """Starts the game."""
-        self.core.start_game(game, server, password)
+        def launch_complete(error):
+            if error is None:
+                return
+            details = str(error)
+            if password:
+                details = details.replace(password, "***")
+            message = i18n._("Unable to launch the game: %(error)s") % {
+                "error": details,
+            }
+            GLib.idle_add(self.show_error_dialog, message)
+
+        try:
+            self.core.start_game(game, server, password, launch_complete)
+        except Exception as error:
+            launch_complete(error)
 
     def cb_about(self, action, dialog, parent, *args):
         """Opens the About dialog."""
@@ -271,84 +377,11 @@ class GUIActions:
             'copyright': COPYRIGHT,
             'license_type': Gtk.License.GPL_3_0
         }
-        if ICON_NAME:
-            kwargs.update({'logo_icon_name': ICON_NAME})
-        else:
-            logo = self.logo
-            kwargs.update({'logo': logo})
+        kwargs.update({'logo': self.logo})
 
         about_dialog = Gtk.AboutDialog(**kwargs)
         about_dialog.run()
         about_dialog.destroy()
-
-    def prompt_geoip_download(self, parent):
-        """Offer to download a GeoIP database when none is present.
-
-        Modal dialog. On agreement, downloads on a background thread with
-        a cancellable progress bar, then loads the DB into the core.
-        """
-        if self.core.geolocation is not None:
-            return
-
-        dialog = Gtk.Dialog(
-            title=i18n._("Download GeoIP database?"),
-            transient_for=parent,
-            modal=True)
-        dialog.add_button(i18n._("Not now"), Gtk.ResponseType.CANCEL)
-        download_button = dialog.add_button(
-            i18n._("Download"), Gtk.ResponseType.ACCEPT)
-
-        content = dialog.get_content_area()
-        content.set_spacing(8)
-        content.set_border_width(12)
-        label = Gtk.Label(
-            label=i18n._("Server geolocation needs a country database. "
-                         "Download it now (a few megabytes)?"))
-        label.set_line_wrap(True)
-        content.add(label)
-        progress = Gtk.ProgressBar(show_text=True)
-        content.add(progress)
-        content.show_all()
-        progress.hide()
-
-        cancel_event = threading.Event()
-
-        def on_progress(downloaded, total):
-            if total > 0:
-                fraction = downloaded / total
-                GLib.idle_add(progress.set_fraction, fraction)
-            else:
-                GLib.idle_add(progress.pulse)
-
-        def on_done(path):
-            if path is not None:
-                self.core.load_geoip(path)
-            dialog.destroy()
-            return False
-
-        def worker():
-            path = None
-            try:
-                path = geoip.download_database(cancel_event, on_progress)
-            finally:
-                GLib.idle_add(on_done, path)
-
-        def on_response(dlg, response):
-            if response == Gtk.ResponseType.ACCEPT:
-                # Enter download mode: swap buttons for a single Cancel.
-                download_button.set_sensitive(False)
-                dlg.set_response_sensitive(Gtk.ResponseType.CANCEL, True)
-                label.set_text(i18n._("Downloading GeoIP database…"))
-                progress.show()
-                thread = threading.Thread(target=worker, daemon=True)
-                thread.start()
-            else:
-                # Cancel: abort any in-flight download and close.
-                cancel_event.set()
-                dlg.destroy()
-
-        dialog.connect("response", on_response)
-        dialog.show()
 
     @staticmethod
     def cb_hide(widget, *args):
@@ -383,8 +416,12 @@ class GUIActions:
 
     def cb_game_treeview_selection_changed(self, *args):
         game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
+        if game_id not in self.core.game_table.get_game_set():
+            self.update_action_sensitivity()
+            return
         query_status = self.core.game_table.get_query_status(game_id)
 
+        self.update_action_sensitivity()
         gtk_helpers.set_widget_value(
             self.gtk_widgets["game-combobox"], game_id)
         if query_status == self.core.game_table.QUERY_STATUS.EMPTY:  # Refresh server list on first access
@@ -404,12 +441,25 @@ class GUIActions:
     def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
         game = self.app.settings.settings_table["common"]["selected-game-browser"]
+        if game not in self.core.game_table.get_game_set():
+            return
+        if (
+            self.core.game_table.get_query_status(game)
+            is self.core.game_table.QUERY_STATUS.WORKING
+        ):
+            self.update_action_sensitivity()
+            return
 
-        self.set_loading_state("working")
-        self.set_game_state(game, self.core.game_table.QUERY_STATUS.WORKING)
-
-        self.core.update_server_list(
+        admitted = self.core.update_server_list(
             game, stat_callback=self.cb_update_server_list)
+        if not admitted:
+            self.update_action_sensitivity()
+            return
+        query_status = self.core.game_table.get_query_status(game)
+        if query_status is self.core.game_table.QUERY_STATUS.WORKING:
+            self.set_loading_state("working")
+            self.set_game_state(game, query_status)
+        self.update_action_sensitivity()
 
     def cb_update_server_list(self, game: str) -> None:
         GLib.idle_add(self.show_game_page, game)
@@ -459,10 +509,14 @@ class GUIActions:
             elif query_status == query_status_enum.WORKING:
                 self.set_loading_state("working")
             elif query_status == query_status_enum.ERROR:
+                self.gtk_widgets["error-message-content-label"].set_property(
+                    "label",
+                    self.app.core.game_table.get_query_error(str(game)),
+                )
                 self.set_loading_state("error")
 
         # In case selected server's existence is altered
-        self.cb_server_connect_data_changed()
+        self.update_action_sensitivity()
 
     def set_game_state(self, game: str, state: str) -> None:
         icon = ""
@@ -500,7 +554,7 @@ class GUIActions:
     def fill_server_list_model(self, server_table):
         """Fill the server view"""
 
-        view_table = helpers.deepcopy(server_table)
+        view_table = [server.to_mapping() for server in server_table]
 
         model = self.gtk_widgets["server-list-model"]
         model_append = model.append
@@ -637,29 +691,58 @@ class GUIActions:
         self.cb_connect_button_clicked()
 
     def cb_server_connect_data_changed(self, *args):
-        """Resets button sensitivity on server connect data change"""
-        game = self.app.settings.settings_table["common"]["selected-game-connect"]
+        """Recompute action sensitivity after Connect data changes."""
+        self.update_action_sensitivity()
+
+    def _find_selected_server(self, game, endpoint):
         try:
             server_list_table = self.core.game_table.get_servers_data(game)
-        except (ValueError, KeyError):
-            server_list_table = []
-        host = self.app.settings.settings_table["common"]["server-host"]
-        server_entry_index = helpers.search_dict_table(
-            server_list_table, "host", host)
+        except ValueError:
+            return None
+        return next(
+            (
+                server
+                for server in server_list_table
+                if server.game_id == game and server.endpoint == endpoint
+            ),
+            None,
+        )
 
-        entry_field = self.gtk_widgets["server-connect-host"]
-        info_button = self.gtk_widgets["action-info-button"]
-        connect_button = self.gtk_widgets["action-connect-button"]
+    def update_action_sensitivity(self) -> dict[str, bool]:
+        common_settings = self.app.settings.settings_table["common"]
+        games = self.core.game_table.get_game_set()
+        browser_game = common_settings.get("selected-game-browser")
+        connect_game = gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-game"])
+        endpoint = _parse_endpoint(gtk_helpers.get_widget_value(
+            self.gtk_widgets["server-connect-host"]))
 
-        if server_entry_index is None:
-            info_button.set_property("sensitive", False)
-            if gtk_helpers.get_widget_value(entry_field) == '':
-                connect_button.set_property("sensitive", False)
-            else:
-                connect_button.set_property("sensitive", True)
-        else:
-            info_button.set_property("sensitive", True)
-            connect_button.set_property("sensitive", True)
+        browser_game_valid = browser_game in games
+        connect_game_valid = connect_game in games
+        query_status = None
+        if browser_game_valid:
+            query_status = self.core.game_table.get_query_status(browser_game)
+        selected_server = None
+        if connect_game_valid and endpoint is not None:
+            selected_server = self._find_selected_server(connect_game, endpoint)
+
+        sensitivity = derive_action_sensitivity(
+            browser_game_valid=browser_game_valid,
+            connect_game_valid=connect_game_valid,
+            endpoint_valid=endpoint is not None,
+            query_status=query_status,
+            selected_server_present=selected_server is not None,
+        )
+        action_widgets = {
+            "preferences": "game-preferences-button",
+            "refresh": "action-update-button",
+            "connect": "action-connect-button",
+            "info": "action-info-button",
+        }
+        for action, widget_name in action_widgets.items():
+            self.gtk_widgets[widget_name].set_property(
+                "sensitive", sensitivity[action])
+        return sensitivity
 
     def cb_listed_widget_changed(self, *args):
         self.update_settings_table()
@@ -702,11 +785,292 @@ class GUIActions:
         gtk_helpers.bind_widget_to_callback(widget, self.update_settings_table)
 
 
+_GEOIP_WORKER_THREAD_NAME = "obozrenie-geoip-download"
+
+
+class GeoIPDownloadCoordinator:
+
+    """Owner of the GeoIP offer dialog, its transfer, and their shutdown.
+
+    One offer is in flight at a time. `offer` reserves this coordinator under
+    its state lock and reports whether it presented a dialog, so a repeated
+    activation can neither stack a second dialog nor start a second transfer.
+    Only a presented offer promises a completion callback, and that callback
+    runs once the dialog has been destroyed and any downloaded database has
+    been loaded, which is what keeps startup admission held until then.
+
+    The state lock only publishes the dialog, transfer, worker, and completion
+    flags that close and the worker both read: dialog work, the caller's
+    callback, and thread joins never run under it. `begin_close` marks this
+    coordinator closing and cancels the transfer, which closes the response its
+    worker may be reading. The worker re-checks that flag before it queues
+    anything, and every queued callback re-checks it again, so a transfer that
+    outlives close can neither load a database nor touch a widget.
+    """
+
+    def __init__(self, core_instance: core.Core) -> None:
+        self._core = core_instance
+        self._state_lock = threading.Lock()
+        self._dialog = None
+        self._transfer = None
+        self._worker = None
+        self._closing = False
+        self._active = False
+        self._completed = False
+        self._finished_callback = None
+
+    def offer(
+        self,
+        parent: Gtk.Window,
+        finished_callback: Callable[[], None],
+    ) -> bool:
+        """Present one GeoIP offer; report whether this call started it.
+
+        A true result promises exactly one later `finished_callback`, after the
+        offer is declined or after an accepted transfer has completed. A false
+        result promises nothing and never calls back: the database is already
+        loaded, this coordinator is closing, or an offer is already in flight.
+        """
+        with self._state_lock:
+            if self._closing or self._offer_in_flight():
+                return False
+            if self._core.geolocation is not None:
+                return False
+            self._active = True
+            self._completed = False
+            self._finished_callback = finished_callback
+
+        presented = False
+        try:
+            dialog = self._build_offer_dialog(parent)
+            with self._state_lock:
+                closing = self._closing
+                if not closing:
+                    self._dialog = dialog
+            if closing:
+                # Close arrived while this dialog was being built. It is this
+                # call's to destroy, and it promised no callback.
+                dialog.destroy()
+                return False
+            try:
+                dialog.show()
+            except BaseException:
+                # An offer that never reached the screen still owns its
+                # dialog: releasing the reference below would otherwise leave
+                # it alive with nothing able to destroy it.
+                dialog.destroy()
+                raise
+            presented = True
+        finally:
+            if not presented:
+                self._release_offer()
+        return True
+
+    def begin_close(self) -> None:
+        """Stop any transfer and suppress every callback still to be queued."""
+        with self._state_lock:
+            self._closing = True
+            transfer = self._transfer
+        if transfer is not None:
+            # Cancellation closes the response the worker may be reading, so it
+            # runs outside the lock that worker's own callbacks take.
+            transfer.cancel()
+
+    def join_until(self, deadline: float) -> None:
+        """Join this coordinator's transfer worker against one deadline."""
+        deadline = validate_deadline(deadline)
+        with self._state_lock:
+            worker = self._worker
+        if worker is None or worker.ident is None:
+            # A worker that never launched cannot be joined.
+            return
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            worker.join(remaining)
+
+    def _offer_in_flight(self) -> bool:
+        """Report whether an offer or its worker still holds this coordinator.
+
+        The caller holds the state lock. A cancelled transfer's worker keeps
+        the coordinator until it exits, so this owner never holds more than one
+        worker and `join_until` can bound all of them.
+        """
+        if self._active:
+            return True
+        worker = self._worker
+        return worker is not None and worker.is_alive()
+
+    def _release_offer(self) -> None:
+        """Drop one offer that never reached a completion of its own."""
+        with self._state_lock:
+            self._active = False
+            self._dialog = None
+            self._transfer = None
+            self._finished_callback = None
+
+    def _build_offer_dialog(self, parent):
+        """Build the offer dialog and wire the widgets its response drives."""
+        dialog = Gtk.Dialog(
+            title=i18n._("Download GeoIP database?"),
+            transient_for=parent,
+            modal=True)
+        dialog.add_button(i18n._("Not now"), Gtk.ResponseType.CANCEL)
+        download_button = dialog.add_button(
+            i18n._("Download"), Gtk.ResponseType.ACCEPT)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_border_width(12)
+        label = Gtk.Label(
+            label=i18n._("Server geolocation needs a country database. "
+                         "Download it now (a few megabytes)?"))
+        label.set_line_wrap(True)
+        content.add(label)
+        progress = Gtk.ProgressBar(show_text=True)
+        content.add(progress)
+        # This content is built here rather than by GtkBuilder, so nothing in
+        # it is visible until it is shown; the progress bar reappears only once
+        # a transfer starts.
+        content.show_all()
+        progress.hide()
+
+        dialog.connect(
+            "response", self._on_response, label, download_button, progress)
+        return dialog
+
+    def _on_response(self, dialog, response, label, download_button, progress):
+        """Route one dialog response on the GTK main thread."""
+        if response == Gtk.ResponseType.ACCEPT:
+            self._accept(dialog, label, download_button, progress)
+        else:
+            self._decline(dialog)
+
+    def _accept(self, dialog, label, download_button, progress):
+        """Start this offer's one transfer on its own daemon worker."""
+        with self._state_lock:
+            if self._closing or self._transfer is not None:
+                # Neither close nor a repeated response starts a transfer.
+                return
+
+        download_button.set_sensitive(False)
+        dialog.set_response_sensitive(Gtk.ResponseType.CANCEL, True)
+        label.set_text(i18n._("Downloading GeoIP database…"))
+        progress.show()
+
+        # The transfer's own window opens when it is constructed, so it is
+        # built immediately before the worker that runs it.
+        transfer = geoip.GeoIPDatabaseDownload(
+            geoip.CACHE_DB_PATH,
+            time.monotonic() + geoip.DOWNLOAD_TIMEOUT_SECONDS,
+        )
+        worker = threading.Thread(
+            target=self._run_transfer,
+            args=(transfer, progress),
+            name=_GEOIP_WORKER_THREAD_NAME,
+            daemon=True,
+        )
+        with self._state_lock:
+            closing = self._closing
+            if not closing:
+                self._transfer = transfer
+                self._worker = worker
+        if closing:
+            # Close won the race with this response: the transfer is stopped
+            # before it runs, and close owns the offer from here.
+            transfer.cancel()
+            return
+
+        try:
+            worker.start()
+        except RuntimeError:
+            # No worker will report this transfer, so this response completes
+            # the offer itself rather than stranding startup admission.
+            transfer.cancel()
+            self._complete(None)
+
+    def _decline(self, dialog):
+        """Finish a declined offer, stopping a transfer it already started."""
+        with self._state_lock:
+            transfer = self._transfer
+        if transfer is None:
+            self._complete(None)
+            return
+        # A running transfer keeps exactly one completion owner: its worker.
+        # Cancelling returns that worker at once, and hiding the dialog gives
+        # the same immediate feedback destroying it would.
+        transfer.cancel()
+        dialog.hide()
+
+    def _run_transfer(self, transfer, progress):
+        """Run one transfer to completion on this coordinator's worker."""
+        path = None
+        try:
+            path = transfer.run(
+                lambda downloaded, total: self._dispatch(
+                    self._apply_progress, progress, downloaded, total))
+        finally:
+            self._dispatch(self._finish_transfer, path)
+
+    def _dispatch(self, callback, *args):
+        """Queue one main-thread callback unless close has already begun."""
+        with self._state_lock:
+            if self._closing:
+                return
+        # Queueing is not the coordinator's own state, and the callback it
+        # queues re-checks close, so it never runs under the state lock.
+        GLib.idle_add(callback, *args)
+
+    def _apply_progress(self, progress, downloaded, total):
+        """Render one progress update, unless close has begun meanwhile."""
+        with self._state_lock:
+            if self._closing:
+                return False
+        if total > 0:
+            progress.set_fraction(downloaded / total)
+        else:
+            progress.pulse()
+        return False
+
+    def _finish_transfer(self, path):
+        """Complete the accepted offer, unless close has begun meanwhile."""
+        with self._state_lock:
+            if self._closing:
+                return False
+        self._complete(path)
+        return False
+
+    def _complete(self, path):
+        """Finish one offer exactly once, on the GTK main thread.
+
+        The dialog is destroyed and any transferred database is loaded before
+        the caller's callback releases startup admission.
+        """
+        with self._state_lock:
+            if self._completed:
+                return
+            self._completed = True
+            self._active = False
+            dialog = self._dialog
+            callback = self._finished_callback
+            self._dialog = None
+            self._transfer = None
+            self._finished_callback = None
+
+        try:
+            if dialog is not None:
+                dialog.destroy()
+            if path is not None:
+                self._core.load_geoip(path)
+        finally:
+            if callback is not None:
+                callback()
+
+
 class App(Gtk.Application):
 
     """App class."""
 
-    def __init__(self, core_instance, settings_instance):
+    def __init__(self, core_instance, settings_instance, services):
         Gtk.Application.__init__(self,
                                  application_id=APPLICATION_ID,
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
@@ -716,11 +1080,17 @@ class App(Gtk.Application):
 
         # Create builder
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(GTK_UI_FILE)
-        self.builder.add_from_file(GTK_APPMENU_FILE)
+        load_builder_resources(self.builder)
 
         self.core = core_instance
         self.settings = settings_instance
+        self.services = services
+        # The shutdown handler reads this whatever startup managed to do, so
+        # it exists before the first thing that could fail.
+        self.status = "starting"
+        self.handler_failure = None
+        self._pending_settings_warnings = []
+        self._startup_dialogs_pending = False
 
         self.guiactions = GUIActions(self, self.builder, self.core)
 
@@ -735,10 +1105,9 @@ class App(Gtk.Application):
             helpers.debug_msg([GTK_MSG, i18n._("Obozrenie is starting")])
             guiactions = self.guiactions
 
-            self.status = "starting"
             guiactions.fill_game_store()
 
-            self.settings.load(
+            self._pending_settings_warnings = self.settings.load(
                 callback_postgenload=self.guiactions.cb_post_settings_genload)
 
             # Connect signals
@@ -753,10 +1122,7 @@ class App(Gtk.Application):
                     entry["id"], entry["text"])
             guiactions.cb_game_treeview_togglebutton_clicked()
             guiactions.cb_server_filters_changed()
-            try:
-                guiactions.cb_server_connect_data_changed()
-            except ValueError:
-                pass
+            guiactions.cb_server_connect_data_changed()
 
             # Add main window
             main_window = self.guiactions.gtk_widgets["main-window"]
@@ -779,21 +1145,93 @@ class App(Gtk.Application):
                 self.guiactions.gtk_widgets, GTK_STRING_TABLE)
 
             self.status = "up"
-        except Exception as e:
+        except Exception as error:
+            self._record_handler_failure(error)
             app.quit()
-            raise e
+
+    def _record_handler_failure(self, error: BaseException) -> None:
+        """Record and report one failure a signal handler cannot raise.
+
+        PyGObject prints and swallows whatever a `startup` or `shutdown`
+        handler raises, so `run()` would report success for a settings file
+        that never loaded or never saved and the launcher would exit 0.
+        Recording the first failure here is what lets `main()` end the run
+        with a failure status, and reporting it as its declared diagnostic
+        keeps the exception's own text out of the log.
+
+        Recording comes first and the report is best effort, as it is in
+        `core._log_safe_diagnostic`: the failure being recorded can be the
+        output stream itself, and every caller does something after this call
+        — quitting a failed startup, above all — that a second failure out of
+        the report would skip.
+        """
+        diagnostic = diagnostic_for_exception(error)
+        if self.handler_failure is None:
+            self.handler_failure = diagnostic
+        try:
+            helpers.debug_msg([GTK_MSG, diagnostic])
+        except Exception:
+            # The failure is already recorded; a report that cannot be
+            # written is dropped rather than raised into the handler.
+            pass
 
     def on_activate(self, app):
+        """Present the window and, once, run the startup dialogs behind it.
+
+        Widget visibility belongs to the GtkBuilder document, so activation
+        only presents. Startup admission is held from the first activation
+        until the GeoIP coordinator reports the offer it accepted is finished,
+        so an activation arriving meanwhile only presents the window again.
+        """
         window = self.guiactions.gtk_widgets["main-window"]
-        window.show_all()
-        GLib.idle_add(self.guiactions.prompt_geoip_download, window)
+        window.present()
+        if self._startup_dialogs_pending:
+            return
+
+        pending_warnings = self._pending_settings_warnings
+        self._pending_settings_warnings = []
+        self._startup_dialogs_pending = True
+
+        def release_admission():
+            self._startup_dialogs_pending = False
+
+        def show_startup_dialogs():
+            offered = False
+            try:
+                for warning in pending_warnings:
+                    self.guiactions.show_error_dialog(warning)
+                offered = self.services.geoip_downloads.offer(
+                    window, release_admission)
+            finally:
+                # An offer that never started promises no completion, so this
+                # dispatcher is the last thing holding admission.
+                if not offered:
+                    release_admission()
+            return False
+
+        GLib.idle_add(show_startup_dialogs)
 
     def on_shutdown(self, app):
-        if self.status == "up":
-            self.settings.save()
-            self.status = "shutting down"
-            helpers.debug_msg([GTK_MSG, i18n._("Shutting down")])
-        else:
-            self.status = "start failed"
-            helpers.debug_msg(
-                [GTK_MSG, i18n._("Initialization failed. Aborting.")])
+        try:
+            if self.status == "up":
+                # Only the save decides how this run ends, so it alone is
+                # recorded: a failing log line below is what PyGObject prints
+                # and swallows, not a reason to exit non-zero.
+                try:
+                    self.settings.save()
+                except Exception as error:
+                    # A save that failed — a lock this copy could not take, a
+                    # profile it could not write — is the run's outcome, so it
+                    # is recorded rather than swallowed by the GTK dispatch.
+                    self._record_handler_failure(error)
+                else:
+                    self.status = "shutting down"
+                    helpers.debug_msg([GTK_MSG, i18n._("Shutting down")])
+            else:
+                self.status = "start failed"
+                helpers.debug_msg(
+                    [GTK_MSG, i18n._("Initialization failed. Aborting.")])
+        finally:
+            # However the settings save ends, every owned service is told to
+            # close here; the launcher joins them against its own deadline.
+            self.services.begin_close()

@@ -17,18 +17,23 @@
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
+import base64
+import contextlib
+import itertools
 import os
 import subprocess
 import sys
 import tempfile
-import threading
-import tomllib
+import time
 import unittest
 import xmltodict
+from pathlib import Path
+from types import ModuleType, SimpleNamespace
 from unittest import mock
 
-from obozrenie import helpers, adapters, i18n, launch
+from obozrenie import adapters, helpers, launch
+from obozrenie.diagnostics import SafeDiagnostic
+from obozrenie.models import Endpoint, Player, Server
 
 
 class HelpersTests(unittest.TestCase):
@@ -54,39 +59,6 @@ class HelpersTests(unittest.TestCase):
         self.assertTrue(unit['expectation'] == unit['result'])
 
     @classmethod
-    def unit_flatten_dict_table(cls):
-        """Does helper flatten dict based on specified format correctly?"""
-        spec_dict_table = {'lead1': {'a': 'A1', 'b': 'B1', 'c': 'C1', 'd': 'D1', 'e': 'E1'}, 'lead2': {'a': 'A2', 'b': 'B2'}}
-        spec_leading_key_spec = 'leading key'
-
-        func = cls.module.flatten_dict_table
-        spec_args = {'dict_table': spec_dict_table, 'leading_key_spec': spec_leading_key_spec}
-        spec_result = [{'leading key': 'lead1', 'a': 'A1', 'b': 'B1', 'c': 'C1', 'd': 'D1', 'e': 'E1'}, {'leading key': 'lead2', 'a': 'A2', 'b': 'B2'}]
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_flatten_dict_table(self):
-        unit = self.unit_flatten_dict_table()
-        self.assertTrue(unit['expectation'] == unit['result'])
-
-    @classmethod
-    def unit_flatten_list(cls):
-        """Does helper flatten list of iterable objects based on specified format correctly?"""
-        spec_nested_list = ['a', ['b', ['c', 'd'], 'e'], 'f']
-
-        func = cls.module.flatten_list
-        spec_args = {'nested_list': spec_nested_list}
-        spec_result = ['a', 'b', 'c', 'd', 'e', 'f']
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_flatten_list(self):
-        unit = self.unit_flatten_list()
-        self.assertTrue(unit['expectation'] == unit['result'])
-
-    @classmethod
     def unit_sort_dict_table(cls):
         """Checks how helper function sorts dictionary tables"""
         spec_dict_table = [{'name': 'Olga', 'age': 32, 'gender': 'F'}, {'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}]
@@ -105,95 +77,92 @@ class HelpersTests(unittest.TestCase):
 
 
 class LauncherTests(unittest.TestCase):
-    module = launch
-    """Tests for launcher"""
-    @classmethod
-    def unit_steam_launch_pattern(cls):
-        """Check Steam launch pattern"""
-        func = cls.module.steam_launch_pattern
-        spec_args = {'game_settings': {'steam_path': 'steam'}, 'steam_app_id': '12345', 'host': 'localhost', 'port': '27960', 'password': 'abracadabra'}
-        spec_result = ['steam', '-applaunch', '12345', '+connect', 'localhost:27960', '+password', 'abracadabra']
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
+    """Tests for the launch specification builder"""
 
     def test_steam_launch_pattern(self):
-        unit = self.unit_steam_launch_pattern()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        spec = launch.build_launch_spec(
+            "csgo",
+            "steam",
+            {"path": "csgo_linux", "steam_path": "steam", "workdir": ""},
+            Endpoint("localhost", 27960),
+            "abracadabra",
+            "12345",
+            activation_directory="/start",
+        )
 
-    @classmethod
-    def unit_quake_launch_pattern(cls):
-        """Check Quake launch pattern"""
-        func = cls.module.quake_launch_pattern
-        spec_args = {'path': 'quake', 'host': 'localhost', 'port': '27960', 'password': 'abracadabra'}
-        spec_result = ['quake', '+connect', 'localhost:27960', '+password', 'abracadabra']
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
+        self.assertEqual(
+            spec.argv,
+            (
+                "steam",
+                "-applaunch",
+                "12345",
+                "+connect",
+                "localhost:27960",
+                "+password",
+                "abracadabra",
+            ),
+        )
+        self.assertEqual(spec.cwd, "/start")
 
     def test_quake_launch_pattern(self):
-        unit = self.unit_quake_launch_pattern()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        spec = launch.build_launch_spec(
+            "q3a",
+            "quake",
+            {"path": "quake", "workdir": ""},
+            Endpoint("localhost", 27960),
+            "abracadabra",
+            activation_directory="/start",
+        )
 
-
-class MinetestTests(unittest.TestCase):
-    """Tests for minetest"""
-    module = adapters.minetest
-    @classmethod
-    def unit_minetest_parse(cls):
-        """Check Minetest backend parsing"""
-        json_string = '{"ping": 0.09202814102172852, "clients_list": ["PlayerA", "PlayerB", "PlayerC"], "version": "0.4.13", "creative": false, "proto_max": 26, "total_clients": 807, "proto_min": 13, "pvp": true, "damage": true, "mapgen": "v7", "privs": "interact, shout, home", "address": "game.minetest-france.fr", "update_time": 1447351523.4476626, "uptime": 21600, "mods": ["potions", "item_drop", "irc", "irc_commands", "hudbars", "mana", "essentials_mmo", "efori", "denaid", "areas_gui", "areas", "worldedit", "worldedit_infinity", "worldedit_commands", "worldedit_shortcommands", "sethome", "screwdriver", "fire", "dye", "default", "mobs", "essentials", "encyclopedia", "economy", "xpanes", "wool", "farming", "stairs", "beds", "vessels", "tnt", "give_initial_stuff", "flowers", "doors", "creative", "unified_inventory", "u_skins", "worldedit_gui", "3d_armor", "hbarmor", "wieldview", "shields", "bucket", "hbhunger", "bones", "boats"], "rollback": false, "password": false, "game_time": 13680891, "lag": 0.1009900271892548, "description": "Serveur Survie / PvP", "can_see_far_names": false, "port": 30001, "start": 1447333508.1709588, "pop_v": 13.229508196721312, "clients_max": 50, "updates": 61, "name": "My Little Server", "url": "http://my-minetest-server.com", "clients_top": 23, "gameid": "minetest", "clients": 3, "dedicated": true, "ip": "12.34.56.789"}'
-        json_result = {'password': False, 'host': '12.34.56.789:30001', 'player_count': 3, 'player_limit': 26, 'name': 'My Little Server', 'game_type': 'minetest', 'terrain': '', 'secure': False, 'rules': {}, 'players': [{'name': 'PlayerA'}, {'name': 'PlayerB'}, {'name': 'PlayerC'}]}
-
-        func = cls.module.parse_json_entry
-        spec_args = {"entry": json.loads(json_string)}
-        spec_result = json_result
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_minetest_parse(self):
-        unit = self.unit_minetest_parse()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        self.assertEqual(
+            spec.argv,
+            (
+                "quake",
+                "+connect",
+                "localhost:27960",
+                "+password",
+                "abracadabra",
+            ),
+        )
+        self.assertEqual(spec.cwd, "/start")
 
 
 class QStatTests(unittest.TestCase):
     """Tests for QStat backend"""
-    module = adapters.qstat
-    @classmethod
-    def unit_parse_master_entry(cls):
-        """Check QStat output parsing - masters"""
-        xml_string = '<server type="Q2M" address="localhost:12345" status="UP" servers="44"></server>'
-
-        func = cls.module.adapt_qstat_entry
-        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
-        spec_result = {'server_dict': None, 'debug_msg': i18n._('Queried Master. Address: localhost:12345, status: UP, server count: 44.')}
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
 
     def test_parse_master_entry(self):
-        unit = self.unit_parse_master_entry()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        xml_string = '<server type="Q2M" address="localhost:12345" status="UP" servers="44"></server>'
+        result = adapters.qstat.adapt_qstat_entry(
+            xmltodict.parse(xml_string)["server"], "q2", "Q2M", "Q2S"
+        )
 
-    @classmethod
-    def unit_parse_server_entry(cls):
-        """Check QStat output parsing - masters"""
-        xml_string = '<server type="Q2S" address="localhost:12345" status="UP"><hostname>localhost</hostname><name>Gandalfehtgreen&apos;s Casino (R.I.P.)</name><gametype>action</gametype><map>locknload</map><numplayers>0</numplayers><maxplayers>15</maxplayers><numspectators>0</numspectators><maxspectators>0</maxspectators><ping>1126</ping><retries>1</retries><rules><rule name="*Q2Admin">2.0~3a63381</rule><rule name="actionversion">TNG 2.81~d504f0d</rule><rule name="allitem">0</rule><rule name="allweapon">0</rule><rule name="capturelimit">0</rule><rule name="cheats">0</rule><rule name="ctf">0</rule><rule name="deathmatch">1</rule><rule name="dmflags">8</rule><rule name="fraglimit">0</rule><rule name="game">action</rule><rule name="gamedate">Sep 15 2013</rule><rule name="gamedir">action</rule><rule name="gamename">action</rule><rule name="items">1</rule><rule name="matchmode">0</rule><rule name="needpass">0</rule><rule name="port">12345</rule><rule name="protocol">34</rule><rule name="q2a_mvd">1.6hau</rule><rule name="roundlimit">15</rule><rule name="roundtimelimit">5</rule><rule name="t1">0</rule><rule name="t2">0</rule><rule name="t3">0</rule><rule name="teamplay">1</rule><rule name="tgren">1</rule><rule name="timelimit">60</rule><rule name="use_3teams">0</rule><rule name="use_classic">0</rule><rule name="use_tourney">0</rule><rule name="uptime">297+0:09.46</rule></rules><players><player><name>PlayerA</name><score>0</score><ping>3</ping></player><player><name>PlayerB</name><score>0</score><ping>4</ping></player><player><name>PlayerC</name><score>0</score><ping>5</ping></player></players></server>'
-
-        spec_server_dict = {'game_name': 'action', 'password': False, 'game_mod': '', 'player_count': 0, 'secure': False, 'ping': 1126, 'rules': {'gamedir': 'action', 'needpass': '0', 'uptime': '297+0:09.46', 'use_classic': '0', 'timelimit': '60', 'capturelimit': '0', 'game': 'action', 'tgren': '1', 'actionversion': 'TNG 2.81~d504f0d', 'allitem': '0', 'use_tourney': '0', 't1': '0', 'protocol': '34', 'port': '12345', 'cheats': '0', 'ctf': '0', 'deathmatch': '1', 'q2a_mvd': '1.6hau', '*Q2Admin': '2.0~3a63381', 'teamplay': '1', 'use_3teams': '0', 'gamedate': 'Sep 15 2013', 't2': '0', 'fraglimit': '0', 'matchmode': '0', 'dmflags': '8', 'allweapon': '0', 'roundlimit': '15', 'gamename': 'action', 'roundtimelimit': '5', 'items': '1', 't3': '0'}, 'players': [{'name': 'PlayerA', 'ping': 3, 'score': 0}, {'name': 'PlayerB', 'ping': 4, 'score': 0}, {'name': 'PlayerC', 'ping': 5, 'score': 0}], 'name': "Gandalfehtgreen's Casino (R.I.P.)", 'player_limit': 15, 'host': 'localhost', 'game_type': 'action', 'game_id': 'q2', 'terrain': 'locknload'}
-        spec_debug_msg = None
-
-        func = adapters.qstat.adapt_qstat_entry
-        spec_args = {"qstat_entry": xmltodict.parse(xml_string)['server'], "game": "q2", "master_type": "Q2M", "server_type": "Q2S"}
-        spec_result = {'server_dict': spec_server_dict, 'debug_msg': spec_debug_msg}
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
+        self.assertIsNone(result)
 
     def test_parse_server_entry(self):
-        unit = self.unit_parse_server_entry()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        xml_string = '<server type="Q2S" address="localhost:12345" status="UP"><hostname>localhost</hostname><name>Gandalfehtgreen&apos;s Casino (R.I.P.)</name><gametype>action</gametype><map>locknload</map><numplayers>0</numplayers><maxplayers>15</maxplayers><numspectators>0</numspectators><maxspectators>0</maxspectators><ping>1126</ping><retries>1</retries><rules><rule name="*Q2Admin">2.0~3a63381</rule><rule name="actionversion">TNG 2.81~d504f0d</rule><rule name="allitem">0</rule><rule name="allweapon">0</rule><rule name="capturelimit">0</rule><rule name="cheats">0</rule><rule name="ctf">0</rule><rule name="deathmatch">1</rule><rule name="dmflags">8</rule><rule name="fraglimit">0</rule><rule name="game">action</rule><rule name="gamedate">Sep 15 2013</rule><rule name="gamedir">action</rule><rule name="gamename">action</rule><rule name="items">1</rule><rule name="matchmode">0</rule><rule name="needpass">0</rule><rule name="port">12345</rule><rule name="protocol">34</rule><rule name="q2a_mvd">1.6hau</rule><rule name="roundlimit">15</rule><rule name="roundtimelimit">5</rule><rule name="t1">0</rule><rule name="t2">0</rule><rule name="t3">0</rule><rule name="teamplay">1</rule><rule name="tgren">1</rule><rule name="timelimit">60</rule><rule name="use_3teams">0</rule><rule name="use_classic">0</rule><rule name="use_tourney">0</rule><rule name="uptime">297+0:09.46</rule></rules><players><player><name>PlayerA</name><score>0</score><ping>3</ping></player><player><name>PlayerB</name><score>0</score><ping>4</ping></player><player><name>PlayerC</name><score>0</score><ping>5</ping></player></players></server>'
+        server = adapters.qstat.adapt_qstat_entry(
+            xmltodict.parse(xml_string)["server"], "q2", "Q2M", "Q2S"
+        )
+
+        self.assertEqual(server.endpoint, Endpoint("localhost", 12345))
+        self.assertEqual(server.game_id, "q2")
+        self.assertEqual(server.name, "Gandalfehtgreen's Casino (R.I.P.)")
+        self.assertEqual(server.game_mod, "action")
+        self.assertEqual(server.game_type, "action")
+        self.assertEqual(server.terrain, "locknload")
+        self.assertEqual((server.player_count, server.player_limit), (0, 15))
+        self.assertEqual(server.ping, 1126)
+        self.assertEqual(
+            server.players,
+            (
+                Player("PlayerA", score=0, ping=3),
+                Player("PlayerB", score=0, ping=4),
+                Player("PlayerC", score=0, ping=5),
+            ),
+        )
+        self.assertEqual(server.rules["game"], "action")
+        self.assertEqual(server.rules["gamename"], "action")
+        self.assertEqual(server.rules["needpass"], "0")
 
     def test_build_host_list_preserves_order_and_dedupes(self):
         """Masters must keep their configured order and be de-duplicated.
@@ -214,11 +183,7 @@ class QStatTests(unittest.TestCase):
 
 
 class RigsofrodsTests(unittest.TestCase):
-    module = adapters.rigsofrods
-
-    @classmethod
-    def unit_parse_server_entry(cls):
-        """Check Rigs of Rods JSON server entry parsing (incl. player list)."""
+    def test_parse_server_entry(self):
         spec_entry = {"has-password": True,
                       "current-users": 1,
                       "max-clients": 16,
@@ -231,64 +196,70 @@ class RigsofrodsTests(unittest.TestCase):
                       "name": "My Little Server",
                       "json-userlist": [{"username": "PlayerA", "is_bot": 0},
                                         {"username": "RoRBot", "is_bot": 8}]}
-        spec_server_dict = {'player_count': 1,
-                             'player_limit': 16,
-                             'password': True,
-                             'name': 'My Little Server',
-                             'host': '1.2.3.4:12000',
-                             'terrain': 'Terrain A',
-                             'players': [{'name': 'PlayerA'}, {'name': 'RoRBot'}],
-                             'rules': {'verified': 1, 'is_official': 0}}
+        server = adapters.rigsofrods.parse_server_entry("rigsofrods", spec_entry)
 
-        func = cls.module.parse_server_entry
-        spec_args = {'entry': spec_entry}
-        spec_result = spec_server_dict
+        self.assertEqual(
+            server,
+            Server(
+                endpoint=Endpoint("1.2.3.4", 12000),
+                game_id="rigsofrods",
+                name="My Little Server",
+                password=True,
+                player_count=1,
+                player_limit=16,
+                game_type="rigsofrods",
+                terrain="Terrain A",
+                players=(Player("PlayerA"), Player("RoRBot")),
+                rules={"verified": 1, "is_official": 0},
+            ),
+        )
 
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_parse_server_entry(self):
-        unit = self.unit_parse_server_entry()
-        self.assertTrue(unit['expectation'] == unit['result'])
-
-    @classmethod
-    def unit_adapt_server_list(cls):
-        """Check Rigs of Rods JSON list parsing and game tagging."""
-        spec_json_string = json.dumps([
+    def test_adapt_server_list(self):
+        spec_entries = [
             {"has-password": False, "current-users": 3, "max-clients": 16,
              "ip": "1.2.3.4", "port": 12000, "terrain-name": "Terrain A",
              "name": "Server 1", "json-userlist": []},
             {"has-password": True, "current-users": 1, "max-clients": 9,
              "ip": "5.6.7.8", "port": 12001, "terrain-name": "Terrain B",
-             "name": "Server 2", "json-userlist": [{"username": "PlayerA"}]}])
+             "name": "Server 2", "json-userlist": [{"username": "PlayerA"}]}
+        ]
         spec_server_list = [
-            {'player_count': 3, 'player_limit': 16, 'password': False,
-             'name': 'Server 1', 'host': '1.2.3.4:12000', 'terrain': 'Terrain A',
-             'players': [], 'game_id': 'rigsofrods', 'game_type': 'rigsofrods',
-             'secure': False, 'rules': {'verified': 0, 'is_official': 0}},
-            {'player_count': 1, 'player_limit': 9, 'password': True,
-             'name': 'Server 2', 'host': '5.6.7.8:12001', 'terrain': 'Terrain B',
-             'players': [{'name': 'PlayerA'}], 'game_id': 'rigsofrods',
-             'game_type': 'rigsofrods', 'secure': False,
-             'rules': {'verified': 0, 'is_official': 0}}]
-        spec_game = 'rigsofrods'
+            Server(
+                endpoint=Endpoint("1.2.3.4", 12000),
+                game_id="rigsofrods",
+                name="Server 1",
+                player_count=3,
+                player_limit=16,
+                game_type="rigsofrods",
+                terrain="Terrain A",
+                rules={"verified": 0, "is_official": 0},
+            ),
+            Server(
+                endpoint=Endpoint("5.6.7.8", 12001),
+                game_id="rigsofrods",
+                name="Server 2",
+                password=True,
+                player_count=1,
+                player_limit=9,
+                game_type="rigsofrods",
+                terrain="Terrain B",
+                players=(Player("PlayerA"),),
+                rules={"verified": 0, "is_official": 0},
+            ),
+        ]
 
-        func = cls.module.adapt_server_list
-        spec_args = {'game': spec_game, 'json_string': spec_json_string}
-        spec_result = spec_server_list
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_adapt_server_list(self):
-        unit = self.unit_adapt_server_list()
-        self.assertTrue(unit['expectation'] == unit['result'])
+        self.assertEqual(
+            adapters.rigsofrods.adapt_server_list(
+                "rigsofrods", spec_entries
+            ),
+            spec_server_list,
+        )
 
     def test_stat_master_returns_list_not_tuple(self):
-        """Adapter contract: stat_master returns a flat list of server dicts, not a (list, None) tuple.
+        """Adapter contract: stat_master returns a flat list of records.
 
-        Regression: the tuple return caused TypeError in Core.stat_master_target's
-        geolocation loop. Empty master_list => no network access.
+        Regression: the tuple return caused TypeError in the Core query
+        worker's geolocation loop. Empty master_list => no network access.
         """
         from obozrenie.adapters import rigsofrods
         result = rigsofrods.stat_master('rigsofrods', {}, [])
@@ -307,11 +278,6 @@ class RigsofrodsTests(unittest.TestCase):
             rigsofrods.master_request_url(
                 "https://api.rigsofrods.org/server-list?json=true"),
             "https://api.rigsofrods.org/server-list?json=true")
-
-    def test_launch_has_no_ror_sed_hooks(self):
-        self.assertFalse(hasattr(launch, "rigsofrods_prelaunch_hook"))
-        self.assertFalse(hasattr(launch, "rigsofrods_postlaunch_hook"))
-
 
 class GameTableTests(unittest.TestCase):
     def _table(self, config):
@@ -337,38 +303,44 @@ class GameTableTests(unittest.TestCase):
         self.assertEqual(table.get_game_info("tf")["steam_app_id"], "440")
         self.assertNotIn("steam_app_id", table.get_game_info("gesource"))
 
-    def test_set_server_info_is_gone(self):
-        from obozrenie.core import GameTable
-        self.assertFalse(hasattr(GameTable, "set_server_info"))
+    def test_gtk_fill_game_store_renders_game_table_data(self):
+        from obozrenie.gtk import GUIActions
 
-    def test_copy_property_is_gone(self):
-        from obozrenie.core import GameTable
-        self.assertFalse(hasattr(GameTable, "copy"))
+        class ListModel(list):
+            pass
 
-    def test_gtk_fills_game_store_via_get_game_table_copy(self):
-        with open("obozrenie/gtk.py", encoding="utf-8") as handle:
-            source = handle.read()
-        self.assertNotIn("game_table.copy", source)
-        self.assertIn("get_game_table_copy()", source)
+        table = self._table({
+            "q3a": {
+                "name": "Quake III",
+                "adapter": "qstat",
+                "launch_pattern": "quake",
+                "settings": [],
+            },
+        })
+        window = GUIActions.__new__(GUIActions)
+        model = ListModel()
+        window.core = SimpleNamespace(game_table=table)
+        window.game_icons = {"q3a": "game-icon"}
+        window.gtk_widgets = {"game-list-model": model}
+        window.game_list_model_format = (
+            "game_id",
+            "name",
+            "status_icon",
+            "game_icon",
+        )
 
+        window.fill_game_store()
 
-class PingerTests(unittest.TestCase):
-    def test_status_is_per_instance(self):
-        from obozrenie import ping
-        a = ping.Pinger()
-        b = ping.Pinger()
-        a.status["host"] = 12
-        self.assertNotIn("host", b.status)
+        self.assertEqual(model, [["q3a", "Quake III", None, "game-icon"]])
 
 
 class DoLaunchTests(unittest.TestCase):
-    def test_do_launch_without_pwd_uses_cwd(self):
-        with mock.patch.dict(os.environ):
-            os.environ.pop("PWD", None)
-            with mock.patch.object(launch.subprocess, "Popen") as popen:
-                launch.do_launch(["true"])
-        kwargs = popen.call_args.kwargs
-        self.assertEqual(kwargs["cwd"], os.getcwd())
+    def test_do_launch_uses_the_specified_working_directory(self):
+        with mock.patch.object(launch.subprocess, "Popen") as popen, \
+             mock.patch.object(launch.helpers, "debug_msg"):
+            launch.do_launch(launch.LaunchSpec(("true",), "/start"))
+
+        self.assertEqual(popen.call_args.kwargs["cwd"], "/start")
 
 
 class TomlTableTests(unittest.TestCase):
@@ -379,12 +351,14 @@ class TomlTableTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "nested", "table.toml")
             helpers.save_table(path, data)
-            self.assertEqual(helpers.load_table(path), data)
+            loaded, warning = helpers.load_user_table(path)
+            self.assertEqual(loaded, data)
+            self.assertIsNone(warning)
 
-    def test_load_missing_file_returns_none(self):
+    def test_load_missing_file_returns_an_empty_table(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "does-not-exist.toml")
-            self.assertIsNone(helpers.load_table(path))
+            self.assertEqual(helpers.load_user_table(path), ({}, None))
 
 
 class GeoIPModuleTests(unittest.TestCase):
@@ -420,89 +394,6 @@ class GeoIPModuleTests(unittest.TestCase):
                                    os.path.join(d, "b.mmdb")):
                 self.assertIsNone(geoip.find_database())
 
-    def test_download_cancel_cleans_up_and_returns_none(self):
-        from obozrenie import geoip
-
-        class _FakeResp:
-            def __enter__(self): return self
-            def __exit__(self, *a): return False
-            def raise_for_status(self): pass
-            headers = {"Content-Length": "100"}
-            def iter_content(self, chunk_size): yield b"x" * 10
-
-        with tempfile.TemporaryDirectory() as d:
-            cache_db = os.path.join(d, "cache.mmdb")
-            cancel = threading.Event()
-            cancel.set()
-            with mock.patch.object(geoip, "CACHE_DB_PATH", cache_db), \
-                 mock.patch.object(geoip.requests, "get",
-                                   return_value=_FakeResp()):
-                result = geoip.download_database(cancel)
-            self.assertIsNone(result)
-            self.assertFalse(os.path.exists(cache_db + ".part"))
-            self.assertFalse(os.path.exists(cache_db))
-
-
-class CoreGeoIPTests(unittest.TestCase):
-    """Tests for Core geolocation lookups."""
-
-    def _make_core(self):
-        from obozrenie import core
-        c = core.Core()
-        c.geolocation = None
-        return c
-
-    def test_lookup_country_disabled_returns_unknown(self):
-        c = self._make_core()
-        self.assertEqual(c._lookup_country("example.com"), "unknown")
-
-    def test_lookup_country_flat_record_returns_iso_code(self):
-        """ip-location-db DBs return a flat {'country_code': ...} record."""
-        import socket
-
-        class _FakeDB:
-            def get(self, ip):
-                return {"country_code": "US"}
-
-        c = self._make_core()
-        c.geolocation = _FakeDB()
-        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
-            self.assertEqual(c._lookup_country("example.com"), "US")
-
-    def test_lookup_country_nested_record_returns_iso_code(self):
-        """MaxMind/DB-IP DBs return a nested {'country': {'iso_code': ...}}."""
-        import socket
-
-        class _FakeDB:
-            def get(self, ip):
-                return {"country": {"iso_code": "DE"}}
-
-        c = self._make_core()
-        c.geolocation = _FakeDB()
-        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
-            self.assertEqual(c._lookup_country("example.com"), "DE")
-
-    def test_lookup_country_not_in_db_returns_empty(self):
-        """maxminddb returns None for an IP absent from the database."""
-        import socket
-
-        class _FakeDB:
-            def get(self, ip):
-                return None
-
-        c = self._make_core()
-        c.geolocation = _FakeDB()
-        with mock.patch.object(socket, "gethostbyname", return_value="1.2.3.4"):
-            self.assertEqual(c._lookup_country("example.com"), "")
-
-    def test_lookup_country_unresolvable_returns_empty(self):
-        import socket
-        c = self._make_core()
-        c.geolocation = object()  # never called; resolution fails first
-        with mock.patch.object(socket, "gethostbyname",
-                               side_effect=socket.gaierror):
-            self.assertEqual(c._lookup_country("nope.invalid"), "")
-
 
 class IconLoadingTests(unittest.TestCase):
     """Tests for icon pixbuf loading (get_icon_for_entry)."""
@@ -515,6 +406,10 @@ class IconLoadingTests(unittest.TestCase):
         '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480">'
         '<rect width="640" height="480" fill="red"/></svg>'
     )
+    _ONE_PIXEL_PNG = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+        "+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    )
 
     def _gtk_helpers(self):
         try:
@@ -526,10 +421,13 @@ class IconLoadingTests(unittest.TestCase):
     def test_svg_with_leading_comment_loads(self):
         gtk_helpers = self._gtk_helpers()
         with tempfile.TemporaryDirectory() as d:
-            with open(os.path.join(d, "xx.svg"), "w") as handle:
-                handle.write(self._SVG_WITH_LEADING_COMMENT)
+            root = Path(d)
+            (root / "xx.svg").write_text(
+                self._SVG_WITH_LEADING_COMMENT,
+                encoding="utf-8",
+            )
             icon = gtk_helpers.get_icon_for_entry(
-                "xx", "flag", ["svg"], d, 24, 18)
+                "xx", ("svg",), root, 24, 18)
             self.assertIsNotNone(icon)
             self.assertLessEqual(icon.get_width(), 24)
             self.assertLessEqual(icon.get_height(), 18)
@@ -539,7 +437,79 @@ class IconLoadingTests(unittest.TestCase):
         gtk_helpers = self._gtk_helpers()
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(FileNotFoundError):
-                gtk_helpers.get_icon_for_entry("zz", "flag", ["svg"], d, 24, 18)
+                gtk_helpers.get_icon_for_entry(
+                    "zz", ("svg",), Path(d), 24, 18
+                )
+
+    def test_icon_dictionary_uses_explicit_image_missing_fallback(self):
+        gtk_helpers = self._gtk_helpers()
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "image-missing.png").write_bytes(self._ONE_PIXEL_PNG)
+            icons = gtk_helpers.get_icon_dict(
+                ("not-shipped",),
+                ("png", "svg"),
+                root,
+                24,
+                24,
+            )
+
+        self.assertIsNotNone(icons["not-shipped"])
+        self.assertEqual(
+            (
+                icons["not-shipped"].get_width(),
+                icons["not-shipped"].get_height(),
+            ),
+            (24, 24),
+        )
+
+    def test_invalid_requested_icon_uses_valid_image_missing_fallback(self):
+        gtk_helpers = self._gtk_helpers()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "broken.png").write_bytes(b"not a PNG")
+            (root / "image-missing.png").write_bytes(self._ONE_PIXEL_PNG)
+
+            icons = gtk_helpers.get_icon_dict(
+                ("broken",),
+                ("png",),
+                root,
+                24,
+                24,
+            )
+
+        self.assertIsNotNone(icons["broken"])
+        self.assertEqual(
+            (icons["broken"].get_width(), icons["broken"].get_height()),
+            (24, 24),
+        )
+
+    def test_missing_image_missing_fallback_raises_file_not_found(self):
+        gtk_helpers = self._gtk_helpers()
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(FileNotFoundError):
+                gtk_helpers.get_icon_dict(
+                    ("not-shipped",),
+                    ("png",),
+                    Path(directory),
+                    24,
+                    24,
+                )
+
+    def test_invalid_image_missing_fallback_raises_file_not_found(self):
+        gtk_helpers = self._gtk_helpers()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "image-missing.png").write_bytes(b"not a PNG")
+            with self.assertRaises(FileNotFoundError):
+                gtk_helpers.get_icon_dict(
+                    ("not-shipped",),
+                    ("png",),
+                    root,
+                    24,
+                    24,
+                )
 
 
 class CountryEmojiTests(unittest.TestCase):
@@ -571,7 +541,736 @@ class CountryEmojiTests(unittest.TestCase):
         self.assertEqual(self._fn()("U1"), "")
 
 
+class _CleanupAbort(BaseException):
+    pass
+
+
+class _RecordingOwner:
+    """Stand in for one owned service and record how it is closed."""
+
+    def __init__(self, name, events, *, begin_errors=(), join_error=None):
+        self.name = name
+        self.events = events
+        self.begin_errors = list(begin_errors)
+        self.join_error = join_error
+        self.deadlines = []
+
+    def begin_close(self):
+        self.events.append(("begin", self.name))
+        if self.begin_errors:
+            error = self.begin_errors.pop(0)
+            if error is not None:
+                raise error
+
+    def join_until(self, deadline):
+        self.events.append(("join", self.name))
+        self.deadlines.append(deadline)
+        if self.join_error is not None:
+            raise self.join_error
+
+
+class ApplicationServicesTests(unittest.TestCase):
+    OWNER_NAMES = ("core", "geoip", "qstat", "dns", "http", "icmp")
+
+    def make_services(self, **owner_options):
+        from obozrenie import launch_gtk, network_calls
+
+        self.events = []
+        self.owners = {
+            name: _RecordingOwner(
+                name,
+                self.events,
+                **owner_options.get(name, {}),
+            )
+            for name in self.OWNER_NAMES
+        }
+        return launch_gtk.ApplicationServices(
+            self.owners["core"],
+            self.owners["geoip"],
+            self.owners["qstat"],
+            network_calls.NetworkCallPools(
+                dns=self.owners["dns"],
+                http=self.owners["http"],
+                icmp=self.owners["icmp"],
+            ),
+        )
+
+    @property
+    def begins(self):
+        return [("begin", name) for name in self.OWNER_NAMES]
+
+    @property
+    def joins(self):
+        return [("join", name) for name in self.OWNER_NAMES]
+
+    def assert_one_deadline(self, deadline):
+        for name in self.OWNER_NAMES:
+            with self.subTest(owner=name):
+                self.assertEqual(len(self.owners[name].deadlines), 1)
+                self.assertIs(self.owners[name].deadlines[0], deadline)
+
+    def test_begin_close_reaches_every_owner_before_any_join(self):
+        services = self.make_services()
+
+        self.assertIs(services.core, self.owners["core"])
+        self.assertIs(services.geoip_downloads, self.owners["geoip"])
+        self.assertIs(services.qstat_processes, self.owners["qstat"])
+
+        services.begin_close()
+        self.assertEqual(self.events, self.begins)
+
+        deadline = time.monotonic() + 0.5
+        services.join_until(deadline)
+        self.assertEqual(self.events, self.begins + self.joins)
+        self.assert_one_deadline(deadline)
+
+    def test_close_until_rejects_a_malformed_deadline_before_closing(self):
+        services = self.make_services()
+
+        with self.assertRaises(TypeError):
+            services.close_until(1)
+        with self.assertRaises(TypeError):
+            services.join_until(1)
+        self.assertEqual(self.events, [])
+
+    def test_close_until_passes_one_unchanged_deadline_and_continues_after_failures(self):
+        begin_error = _CleanupAbort("geoip close interrupted")
+        join_error = RuntimeError("http join failed")
+        services = self.make_services(
+            geoip={"begin_errors": (begin_error,)},
+            http={"join_error": join_error},
+        )
+
+        deadline = time.monotonic() + 0.5
+        with self.assertRaises(_CleanupAbort) as raised:
+            services.close_until(deadline)
+
+        self.assertIs(raised.exception, begin_error)
+        self.assertEqual(self.events, self.begins + self.joins)
+        self.assert_one_deadline(deadline)
+
+        services = self.make_services(dns={"join_error": join_error})
+        deadline = time.monotonic() + 0.5
+        with self.assertRaises(RuntimeError) as raised:
+            services.close_until(deadline)
+
+        self.assertIs(raised.exception, join_error)
+        self.assertEqual(self.events, self.begins + self.joins)
+        self.assert_one_deadline(deadline)
+
+    def test_repeated_begin_close_retries_only_incomplete_owners(self):
+        error = RuntimeError("qstat close failed")
+        services = self.make_services(qstat={"begin_errors": (error,)})
+
+        with self.assertRaises(RuntimeError) as raised:
+            services.begin_close()
+        self.assertIs(raised.exception, error)
+        self.assertEqual(self.events, self.begins)
+
+        self.events.clear()
+        services.begin_close()
+        self.assertEqual(self.events, [("begin", "qstat")])
+
+        self.events.clear()
+        deadline = time.monotonic() + 0.5
+        services.close_until(deadline)
+        self.assertEqual(self.events, self.joins)
+        self.assert_one_deadline(deadline)
+
+
 class EntryPointTests(unittest.TestCase):
+    _ATTEMPTED_PATHS = {
+        "macOS setup": ["macOS setup"],
+        "GTK import": ["macOS setup", "GTK import"],
+        "Core": ["macOS setup", "Core"],
+        "coordinator": ["macOS setup", "Core", "coordinator"],
+        "services": ["macOS setup", "Core", "coordinator", "services"],
+        "Settings": [
+            "macOS setup",
+            "Core",
+            "coordinator",
+            "services",
+            "Settings",
+        ],
+        "App": [
+            "macOS setup",
+            "Core",
+            "coordinator",
+            "services",
+            "Settings",
+            "App",
+        ],
+        "app.run": [
+            "macOS setup",
+            "Core",
+            "coordinator",
+            "services",
+            "Settings",
+            "App",
+            "app.run",
+        ],
+    }
+    _STARTED_PATH = _ATTEMPTED_PATHS["app.run"]
+
+    def _run_main(
+        self,
+        failure=None,
+        error=None,
+        cleanup_error=None,
+        tracebacks_at_cleanup=None,
+        ambient_error=None,
+        real_cleanup=False,
+        record=None,
+        handler_failure=None,
+    ):
+        from obozrenie import launch_gtk, network_calls, qstat_processes
+
+        events = []
+        instances = {}
+        printed = []
+        raised = []
+        cleanup_calls = []
+        closed_deadlines = []
+
+        if record is not None:
+            record.events = events
+            record.instances = instances
+            record.cleanup_calls = cleanup_calls
+            record.closed_deadlines = closed_deadlines
+
+        class FakeProcessOwner:
+            """One process-wide service, recording its two shutdown phases."""
+
+            def __init__(instance, name):
+                instance.name = name
+                instances[name] = instance
+
+            def begin_close(instance):
+                events.append(f"{instance.name}.begin_close")
+
+            def join_until(instance, deadline):
+                events.append(f"{instance.name}.join_until")
+                closed_deadlines.append(deadline)
+
+        class FakeCore:
+            def __init__(instance):
+                events.append("Core")
+                if failure == "Core":
+                    raise error
+                instances["core"] = instance
+
+            def begin_close(instance):
+                events.append("core.begin_close")
+
+            def join_until(instance, deadline):
+                events.append("core.join_until")
+                closed_deadlines.append(deadline)
+
+        class FakeCoordinator:
+            def __init__(instance, core_instance):
+                events.append("coordinator")
+                if failure == "coordinator":
+                    raise error
+                self.assertIs(core_instance, instances["core"])
+                instances["coordinator"] = instance
+
+            def begin_close(instance):
+                events.append("coordinator.begin_close")
+
+            def join_until(instance, deadline):
+                events.append("coordinator.join_until")
+                closed_deadlines.append(deadline)
+
+        class FakeServices:
+            def __init__(
+                instance,
+                core_instance,
+                coordinator_instance,
+                supervisor,
+                pools,
+            ):
+                events.append("services")
+                if failure == "services":
+                    raise error
+                self.assertIs(core_instance, instances["core"])
+                self.assertIs(coordinator_instance, instances["coordinator"])
+                self.assertIs(
+                    supervisor,
+                    qstat_processes.get_qstat_process_supervisor(),
+                )
+                self.assertIs(pools, network_calls.get_network_call_pools())
+                instances["services"] = instance
+
+            def close_until(instance, deadline):
+                closed_deadlines.append(deadline)
+                record_cleanup()
+
+        class FakeSettings:
+            def __init__(instance, core_instance, profile_path):
+                events.append("Settings")
+                if failure == "Settings":
+                    raise error
+                self.assertIs(core_instance, instances["core"])
+                self.assertEqual(
+                    profile_path,
+                    os.path.expanduser(launch_gtk.PROFILE_PATH),
+                )
+                instances["settings"] = instance
+
+        class FakeApp:
+            def __init__(
+                instance,
+                core_instance,
+                settings_instance,
+                services_instance,
+            ):
+                events.append("App")
+                if failure == "App":
+                    raise error
+                self.assertIs(core_instance, instances["core"])
+                self.assertIs(settings_instance, instances["settings"])
+                self.assertIs(services_instance, instances["services"])
+                instance.handler_failure = None
+
+            def run(instance, argument):
+                events.append("app.run")
+                self.assertIsNone(argument)
+                if failure == "app.run":
+                    raise error
+                # A signal handler cannot raise through PyGObject's dispatch,
+                # so a failed startup or shutdown reaches the launcher only
+                # as this recorded diagnostic.
+                instance.handler_failure = handler_failure
+
+        gtk_module = ModuleType("obozrenie.gtk")
+        if failure == "GTK import":
+            def fail_gtk_import(name):
+                if name in {"App", "GeoIPDownloadCoordinator", "core"}:
+                    events.append("GTK import")
+                    raise error
+                raise AttributeError(name)
+
+            gtk_module.__getattr__ = fail_gtk_import
+        else:
+            gtk_module.App = FakeApp
+            gtk_module.GeoIPDownloadCoordinator = FakeCoordinator
+            gtk_module.core = SimpleNamespace(
+                Core=FakeCore,
+                Settings=FakeSettings,
+            )
+
+        def ensure_macos_library_path():
+            events.append("macOS setup")
+            if failure == "macOS setup":
+                raise error
+
+        def record_cleanup():
+            events.append("cleanup")
+            if tracebacks_at_cleanup is not None:
+                tracebacks_at_cleanup.append(error.__traceback__)
+            if cleanup_error is not None:
+                raise cleanup_error
+
+        def close_application_services(services, started_owners):
+            cleanup_calls.append((services, tuple(started_owners)))
+            record_cleanup()
+
+        def print_error(*values, **kwargs):
+            self.assertEqual(kwargs, {})
+            events.append("print")
+            printed.append(values)
+
+        def invoke_main():
+            try:
+                launch_gtk.main()
+            except BaseException as caught:
+                events.append("raised")
+                raised.append(caught)
+
+        with contextlib.ExitStack() as patches:
+            # The QStat supervisor and the network pools exist before `main()`
+            # runs, so the launch resolves fakes from their own registries
+            # rather than closing this process's real services.
+            pools = network_calls.NetworkCallPools(
+                dns=FakeProcessOwner("dns"),
+                http=FakeProcessOwner("http"),
+                icmp=FakeProcessOwner("icmp"),
+            )
+            patches.enter_context(mock.patch.object(
+                network_calls, "_NETWORK_CALL_POOLS", pools))
+            previous_supervisor = (
+                qstat_processes.install_qstat_process_supervisor(
+                    FakeProcessOwner("qstat")
+                )
+            )
+            patches.callback(
+                qstat_processes.install_qstat_process_supervisor,
+                previous_supervisor,
+            )
+            patches.enter_context(
+                mock.patch.dict(sys.modules, {"obozrenie.gtk": gtk_module}))
+            patches.enter_context(mock.patch.object(
+                launch_gtk,
+                "_ensure_macos_library_path",
+                side_effect=ensure_macos_library_path,
+            ))
+            patches.enter_context(mock.patch.object(
+                launch_gtk, "ApplicationServices", FakeServices))
+            patches.enter_context(
+                mock.patch("builtins.print", side_effect=print_error))
+            if not real_cleanup:
+                patches.enter_context(mock.patch.object(
+                    launch_gtk,
+                    "_close_application_services",
+                    side_effect=close_application_services,
+                ))
+            if ambient_error is None:
+                invoke_main()
+            else:
+                try:
+                    raise ambient_error
+                except BaseException as caught_ambient:
+                    self.assertIs(caught_ambient, ambient_error)
+                    invoke_main()
+
+        return events, printed, raised
+
+    def test_main_closes_application_services_once_after_success(self):
+        events, printed, raised = self._run_main()
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup"])
+        self.assertEqual(printed, [])
+        self.assertEqual(raised, [])
+
+    def test_main_closes_application_services_before_failed_startup_exits(self):
+        for failure, attempted_path in self._ATTEMPTED_PATHS.items():
+            with self.subTest(failure=failure):
+                error = RuntimeError(f"{failure} failed")
+                events, printed, raised = self._run_main(failure, error)
+
+                self.assertEqual(
+                    events,
+                    [*attempted_path, "print", "cleanup", "raised"],
+                )
+                self.assertEqual(printed, [(error,)])
+                self.assertEqual(len(raised), 1)
+                self.assertIsInstance(raised[0], SystemExit)
+                self.assertEqual(raised[0].code, 1)
+
+    def test_main_exits_one_for_a_failure_a_signal_handler_could_not_raise(self):
+        # PyGObject prints and swallows what a `startup` or `shutdown`
+        # handler raises, so `run()` returns success for a settings file that
+        # never loaded or never saved; the recorded diagnostic is what makes
+        # the run report the failure it was.
+        events, printed, raised = self._run_main(
+            handler_failure=SafeDiagnostic("Settings profile is locked."),
+        )
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup", "raised"])
+        self.assertEqual(printed, [])
+        self.assertEqual(len(raised), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+        self.assertEqual(raised[0].code, 1)
+
+    def test_main_keeps_a_handler_failure_over_a_later_cleanup_failure(self):
+        cleanup_error = RuntimeError("cleanup failed")
+        events, printed, raised = self._run_main(
+            cleanup_error=cleanup_error,
+            handler_failure=SafeDiagnostic("Settings profile is locked."),
+        )
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup", "raised"])
+        self.assertEqual(printed, [])
+        self.assertEqual(len(raised), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+        self.assertEqual(raised[0].code, 1)
+
+    def test_main_closes_application_services_when_caller_raises_base_exception(self):
+        class CallerAbort(BaseException):
+            pass
+
+        error = CallerAbort("caller interrupted")
+        events, printed, raised = self._run_main("app.run", error)
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup", "raised"])
+        self.assertEqual(printed, [])
+        self.assertEqual(len(raised), 1)
+        self.assertIs(raised[0], error)
+
+    def test_main_passes_the_services_owner_and_started_owners_to_cleanup(self):
+        record = SimpleNamespace()
+        self._run_main(record=record)
+        services, started_owners = record.cleanup_calls[0]
+        self.assertIs(services, record.instances["services"])
+        # The process-wide services exist before the launch does, so cleanup
+        # owns them however far construction got.
+        process_wide = ("qstat", "dns", "http", "icmp")
+        self.assertEqual(
+            started_owners,
+            tuple(
+                record.instances[name]
+                for name in (*process_wide, "core", "coordinator")
+            ),
+        )
+
+        for failure, constructed_owners in (
+            ("macOS setup", ()),
+            ("Core", ()),
+            ("coordinator", ("core",)),
+            ("services", ("core", "coordinator")),
+        ):
+            with self.subTest(failure=failure):
+                record = SimpleNamespace()
+                self._run_main(
+                    failure,
+                    RuntimeError(f"{failure} failed"),
+                    record=record,
+                )
+                services, started_owners = record.cleanup_calls[0]
+                self.assertIsNone(services)
+                self.assertEqual(
+                    started_owners,
+                    tuple(
+                        record.instances[name]
+                        for name in (*process_wide, *constructed_owners)
+                    ),
+                )
+
+    def test_main_closes_the_services_owner_against_the_shutdown_deadline(self):
+        from obozrenie import launch_gtk
+
+        record = SimpleNamespace()
+        started = time.monotonic()
+        events, printed, raised = self._run_main(
+            real_cleanup=True,
+            record=record,
+        )
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup"])
+        self.assertEqual(raised, [])
+        self.assertEqual(len(record.closed_deadlines), 1)
+        deadline = record.closed_deadlines[0]
+        self.assertIs(type(deadline), float)
+        self.assertGreaterEqual(
+            deadline,
+            started + launch_gtk._APPLICATION_SHUTDOWN_TIMEOUT_SECONDS,
+        )
+        self.assertLessEqual(
+            deadline,
+            time.monotonic()
+            + launch_gtk._APPLICATION_SHUTDOWN_TIMEOUT_SECONDS,
+        )
+
+    def test_main_closes_owners_built_before_a_failed_services_owner(self):
+        record = SimpleNamespace()
+        error = RuntimeError("services failed")
+        events, printed, raised = self._run_main(
+            "services",
+            error,
+            real_cleanup=True,
+            record=record,
+        )
+
+        self.assertEqual(
+            events,
+            [
+                *self._ATTEMPTED_PATHS["services"],
+                "print",
+                "qstat.begin_close",
+                "dns.begin_close",
+                "http.begin_close",
+                "icmp.begin_close",
+                "core.begin_close",
+                "coordinator.begin_close",
+                "qstat.join_until",
+                "dns.join_until",
+                "http.join_until",
+                "icmp.join_until",
+                "core.join_until",
+                "coordinator.join_until",
+                "raised",
+            ],
+        )
+        self.assertEqual(printed, [(error,)])
+        self.assertEqual(len(set(record.closed_deadlines)), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+
+    def test_main_closes_process_wide_owners_when_core_construction_fails(self):
+        record = SimpleNamespace()
+        error = RuntimeError("Core failed")
+        events, printed, raised = self._run_main(
+            "Core",
+            error,
+            real_cleanup=True,
+            record=record,
+        )
+
+        # Nothing this launch could build exists, but the supervisor and the
+        # pools it would have used do, and both phases still reach them.
+        self.assertEqual(
+            events,
+            [
+                *self._ATTEMPTED_PATHS["Core"],
+                "print",
+                "qstat.begin_close",
+                "dns.begin_close",
+                "http.begin_close",
+                "icmp.begin_close",
+                "qstat.join_until",
+                "dns.join_until",
+                "http.join_until",
+                "icmp.join_until",
+                "raised",
+            ],
+        )
+        self.assertEqual(printed, [(error,)])
+        self.assertEqual(len(set(record.closed_deadlines)), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+
+    def test_main_propagates_cleanup_base_exception_after_success(self):
+        class CleanupAbort(BaseException):
+            pass
+
+        cleanup_error = CleanupAbort("cleanup interrupted")
+        events, printed, raised = self._run_main(cleanup_error=cleanup_error)
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup", "raised"])
+        self.assertEqual(printed, [])
+        self.assertEqual(len(raised), 1)
+        self.assertIs(raised[0], cleanup_error)
+
+    def test_main_preserves_selected_exit_when_cleanup_raises(self):
+        class CleanupAbort(BaseException):
+            pass
+
+        app_error = RuntimeError("app.run failed")
+        cleanup_error = CleanupAbort("cleanup interrupted")
+        events, printed, raised = self._run_main(
+            "app.run",
+            app_error,
+            cleanup_error,
+        )
+
+        self.assertEqual(
+            events,
+            [*self._STARTED_PATH, "print", "cleanup", "raised"],
+        )
+        self.assertEqual(printed, [(app_error,)])
+        self.assertEqual(len(raised), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+        self.assertEqual(raised[0].code, 1)
+
+    def test_main_propagates_cleanup_failure_inside_ambient_except(self):
+        class CleanupAbort(BaseException):
+            pass
+
+        ambient_error = RuntimeError("unrelated handled error")
+        cleanup_error = CleanupAbort("cleanup interrupted")
+        events, printed, raised = self._run_main(
+            cleanup_error=cleanup_error,
+            ambient_error=ambient_error,
+        )
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup", "raised"])
+        self.assertEqual(printed, [])
+        self.assertEqual(len(raised), 1)
+        self.assertIs(raised[0], cleanup_error)
+
+    def test_main_succeeds_inside_ambient_except_when_cleanup_succeeds(self):
+        ambient_error = RuntimeError("unrelated handled error")
+        events, printed, raised = self._run_main(ambient_error=ambient_error)
+
+        self.assertEqual(events, [*self._STARTED_PATH, "cleanup"])
+        self.assertEqual(printed, [])
+        self.assertEqual(raised, [])
+
+    def test_main_preserves_selected_exit_inside_ambient_except(self):
+        class CleanupAbort(BaseException):
+            pass
+
+        ambient_error = RuntimeError("unrelated handled error")
+        app_error = RuntimeError("app.run failed")
+        cleanup_error = CleanupAbort("cleanup interrupted")
+        events, printed, raised = self._run_main(
+            failure="app.run",
+            error=app_error,
+            cleanup_error=cleanup_error,
+            ambient_error=ambient_error,
+        )
+
+        self.assertEqual(
+            events,
+            [*self._STARTED_PATH, "print", "cleanup", "raised"],
+        )
+        self.assertEqual(printed, [(app_error,)])
+        self.assertEqual(len(raised), 1)
+        self.assertIsInstance(raised[0], SystemExit)
+        self.assertEqual(raised[0].code, 1)
+
+    def test_main_preserves_caller_base_exception_and_original_traceback(self):
+        from obozrenie import launch_gtk
+
+        class CallerAbort(BaseException):
+            pass
+
+        class CleanupAbort(BaseException):
+            pass
+
+        class AmbientError(Exception):
+            pass
+
+        for failure, attempted_path in self._ATTEMPTED_PATHS.items():
+            for cleanup_fails, ambient_is_active in itertools.product(
+                (False, True),
+                repeat=2,
+            ):
+                with self.subTest(
+                    failure=failure,
+                    cleanup_fails=cleanup_fails,
+                    ambient_is_active=ambient_is_active,
+                ):
+                    caller_error = CallerAbort(f"{failure} interrupted")
+                    cleanup_error = (
+                        CleanupAbort("cleanup interrupted")
+                        if cleanup_fails
+                        else None
+                    )
+                    ambient_error = (
+                        AmbientError("unrelated handled error")
+                        if ambient_is_active
+                        else None
+                    )
+                    tracebacks_at_cleanup = []
+                    events, printed, raised = self._run_main(
+                        failure=failure,
+                        error=caller_error,
+                        cleanup_error=cleanup_error,
+                        tracebacks_at_cleanup=tracebacks_at_cleanup,
+                        ambient_error=ambient_error,
+                    )
+
+                    self.assertEqual(
+                        events,
+                        [*attempted_path, "cleanup", "raised"],
+                    )
+                    self.assertEqual(printed, [])
+                    self.assertEqual(len(raised), 1)
+                    self.assertIs(raised[0], caller_error)
+                    self.assertEqual(len(tracebacks_at_cleanup), 1)
+
+                    original_traceback = tracebacks_at_cleanup[0]
+                    main_tracebacks = []
+                    current_traceback = raised[0].__traceback__
+                    while current_traceback is not None:
+                        if (
+                            current_traceback.tb_frame.f_code
+                            is launch_gtk.main.__code__
+                        ):
+                            main_tracebacks.append(current_traceback)
+                        current_traceback = current_traceback.tb_next
+                    self.assertEqual(len(main_tracebacks), 1)
+                    self.assertIs(main_tracebacks[0], original_traceback)
+
     def test_import_is_side_effect_free_and_exposes_main(self):
         # Importing the launcher must not start the GUI or import GTK; it must
         # expose a callable main(). Run in a subprocess (with a timeout) so a
@@ -643,25 +1342,12 @@ class EntryPointTests(unittest.TestCase):
 
 
 class PackagingTests(unittest.TestCase):
-    def _project(self):
-        with open("pyproject.toml", "rb") as handle:
-            return tomllib.load(handle)["project"]
-
-    def test_gtk_dependencies_declared(self):
-        deps = self._project()["dependencies"]
-        self.assertIn("pygobject", deps)
-        self.assertIn("pycairo", deps)
-
-    def test_console_script_declared(self):
-        scripts = self._project().get("scripts", {})
-        self.assertEqual(scripts.get("obozrenie-gtk"), "obozrenie.launch_gtk:main")
-
-    def test_no_requirements_txt(self):
-        self.assertFalse(os.path.exists("requirements.txt"))
-
     def test_game_lists_have_no_proxy_keys(self):
-        from obozrenie.global_settings import GAME_CONFIG_FILE
-        table = helpers.load_table(GAME_CONFIG_FILE)
+        from obozrenie import resources
+
+        table = resources.load_toml(
+            "settings", "internal", "game_lists.toml"
+        )
         for game, entry in table.items():
             self.assertNotIn("proxy", entry, game)
 
@@ -669,26 +1355,6 @@ class PackagingTests(unittest.TestCase):
         import importlib
         with self.assertRaises(ModuleNotFoundError):
             importlib.import_module("obozrenie.proxies")
-
-
-class DataPathTests(unittest.TestCase):
-    def test_assets_dir_is_absolute_and_exists(self):
-        from obozrenie import global_settings
-        self.assertTrue(os.path.isabs(global_settings.ASSETS_DIR))
-        self.assertTrue(os.path.isdir(global_settings.ASSETS_DIR))
-
-    def test_assets_resolve_independent_of_cwd(self):
-        from obozrenie.global_settings import ASSETS_DIR, _SOURCE_ROOT
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join(
-            filter(None, [_SOURCE_ROOT, env.get("PYTHONPATH")]))
-        with tempfile.TemporaryDirectory() as d:
-            result = subprocess.run(
-                [sys.executable, "-c",
-                 "from obozrenie.global_settings import ASSETS_DIR; print(ASSETS_DIR)"],
-                cwd=d, env=env, capture_output=True, text=True, check=True)
-        self.assertEqual(result.stdout.strip(), ASSETS_DIR)
-
 
 if __name__ == "__main__":
     unittest.main()

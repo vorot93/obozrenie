@@ -19,7 +19,6 @@
 """Useful functions for GTK+ UI"""
 
 import ast
-import os
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -35,16 +34,15 @@ def _scale_keeping_aspect(loader, image_width, image_height, box):
                     max(1, round(image_height * scale)))
 
 
-def _read_icon_bytes(path, icon_format):
-    """Read an icon file, normalising problematic SVGs.
+def _read_icon_bytes(icon, icon_format):
+    """Read an icon resource, normalising problematic SVGs.
 
     Several bundled flag SVGs place a large comment/RDF metadata block
     before the <svg> root element. That trips both gdk-pixbuf format
     detection (which only sniffs the first ~1 KiB) and the SVG decoder
     itself. Dropping everything before <svg> makes them load.
     """
-    with open(path, "rb") as handle:
-        data = handle.read()
+    data = icon.read_bytes()
     if icon_format == "svg":
         start = data.find(b"<svg")
         if start > 0:
@@ -52,7 +50,21 @@ def _read_icon_bytes(path, icon_format):
     return data
 
 
-def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
+def load_icon(icon, icon_format, width=None, height=None):
+    data = _read_icon_bytes(icon, icon_format)
+    loader = GdkPixbuf.PixbufLoader.new_with_type(icon_format)
+    if width is not None and height is not None:
+        loader.connect(
+            "size-prepared",
+            _scale_keeping_aspect,
+            (width, height),
+        )
+    loader.write(data)
+    loader.close()
+    return loader.get_pixbuf()
+
+
+def get_icon_for_entry(entry, icon_formats, icon_root, width, height):
     """Load an icon pixbuf scaled to fit within width x height.
 
     Uses an explicitly-typed PixbufLoader fed normalised bytes rather than
@@ -60,17 +72,18 @@ def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
     still load. Aspect ratio is preserved, matching the previous behaviour.
     """
     for icon_format in icon_formats:
-        path = os.path.join(icon_dir, entry.lower() + "." + icon_format)
-        if not os.path.isfile(path):
+        icon_resource = icon_root.joinpath(
+            entry.lower() + "." + icon_format
+        )
+        if not icon_resource.is_file():
             continue
         try:
-            data = _read_icon_bytes(path, icon_format)
-            loader = GdkPixbuf.PixbufLoader.new_with_type(icon_format)
-            loader.connect("size-prepared", _scale_keeping_aspect,
-                           (width, height))
-            loader.write(data)
-            loader.close()
-            icon = loader.get_pixbuf()
+            icon = load_icon(
+                icon_resource,
+                icon_format,
+                width,
+                height,
+            )
         except (GLib.GError, OSError):
             continue
         if icon is not None:
@@ -79,21 +92,24 @@ def get_icon_for_entry(entry, icon_type, icon_formats, icon_dir, width, height):
     raise FileNotFoundError
 
 
-def get_icon_dict(key_list, icon_type, icon_formats, icon_dir, width, height, error_msg=None):
+def get_icon_dict(key_list, icon_formats, icon_root, width, height):
     """Loads icon pixbufs into memory for later usage"""
     icon_dict = {}
+    fallback = None
     for entry in key_list:
         try:
             icon_dict[entry] = get_icon_for_entry(
-                entry, icon_type, icon_formats, icon_dir, width, height)
+                entry, icon_formats, icon_root, width, height)
         except FileNotFoundError:
-            if error_msg is not None:
-                error_msg(entry)
-            try:
-                icon_dict[entry] = get_icon_for_entry(
-                    "unknown", icon_type, icon_formats, icon_dir, width, height)
-            except FileNotFoundError:
-                icon_dict[entry] = None
+            if fallback is None:
+                fallback = get_icon_for_entry(
+                    "image-missing",
+                    icon_formats,
+                    icon_root,
+                    width,
+                    height,
+                )
+            icon_dict[entry] = fallback
 
     return icon_dict
 

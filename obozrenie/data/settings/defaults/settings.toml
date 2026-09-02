@@ -1,0 +1,5 @@
+[common]
+server-host = ""
+selected-game-browser = ""
+selected-game-connect = ""
+game-listview = true

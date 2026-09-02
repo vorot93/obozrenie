@@ -1,6 +1,0 @@
-Dockerfile
-.coverage
-__pycache__
-*.mo
-.git
-.gitignore

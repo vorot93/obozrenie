@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
+from types import MappingProxyType
+
 import obozrenie.i18n as i18n
 
 PROJECT = i18n._("Obozrenie")
@@ -37,6 +39,20 @@ HELPER_MSG = i18n._("Helpers")
 LAUNCHER_MSG = i18n._("Launcher")
 
 
+def N_(message: str) -> str:
+    """Mark a source message for extraction without translating it."""
+    return message
+
+
+_FILTER_LABEL_MESSAGE_IDS = MappingProxyType({
+    "filter-mod-label": N_("_Game Mod:"),
+    "filter-type-label": N_("Game _Type:"),
+    "filter-terrain-label": N_("Te_rrain:"),
+    "filter-ping-label": N_("Max _ping:"),
+    "filter-secure-label": N_("_Secure:"),
+})
+
+
 GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
                     "game-combobox":                    {"tooltip-text": i18n._("Select a game.")},
                     "game-treeview-column":             {"title": i18n._("Available games")},
@@ -46,11 +62,10 @@ GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
                     "action-info-button":               {"tooltip-text": i18n._("Show server information.")},
                     "action-connect-button":            {"tooltip-text": i18n._("Connect to the selected server.")},
                     "filters-button":                   {"tooltip-text": i18n._("Set up server filters.")},
-                    "filter-mod-label":                 {"label": i18n._("Game Mod:")},
-                    "filter-type-label":                {"label": i18n._("Game Type:")},
-                    "filter-terrain-label":            {"label": i18n._("Terrain:")},
-                    "filter-ping-label":               {"label": i18n._("Max ping:")},
-                    "filter-secure-label":              {"label": i18n._("Secure:")},
+                    **{
+                        widget_id: {"label": i18n._(message_id)}
+                        for widget_id, message_id in _FILTER_LABEL_MESSAGE_IDS.items()
+                    },
                     "filter-notfull":                   {"label": i18n._("Not full")},
                     "filter-notempty":                  {"label": i18n._("Has players")},
                     "filter-nopassword":                {"label": i18n._("No password")},

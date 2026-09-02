@@ -1,5 +1,0 @@
-#!/bin/sh
-
-PYTHON="/usr/bin/env python3"
-
-exec $PYTHON -m obozrenie.launch_gtk "$@"

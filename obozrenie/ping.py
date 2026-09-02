@@ -16,113 +16,126 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
-import sys
-import threading
+from collections.abc import Iterable
+import time
 
-import obozrenie.helpers as helpers
+from icmplib import ping as icmp_ping
+from icmplib.exceptions import ICMPLibError
 
-
-def add_rtt_info(array):
-    """Appends server response time to the table."""
-    hosts_array = []
-    rtt_array = []
-    rtt_array.append([])
-
-    for entry in array:
-        host = entry['host'].split(":")
-        if len(host) > 1:
-            host = ":".join(host[0:-1])
-        else:
-            host = ":".join(host)
-        hosts_array.append(host)
-
-    pinger = Pinger()
-    pinger.hosts = list(set(hosts_array))
-    pinger.action = "ping"
-
-    pinger.status.clear()
-    rtt_array = pinger.start()
-
-    # Match ping in host list.
-    for entry in array:
-        host = entry['host'].split(":")
-        if len(host) > 1:
-            host = ":".join(host[0:-1])
-        else:
-            host = ":".join(host)
-        entry["ping"] = rtt_array[host]
+from obozrenie import network_calls
+from obozrenie.models import Endpoint, Server
 
 
-class Pinger():
-    def __init__(self):
-        self.status = {}
-        self.hosts = []
-        self.action = "ping"
-        self.options = []
-        self.thread_count = 100
-        self.lock = threading.Lock()
+_RTT_BATCH_TIMEOUT_SECONDS = 5.0
+_UNAVAILABLE_RTT = 9999
 
-    def ping(self, entry):
-        """Pings the requested server. Note: this function is not threaded yet, therefore pinging may take up to a second."""
-        if sys.platform == 'win32':
-            ping_cmd = ["ping", '-n', '1', entry]
-        else:
-            ping_cmd = ["ping", '-c', '1', '-n', '-W', '1', entry]
 
-        ping_output_byte, _ = subprocess.Popen(ping_cmd, stdout=subprocess.PIPE).communicate()
-        ping_output = ping_output_byte.decode()
+def _measure_host(host: str) -> int:
+    try:
+        result = icmp_ping(
+            host,
+            count=1,
+            interval=0,
+            timeout=1,
+            privileged=False,
+        )
+        if not result.is_alive:
+            return _UNAVAILABLE_RTT
+        return round(result.avg_rtt)
+    except (ICMPLibError, OSError, TypeError, ValueError):
+        return _UNAVAILABLE_RTT
 
+
+def _unavailable_outcomes(
+    count: int,
+) -> list[network_calls.CallOutcome[int]]:
+    return [
+        network_calls.CallOutcome.failure(
+            network_calls.PoolUnavailableError(
+                "ICMP network call pool is unavailable."
+            )
+        )
+        for _ in range(count)
+    ]
+
+
+def _validated_supplied_deadline(deadline: float | None) -> float | None:
+    """Validate a caller-supplied deadline, passing `None` through unchanged.
+
+    Both facades validate before they touch their own inputs, so a malformed
+    deadline is rejected before any iterable is consumed or any pool resolved.
+    """
+    if deadline is None:
+        return None
+    return network_calls.validate_deadline(deadline)
+
+
+def measure_rtt(
+    endpoints: Iterable[Endpoint],
+    *,
+    deadline: float | None = None,
+) -> dict[Endpoint, int]:
+    """Return an RTT or the unavailable sentinel for every endpoint."""
+    deadline = _validated_supplied_deadline(deadline)
+
+    endpoints = list(endpoints)
+    if not endpoints:
+        return {}
+
+    hosts = tuple(dict.fromkeys(endpoint.host for endpoint in endpoints))
+    if deadline is None:
+        deadline = time.monotonic() + _RTT_BATCH_TIMEOUT_SECONDS
+        deadline = network_calls.validate_deadline(deadline)
+
+    pool = network_calls.get_network_call_pools().icmp
+    try:
+        pool.ensure_started()
+    except BaseException:
+        outcomes = _unavailable_outcomes(len(hosts))
+    else:
         try:
-            if sys.platform == 'win32':
-                rtt_info = ping_output.rstrip('\n').split('\n')[-1].split(',')[0].split('=')[-1].strip('ms')
-            else:
-                rtt_info = ping_output.split('\n')[1].split('=')[-1].split(' ')[0]
+            outcomes = pool.map_until(deadline, _measure_host, hosts)
+        except network_calls.PoolUnavailableError as error:
+            if type(error) is not network_calls.PoolUnavailableError:
+                raise
+            outcomes = _unavailable_outcomes(len(hosts))
 
-            rtt_num = round(float(rtt_info))
-        except:
-            rtt_num = 9999
+    response_times = {}
+    infrastructure_errors = (
+        network_calls.CallDeadlineExceeded,
+        network_calls.PoolSaturatedError,
+        network_calls.PoolUnavailableError,
+    )
+    for host, outcome in zip(hosts, outcomes, strict=True):
+        if not outcome.succeeded and type(outcome.error) in infrastructure_errors:
+            response_times[host] = _UNAVAILABLE_RTT
+            continue
+        response_times[host] = outcome.result()
 
-        return rtt_num
+    return {
+        endpoint: response_times[endpoint.host]
+        for endpoint in endpoints
+    }
 
-    def pop_queue(self):
-        entry = None
 
-        self.lock.acquire()  # Grab or wait+grab the lock.
+def add_rtt_info(
+    servers: Iterable[Server],
+    *,
+    deadline: float | None = None,
+) -> list[Server]:
+    """Return server records enriched with their response times."""
+    deadline = _validated_supplied_deadline(deadline)
 
-        if self.hosts:
-            entry = self.hosts.pop()
+    servers = list(servers)
+    if not servers:
+        return []
 
-        self.lock.release()  # Release the lock, so another thread could grab it.
+    response_times = measure_rtt(
+        (server.endpoint for server in servers),
+        deadline=deadline,
+    )
 
-        return entry
-
-    def dequeue(self):
-        while True:
-            entry = self.pop_queue()
-
-            if not entry:
-                return None
-
-            if self.action == "ping":
-                result = self.ping(entry)
-            else:
-                result = None
-
-            self.status[entry] = result
-
-    def start(self):
-        threads = []
-
-        for i in range(self.thread_count):
-            # Create self.thread_count number of threads that together will
-            # cooperate removing every ip in the list. Each thread will do the
-            # job as fast as it can.
-            t = threading.Thread(target=self.dequeue)
-            t.start()
-            threads.append(t)
-
-        # Wait until all the threads are done. .join() is blocking.
-        [t.join() for t in threads]
-
-        return self.status
+    return [
+        server.with_network(response_times[server.endpoint], server.country)
+        for server in servers
+    ]

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,23 +9,32 @@ description = "Simple and easy to use game server browser"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Artem Vorotnikov", email = "artem@vorotnikov.me" }]
-license = { text = "GPL-3.0-only" }
+license = "GPL-3.0-only"
+license-files = ["COPYING"]
 dependencies = [
     "xmltodict",
     "maxminddb",
     "pyxdg",
     "tomli-w",
-    "babel",
     "requests",
+    "urllib3>=2.3",
     "pygobject",
     "pycairo",
+    "icmplib>=3.0.4",
+    "filelock>=3.32.5",
 ]
+
 classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Topic :: Games/Entertainment",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Utilities",
     "Programming Language :: Python :: 3",
+]
+
+[dependency-groups]
+dev = [
+    "babel==2.18.0",
+    "pyyaml",
 ]
 
 [project.urls]
@@ -36,13 +45,39 @@ obozrenie-gtk = "obozrenie.launch_gtk:main"
 
 [tool.setuptools]
 packages = ["obozrenie", "obozrenie.adapters"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+obozrenie = [
+    "data/applications/*.desktop",
+    "data/icons/games/*",
+    "data/icons/hicolor/scalable/apps/*.svg",
+    "data/locale/*.pot",
+    "data/locale/*/LC_MESSAGES/*.po",
+    "data/locale/*/LC_MESSAGES/*.mo",
+    "data/settings/defaults/*.toml",
+    "data/settings/internal/*.toml",
+    "data/settings/internal/backends/*.toml",
+    "data/ui/*.ui",
+]
 
 [tool.setuptools.data-files]
-"share/applications" = ["assets/applications/*"]
-"share/icons/hicolor/scalable/apps" = ["assets/icons/hicolor/scalable/apps/*"]
-"share/obozrenie/settings/defaults" = ["assets/obozrenie/settings/defaults/*"]
-"share/obozrenie/settings/internal" = ["assets/obozrenie/settings/internal/game_lists.toml"]
-"share/obozrenie/settings/internal/backends" = ["assets/obozrenie/settings/internal/backends/*"]
-"share/obozrenie/ui" = ["assets/obozrenie/ui/*"]
-"share/pixmaps/obozrenie/games" = ["assets/pixmaps/obozrenie/games/*"]
-"share" = ["README.md", "COPYING"]
+"share/applications" = [
+    "obozrenie/data/applications/me.vorotnikov.Obozrenie.desktop",
+]
+"share/icons/hicolor/scalable/apps" = [
+    "obozrenie/data/icons/hicolor/scalable/apps/obozrenie.svg",
+    "obozrenie/data/icons/hicolor/scalable/apps/obozrenie-short.svg",
+]
+
+[tool.obozrenie.translations]
+project = "Obozrenie"
+version = "1"
+copyright-holder = "Artem Vorotnikov"
+copyright-years = "2016-2026"
+msgid-bugs-address = "https://github.com/obozrenie/obozrenie/issues"
+last-translator = "Artem Vorotnikov <artem@vorotnikov.me>"
+template-language-team = "Obozrenie translators <artem@vorotnikov.me>"
+russian-language-team = "Russian <artem@vorotnikov.me>"
+pot-creation-date = 2026-09-02T14:49:55Z
+po-revision-date = 2026-09-02T14:49:55Z

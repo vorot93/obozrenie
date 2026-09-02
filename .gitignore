@@ -1,6 +1,7 @@
 __pycache__
-*.mo
 .coverage
+/build/
+/dist/
 
 # Python virtualenv
 .venv/
