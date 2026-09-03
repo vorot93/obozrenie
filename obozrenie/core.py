@@ -24,15 +24,9 @@ import time
 from dataclasses import replace
 from enum import Enum, auto
 
-from obozrenie.global_settings import *
-from obozrenie.global_strings import *
-
 from obozrenie import adapters, geoip, helpers, i18n, launch, ping
-from obozrenie.diagnostics import (
-    SafeDiagnostic,
-    SafeDiagnosticError,
-)
 from obozrenie.game_table import GameTable, validated_server_batch
+from obozrenie.global_strings import CORE_MSG
 from obozrenie.models import Endpoint, Server
 from obozrenie.network_calls import validate_deadline
 
@@ -483,8 +477,3 @@ class Core:
         launch_process = threading.Thread(target=launch_target, daemon=True)
         launch_process.start()
         return True
-
-
-if __name__ == "__main__":
-    helpers.debug_msg([CORE_MSG, i18n._(
-        "This is the core module of Obozrenie Game Server Browser. Please run an appropriate UI instead.")])

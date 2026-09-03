@@ -22,10 +22,8 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 
-from obozrenie.global_settings import *
-from obozrenie.global_strings import *
-
-from obozrenie import helpers
+from obozrenie import helpers, i18n
+from obozrenie.global_strings import LAUNCHER_MSG
 from obozrenie.models import Endpoint
 
 

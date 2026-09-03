@@ -150,7 +150,7 @@ class AccessibilityTests(unittest.TestCase):
                 self.assert_true_property(target_id, "can_focus")
                 self.assertIn(
                     "_",
-                    gtk_module.GTK_STRING_TABLE[label_id]["label"],
+                    gtk_window.GTK_STRING_TABLE[label_id]["label"],
                     "the runtime label needs a mnemonic marker",
                 )
 
@@ -1128,6 +1128,51 @@ class SettingsBindingTests(unittest.TestCase):
         )
 
 
+class ServerFilterTests(unittest.TestCase):
+    COLUMNS = gtk_window.SERVER_LIST_COLUMNS
+
+    def make_window(self, **filters):
+        window = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
+        window._filter_values = filters
+        return window
+
+    def row(self, **fields):
+        values = dict.fromkeys(self.COLUMNS)
+        values.update(fields)
+        return [values[column] for column in self.COLUMNS]
+
+    def matches(self, window, **fields):
+        row = self.row(**fields)
+        return window.server_filter_func({0: row}, 0)
+
+    def test_unset_filters_pass_every_row(self):
+        window = self.make_window(game_mod=None, game_type="", terrain="None", ping=0.0, secure="None", full=False, empty=False, password=False)
+        self.assertTrue(self.matches(window, game_mod=None, ping=9999, secure=False, full=True, empty=True, password=True))
+
+    def test_substring_filters_require_the_text_and_reject_missing_values(self):
+        window = self.make_window(game_mod="ctf")
+        self.assertTrue(self.matches(window, game_mod="instactf"))
+        self.assertFalse(self.matches(window, game_mod="dm"))
+        self.assertFalse(self.matches(window, game_mod=None))
+
+    def test_ping_ceiling_applies_only_when_nonzero(self):
+        self.assertTrue(self.matches(self.make_window(ping=50.0), ping=50))
+        self.assertFalse(self.matches(self.make_window(ping=50.0), ping=51))
+        self.assertTrue(self.matches(self.make_window(ping=0.0), ping=9999))
+
+    def test_secure_filter_matches_the_chosen_boolean_exactly(self):
+        self.assertTrue(self.matches(self.make_window(secure="True"), secure=True))
+        self.assertFalse(self.matches(self.make_window(secure="True"), secure=False))
+        self.assertTrue(self.matches(self.make_window(secure="False"), secure=False))
+
+    def test_checked_hide_filters_reject_only_true_rows(self):
+        window = self.make_window(full=True, empty=True, password=True)
+        self.assertTrue(self.matches(window, full=False, empty=False, password=None))
+        self.assertFalse(self.matches(window, full=True))
+        self.assertFalse(self.matches(window, empty=True))
+        self.assertFalse(self.matches(window, password=True))
+
+
 class PreferencesSchemaTests(unittest.TestCase):
     def test_packaged_game_defaults_keep_every_declared_nickname(self):
         from obozrenie import resources
@@ -1594,9 +1639,6 @@ master_uri = ["master://example.test:27950"]
             with mock.patch.object(gtk_module, "Gio"), mock.patch.object(
                 gtk_module.gtk_helpers,
                 "set_widget_value",
-            ), mock.patch.object(
-                gtk_module.gtk_helpers,
-                "set_object_properties",
             ):
                 gtk_module.App.on_startup(app, app)
 

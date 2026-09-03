@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING
 from obozrenie.core import Core
 from obozrenie.game_table import GameTable
 from obozrenie.geoip import Geolocation
-from obozrenie.global_settings import *
+from obozrenie.global_settings import PROFILE_PATH
 from obozrenie.network_calls import (
     NetworkCallPools,
     get_network_call_pools,

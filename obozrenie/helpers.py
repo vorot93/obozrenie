@@ -26,15 +26,12 @@ import tomli_w
 import time
 from dataclasses import dataclass
 
+from obozrenie import i18n
 from obozrenie.diagnostics import (
     SafeDiagnostic,
     SafeDiagnosticError,
     diagnostic_for_exception,
 )
-from obozrenie.global_settings import *
-from obozrenie.global_strings import *
-
-from obozrenie import i18n
 
 
 # A non-cooperating writer can replace the user table while it is being

@@ -1051,7 +1051,7 @@ class SettingsNormalizationTests(unittest.TestCase):
                     },
                 )
 
-    def test_missing_empty_and_unknown_selectors_normalize_before_callbacks(self):
+    def test_missing_empty_and_unknown_selectors_normalize_on_load(self):
         user_values = (
             ("missing", {}),
             (

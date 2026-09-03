@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Obozrenie 1\n"
 "Report-Msgid-Bugs-To: https://github.com/obozrenie/obozrenie/issues\n"
-"POT-Creation-Date: 2026-09-02 14:49+0000\n"
-"PO-Revision-Date: 2026-09-02 14:49+0000\n"
+"POT-Creation-Date: 2026-09-03 15:11+0000\n"
+"PO-Revision-Date: 2026-09-03 15:11+0000\n"
 "Last-Translator: Artem Vorotnikov <artem@vorotnikov.me>\n"
 "Language-Team: Obozrenie translators <artem@vorotnikov.me>\n"
 "MIME-Version: 1.0\n"
@@ -17,411 +17,397 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: obozrenie/core.py:77
+#: obozrenie/core.py:36
 msgid "Unable to refresh the server list."
 msgstr ""
 
-#: obozrenie/core.py:159
-#, python-format
-msgid "<Game Table - games: %(game_num)i, id: %(gt_id)i>"
-msgstr ""
-
-#: obozrenie/core.py:193
-msgid "Invalid game specified."
-msgstr ""
-
-#: obozrenie/core.py:198
-#, python-format
-msgid "Game not found: %(game)s"
-msgstr ""
-
-#: obozrenie/core.py:232 obozrenie/core.py:304
-msgid "game id"
-msgstr ""
-
-#: obozrenie/core.py:234
-msgid "option"
-msgstr ""
-
-#: obozrenie/core.py:237 obozrenie/core.py:309
-#, python-format
-msgid "Invalid %(param)s specified."
-msgstr ""
-
-#: obozrenie/core.py:306
-msgid "hostname"
-msgstr ""
-
-#: obozrenie/core.py:316
-#, python-format
-msgid "Server not found: %(host)s"
-msgstr ""
-
-#: obozrenie/core.py:505
-msgid "GeoIP database not found. Disabling geolocation."
-msgstr ""
-
-#: obozrenie/core.py:511
-#, python-format
-msgid "GeoIP database %(path)s opened successfully."
-msgstr ""
-
-#: obozrenie/core.py:515
-msgid "Failed to open GeoIP database. Disabling geolocation."
-msgstr ""
-
-#: obozrenie/core.py:820
+#: obozrenie/core.py:436
 msgid "Please specify a valid game id."
 msgstr ""
 
-#: obozrenie/core.py:838 obozrenie/launch.py:335
+#: obozrenie/core.py:454 obozrenie/launch.py:333
 #, python-format
 msgid "Please configure the executable path for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:1032
-msgid ""
-"This is the core module of Obozrenie Game Server Browser. Please run an "
-"appropriate UI instead."
+#: obozrenie/game_table.py:113
+#, python-format
+msgid "<Game Table - games: %(game_num)i, id: %(gt_id)i>"
 msgstr ""
 
-#: obozrenie/data/ui/obozrenie_gtk.ui obozrenie/global_strings.py:23
+#: obozrenie/game_table.py:147
+msgid "Invalid game specified."
+msgstr ""
+
+#: obozrenie/game_table.py:152
+#, python-format
+msgid "Game not found: %(game)s"
+msgstr ""
+
+#: obozrenie/game_table.py:186 obozrenie/game_table.py:258
+msgid "game id"
+msgstr ""
+
+#: obozrenie/game_table.py:188
+msgid "option"
+msgstr ""
+
+#: obozrenie/game_table.py:191 obozrenie/game_table.py:263
+#, python-format
+msgid "Invalid %(param)s specified."
+msgstr ""
+
+#: obozrenie/game_table.py:260
+msgid "hostname"
+msgstr ""
+
+#: obozrenie/game_table.py:270
+#, python-format
+msgid "Server not found: %(host)s"
+msgstr ""
+
+#: obozrenie/geoip.py:151
+msgid "GeoIP database not found. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/geoip.py:167
+#, python-format
+msgid "GeoIP database %(path)s opened successfully."
+msgstr ""
+
+#: obozrenie/geoip.py:173
+msgid "Failed to open GeoIP database. Disabling geolocation."
+msgstr ""
+
+#: obozrenie/data/ui/obozrenie_gtk.ui obozrenie/global_strings.py:21
 msgid "Obozrenie"
 msgstr ""
 
-#: obozrenie/global_strings.py:24
+#: obozrenie/global_strings.py:22
 msgid "Game Server Browser"
 msgstr ""
 
-#: obozrenie/global_strings.py:25
+#: obozrenie/global_strings.py:23
 msgid "© 2015-2017 Artem Vorotnikov"
 msgstr ""
 
-#: obozrenie/global_strings.py:26 obozrenie/global_strings.py:27
+#: obozrenie/global_strings.py:24
 msgid "Artem Vorotnikov"
 msgstr ""
 
-#: obozrenie/global_strings.py:31
+#: obozrenie/global_strings.py:27
 msgid "Core/"
 msgstr ""
 
-#: obozrenie/global_strings.py:32
+#: obozrenie/global_strings.py:28
 msgid "UI/"
 msgstr ""
 
-#: obozrenie/global_strings.py:33
+#: obozrenie/global_strings.py:29
 msgid "Adapter/"
 msgstr ""
 
-#: obozrenie/global_strings.py:35
+#: obozrenie/global_strings.py:31
 msgid "Core"
 msgstr ""
 
-#: obozrenie/global_strings.py:36
-msgid "Settings"
-msgstr ""
-
-#: obozrenie/global_strings.py:37
+#: obozrenie/global_strings.py:32
 msgid "GTK+"
 msgstr ""
 
-#: obozrenie/global_strings.py:38
-msgid "Helpers"
-msgstr ""
-
-#: obozrenie/global_strings.py:39
+#: obozrenie/global_strings.py:33
 msgid "Launcher"
 msgstr ""
 
-#: obozrenie/global_strings.py:48
-msgid "_Game Mod:"
+#: obozrenie/gtk.py:83
+msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/global_strings.py:49
-msgid "Game _Type:"
+#: obozrenie/gtk.py:200
+msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/global_strings.py:50
-msgid "Te_rrain:"
+#: obozrenie/gtk.py:204
+msgid "Initialization failed. Aborting."
 msgstr ""
 
-#: obozrenie/global_strings.py:51
-msgid "Max _ping:"
-msgstr ""
-
-#: obozrenie/global_strings.py:52
-msgid "_Secure:"
-msgstr ""
-
-#: obozrenie/global_strings.py:57
-msgid "Select a game."
-msgstr ""
-
-#: obozrenie/global_strings.py:58
-msgid "Available games"
-msgstr ""
-
-#: obozrenie/global_strings.py:59
-msgid "Toggle game list view mode."
-msgstr ""
-
-#: obozrenie/global_strings.py:60
-msgid "Configure the selected game."
-msgstr ""
-
-#: obozrenie/global_strings.py:61
-msgid "Update server list."
-msgstr ""
-
-#: obozrenie/global_strings.py:62
-msgid "Show server information."
-msgstr ""
-
-#: obozrenie/global_strings.py:63
-msgid "Connect to the selected server."
-msgstr ""
-
-#: obozrenie/global_strings.py:64
-msgid "Set up server filters."
-msgstr ""
-
-#: obozrenie/global_strings.py:69
-msgid "Not full"
-msgstr ""
-
-#: obozrenie/global_strings.py:70
-msgid "Has players"
-msgstr ""
-
-#: obozrenie/global_strings.py:71
-msgid "No password"
-msgstr ""
-
-#: obozrenie/global_strings.py:72 obozrenie/global_strings.py:94
-msgid "Name"
-msgstr ""
-
-#: obozrenie/global_strings.py:73
-msgid "Host"
-msgstr ""
-
-#: obozrenie/global_strings.py:74 obozrenie/global_strings.py:96
-msgid "Ping"
-msgstr ""
-
-#: obozrenie/global_strings.py:75
-msgid "Players"
-msgstr ""
-
-#: obozrenie/global_strings.py:76
-msgid "Game Mod"
-msgstr ""
-
-#: obozrenie/global_strings.py:77
-msgid "Game Type"
-msgstr ""
-
-#: obozrenie/global_strings.py:78
-msgid "Terrain"
-msgstr ""
-
-#: obozrenie/global_strings.py:79
-msgid ""
-"Welcome to Obozrenie!\n"
-"Select a game or press refresh button below."
-msgstr ""
-
-#: obozrenie/global_strings.py:80
-msgid "Oops. Something went wrong."
-msgstr ""
-
-#: obozrenie/global_strings.py:81
-msgid "Host address"
-msgstr ""
-
-#: obozrenie/global_strings.py:82
-msgid ""
-"Server address to connect to. Automatically filled on changing server "
-"list selection."
-msgstr ""
-
-#: obozrenie/global_strings.py:83
-msgid "Password"
-msgstr ""
-
-#: obozrenie/global_strings.py:84
-msgid "The server password, if required."
-msgstr ""
-
-#: obozrenie/global_strings.py:85
-msgid "Server information"
-msgstr ""
-
-#: obozrenie/global_strings.py:86
-msgid "Name:"
-msgstr ""
-
-#: obozrenie/global_strings.py:87
-msgid "Host:"
-msgstr ""
-
-#: obozrenie/global_strings.py:88
-msgid "Game:"
-msgstr ""
-
-#: obozrenie/global_strings.py:89
-msgid "Terrain:"
-msgstr ""
-
-#: obozrenie/global_strings.py:90
-msgid "Players:"
-msgstr ""
-
-#: obozrenie/global_strings.py:91
-msgid "Ping:"
-msgstr ""
-
-#: obozrenie/global_strings.py:92
-msgid "Connect"
-msgstr ""
-
-#: obozrenie/global_strings.py:93
-msgid "Close"
-msgstr ""
-
-#: obozrenie/global_strings.py:95
-msgid "Score"
-msgstr ""
-
-#: obozrenie/gtk.py:201
-msgid "(all)"
-msgstr ""
-
-#: obozrenie/gtk.py:202
-msgid "True"
-msgstr ""
-
-#: obozrenie/gtk.py:203
-msgid "False"
-msgstr ""
-
-#: obozrenie/gtk.py:291
-#, python-format
-msgid "%(player_count)s / %(player_limit)s"
-msgstr ""
-
-#: obozrenie/gtk.py:359
-#, python-format
-msgid "Unable to launch the game: %(error)s"
-msgstr ""
-
-#: obozrenie/gtk.py:914
+#: obozrenie/gtk_geoip.py:159
 msgid "Download GeoIP database?"
 msgstr ""
 
-#: obozrenie/gtk.py:917
+#: obozrenie/gtk_geoip.py:162
 msgid "Not now"
 msgstr ""
 
-#: obozrenie/gtk.py:919
+#: obozrenie/gtk_geoip.py:164
 msgid "Download"
 msgstr ""
 
-#: obozrenie/gtk.py:925
+#: obozrenie/gtk_geoip.py:170
 msgid ""
 "Server geolocation needs a country database. Download it now (a few "
 "megabytes)?"
 msgstr ""
 
-#: obozrenie/gtk.py:957
+#: obozrenie/gtk_geoip.py:202
 msgid "Downloading GeoIP database…"
 msgstr ""
 
-#: obozrenie/gtk.py:1105
-msgid "Obozrenie is starting"
-msgstr ""
-
-#: obozrenie/gtk.py:1223
-msgid "Shutting down"
-msgstr ""
-
-#: obozrenie/gtk.py:1227
-msgid "Initialization failed. Aborting."
-msgstr ""
-
-#: obozrenie/gtk_templates.py:96
+#: obozrenie/gtk_preferences.py:96
 #, python-format
 msgid "No widget generated for type %(widget_type)s"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:157
+#: obozrenie/gtk_preferences.py:157
 #, python-format
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/gtk_templates.py:161
+#: obozrenie/gtk_preferences.py:161
 msgid "Save"
 msgstr ""
 
-#: obozrenie/helpers.py:303
-msgid "Invalid user settings were backed up and defaults were restored."
-msgstr ""
-
-#: obozrenie/launch.py:295
-msgid "Launch pattern does not exist"
-msgstr ""
-
-#: obozrenie/launch.py:361
-#, python-format
-msgid "Launching '%(launch_cmd)s'"
-msgstr ""
-
-#: obozrenie/option_lists.py:38
+#: obozrenie/gtk_preferences.py:176
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/option_lists.py:39
+#: obozrenie/gtk_preferences.py:177
 msgid "Path to the game."
 msgstr ""
 
-#: obozrenie/option_lists.py:44
+#: obozrenie/gtk_preferences.py:182
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/option_lists.py:45
+#: obozrenie/gtk_preferences.py:183
 msgid "Working directory of the game."
 msgstr ""
 
-#: obozrenie/option_lists.py:50
+#: obozrenie/gtk_preferences.py:188
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/option_lists.py:51
+#: obozrenie/gtk_preferences.py:189
 msgid "List of master servers to query."
 msgstr ""
 
-#: obozrenie/option_lists.py:56
+#: obozrenie/gtk_preferences.py:194
 msgid "Launch via Steam"
 msgstr ""
 
-#: obozrenie/option_lists.py:57
+#: obozrenie/gtk_preferences.py:195
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
 
-#: obozrenie/option_lists.py:62
+#: obozrenie/gtk_preferences.py:200
 msgid "Steam path"
 msgstr ""
 
-#: obozrenie/option_lists.py:63
+#: obozrenie/gtk_preferences.py:201
 msgid "Steam client path."
 msgstr ""
 
-#: obozrenie/option_lists.py:67
+#: obozrenie/gtk_preferences.py:205
 msgid "Nickname"
 msgstr ""
 
-#: obozrenie/option_lists.py:68
+#: obozrenie/gtk_preferences.py:206
 msgid "Your nickname."
+msgstr ""
+
+#: obozrenie/gtk_window.py:172
+msgid "_Game Mod:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:173
+msgid "Game _Type:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:174
+msgid "Te_rrain:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:175
+msgid "Max _ping:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:176
+msgid "_Secure:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:181
+msgid "Select a game."
+msgstr ""
+
+#: obozrenie/gtk_window.py:182
+msgid "Available games"
+msgstr ""
+
+#: obozrenie/gtk_window.py:183
+msgid "Toggle game list view mode."
+msgstr ""
+
+#: obozrenie/gtk_window.py:184
+msgid "Configure the selected game."
+msgstr ""
+
+#: obozrenie/gtk_window.py:185
+msgid "Update server list."
+msgstr ""
+
+#: obozrenie/gtk_window.py:186
+msgid "Show server information."
+msgstr ""
+
+#: obozrenie/gtk_window.py:187
+msgid "Connect to the selected server."
+msgstr ""
+
+#: obozrenie/gtk_window.py:188
+msgid "Set up server filters."
+msgstr ""
+
+#: obozrenie/gtk_window.py:193
+msgid "Not full"
+msgstr ""
+
+#: obozrenie/gtk_window.py:194
+msgid "Has players"
+msgstr ""
+
+#: obozrenie/gtk_window.py:195
+msgid "No password"
+msgstr ""
+
+#: obozrenie/gtk_window.py:196 obozrenie/gtk_window.py:218
+msgid "Name"
+msgstr ""
+
+#: obozrenie/gtk_window.py:197
+msgid "Host"
+msgstr ""
+
+#: obozrenie/gtk_window.py:198 obozrenie/gtk_window.py:220
+msgid "Ping"
+msgstr ""
+
+#: obozrenie/gtk_window.py:199
+msgid "Players"
+msgstr ""
+
+#: obozrenie/gtk_window.py:200
+msgid "Game Mod"
+msgstr ""
+
+#: obozrenie/gtk_window.py:201
+msgid "Game Type"
+msgstr ""
+
+#: obozrenie/gtk_window.py:202
+msgid "Terrain"
+msgstr ""
+
+#: obozrenie/gtk_window.py:203
+msgid ""
+"Welcome to Obozrenie!\n"
+"Select a game or press refresh button below."
+msgstr ""
+
+#: obozrenie/gtk_window.py:204
+msgid "Oops. Something went wrong."
+msgstr ""
+
+#: obozrenie/gtk_window.py:205
+msgid "Host address"
+msgstr ""
+
+#: obozrenie/gtk_window.py:206
+msgid ""
+"Server address to connect to. Automatically filled on changing server "
+"list selection."
+msgstr ""
+
+#: obozrenie/gtk_window.py:207
+msgid "Password"
+msgstr ""
+
+#: obozrenie/gtk_window.py:208
+msgid "The server password, if required."
+msgstr ""
+
+#: obozrenie/gtk_window.py:209
+msgid "Server information"
+msgstr ""
+
+#: obozrenie/gtk_window.py:210
+msgid "Name:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:211
+msgid "Host:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:212
+msgid "Game:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:213
+msgid "Terrain:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:214
+msgid "Players:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:215
+msgid "Ping:"
+msgstr ""
+
+#: obozrenie/gtk_window.py:216
+msgid "Connect"
+msgstr ""
+
+#: obozrenie/gtk_window.py:217
+msgid "Close"
+msgstr ""
+
+#: obozrenie/gtk_window.py:219
+msgid "Score"
+msgstr ""
+
+#: obozrenie/gtk_window.py:274
+msgid "(all)"
+msgstr ""
+
+#: obozrenie/gtk_window.py:275
+msgid "True"
+msgstr ""
+
+#: obozrenie/gtk_window.py:276
+msgid "False"
+msgstr ""
+
+#: obozrenie/gtk_window.py:351
+#, python-format
+msgid "%(player_count)s / %(player_limit)s"
+msgstr ""
+
+#: obozrenie/gtk_window.py:419
+#, python-format
+msgid "Unable to launch the game: %(error)s"
+msgstr ""
+
+#: obozrenie/helpers.py:273
+msgid "Invalid user settings were backed up and defaults were restored."
+msgstr ""
+
+#: obozrenie/launch.py:293
+msgid "Launch pattern does not exist"
+msgstr ""
+
+#: obozrenie/launch.py:359
+#, python-format
+msgid "Launching '%(launch_cmd)s'"
 msgstr ""
 
 #: obozrenie/adapters/http_masters.py:27

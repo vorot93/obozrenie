@@ -25,8 +25,8 @@ from gi.repository import GLib, Gio, Gtk
 
 from obozrenie import gtk_helpers, helpers, i18n, resources
 from obozrenie.diagnostics import diagnostic_for_exception
-from obozrenie.global_strings import *
-from obozrenie.global_settings import *
+from obozrenie.global_settings import APPLICATION_ID
+from obozrenie.global_strings import GTK_MSG
 from obozrenie.gtk_window import MainWindow
 
 
@@ -119,8 +119,7 @@ class App(Gtk.Application):
 
             self.set_app_menu(self.builder.get_object("app-menu"))
 
-            gtk_helpers.set_object_properties(
-                self.window.gtk_widgets, GTK_STRING_TABLE)
+            window.apply_string_table()
 
             self.status = "up"
         except Exception as error:

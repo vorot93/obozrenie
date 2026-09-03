@@ -18,7 +18,8 @@
 
 """The main window: every handler the GtkBuilder documents bind by name."""
 
-import ast
+from collections.abc import Callable
+from dataclasses import dataclass
 from types import MappingProxyType
 
 import gi
@@ -107,6 +108,12 @@ _WIDGETS = {
 }
 
 GAME_LIST_COLUMNS = ("game_id", "name", "game_icon", "status_icon")
+SERVER_LIST_COLUMNS = (
+    "host", "password", "player_count", "player_limit", "ping", "secure",
+    "country", "name", "game_id", "game_mod", "game_type", "terrain",
+    "game_icon", "password_icon", "secure_icon", "country_icon", "full", "empty",
+)
+PLAYER_LIST_COLUMNS = ("name", "score", "ping")
 
 # Persisted common option -> (widget key, tree column holding the value).
 COMMON_OPTION_WIDGETS = MappingProxyType({
@@ -115,6 +122,103 @@ COMMON_OPTION_WIDGETS = MappingProxyType({
     "server-host": ("server-connect-host", None),
     "game-listview": ("game-view-togglebutton", None),
 })
+
+# A filter whose widget holds one of these is not applied.
+_UNSET_FILTER_VALUES = (None, "", "None")
+_SECURE_FILTER_VALUES = {"True": True, "False": False}
+
+
+def _contains_text(row_value, filter_value) -> bool:
+    return row_value is not None and filter_value in row_value
+
+
+def _within_ceiling(row_value, filter_value) -> bool:
+    return filter_value == 0 or row_value <= filter_value
+
+
+def _is_chosen_boolean(row_value, filter_value) -> bool:
+    return row_value is _SECURE_FILTER_VALUES[filter_value]
+
+
+def _hidden_when_checked(row_value, filter_value) -> bool:
+    return filter_value is not True or row_value is not True
+
+
+@dataclass(frozen=True, slots=True)
+class _FilterCriterion:
+    column: str
+    widget: str
+    matches: Callable[[object, object], bool]
+
+
+_FILTER_CRITERIA = (
+    _FilterCriterion("game_mod", "filter-mod", _contains_text),
+    _FilterCriterion("game_type", "filter-type", _contains_text),
+    _FilterCriterion("terrain", "filter-terrain", _contains_text),
+    _FilterCriterion("ping", "filter-ping", _within_ceiling),
+    _FilterCriterion("secure", "filter-secure", _is_chosen_boolean),
+    _FilterCriterion("full", "filter-notfull", _hidden_when_checked),
+    _FilterCriterion("empty", "filter-notempty", _hidden_when_checked),
+    _FilterCriterion("password", "filter-nopassword", _hidden_when_checked),
+)
+
+
+def N_(message: str) -> str:
+    """Mark a source message for extraction without translating it."""
+    return message
+
+
+_FILTER_LABEL_MESSAGE_IDS = MappingProxyType({
+    "filter-mod-label": N_("_Game Mod:"),
+    "filter-type-label": N_("Game _Type:"),
+    "filter-terrain-label": N_("Te_rrain:"),
+    "filter-ping-label": N_("Max _ping:"),
+    "filter-secure-label": N_("_Secure:"),
+})
+
+
+GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
+                    "game-combobox":                    {"tooltip-text": i18n._("Select a game.")},
+                    "game-treeview-column":             {"title": i18n._("Available games")},
+                    "game-view-togglebutton":           {"tooltip-text": i18n._("Toggle game list view mode.")},
+                    "game-preferences-button":          {"tooltip-text": i18n._("Configure the selected game.")},
+                    "action-update-button":             {"tooltip-text": i18n._("Update server list.")},
+                    "action-info-button":               {"tooltip-text": i18n._("Show server information.")},
+                    "action-connect-button":            {"tooltip-text": i18n._("Connect to the selected server.")},
+                    "filters-button":                   {"tooltip-text": i18n._("Set up server filters.")},
+                    **{
+                        widget_id: {"label": i18n._(message_id)}
+                        for widget_id, message_id in _FILTER_LABEL_MESSAGE_IDS.items()
+                    },
+                    "filter-notfull":                   {"label": i18n._("Not full")},
+                    "filter-notempty":                  {"label": i18n._("Has players")},
+                    "filter-nopassword":                {"label": i18n._("No password")},
+                    "serverlist-view-name-column":      {"title": i18n._("Name")},
+                    "serverlist-view-host-column":      {"title": i18n._("Host")},
+                    "serverlist-view-ping-column":      {"title": i18n._("Ping")},
+                    "serverlist-view-players-column":   {"title": i18n._("Players")},
+                    "serverlist-view-game_mod-column":  {"title": i18n._("Game Mod")},
+                    "serverlist-view-game_type-column": {"title": i18n._("Game Type")},
+                    "serverlist-view-terrain-column":   {"title": i18n._("Terrain")},
+                    "serverlist-welcome-label":         {"label": i18n._("Welcome to Obozrenie!\nSelect a game or press refresh button below.")},
+                    "error-message-label":              {"label": i18n._("Oops. Something went wrong.")},
+                    "server-connect-host":              {"placeholder-text": i18n._("Host address"),
+                                                         "tooltip-text":     i18n._("Server address to connect to. Automatically filled on changing server list selection.")},
+                    "server-connect-pass":              {"placeholder-text": i18n._("Password"),
+                                                         "tooltip-text":     i18n._("The server password, if required.")},
+                    "serverinfo-dialog":                {"title": i18n._("Server information")},
+                    "serverinfo-name-label":            {"label": i18n._("Name:")},
+                    "serverinfo-host-label":            {"label": i18n._("Host:")},
+                    "serverinfo-game-label":            {"label": i18n._("Game:")},
+                    "serverinfo-terrain-label":         {"label": i18n._("Terrain:")},
+                    "serverinfo-players-label":         {"label": i18n._("Players:")},
+                    "serverinfo-ping-label":            {"label": i18n._("Ping:")},
+                    "serverinfo-connect-button":        {"label": i18n._("Connect")},
+                    "serverinfo-close-button":          {"label": i18n._("Close")},
+                    "serverinfo-players-name-column":   {"title": i18n._("Name")},
+                    "serverinfo-players-score-column":  {"title": i18n._("Score")},
+                    "serverinfo-players-ping-column":   {"title": i18n._("Ping")}
+                    }
 
 
 def derive_action_sensitivity(
@@ -164,48 +268,14 @@ class MainWindow:
 
         self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, _WIDGETS)
         self.game_list_model_format = GAME_LIST_COLUMNS
-
-        self.server_list_model_format = ("host",
-                                         "password",
-                                         "player_count",
-                                         "player_limit",
-                                         "ping",
-                                         "secure",
-                                         "country",
-                                         "name",
-                                         "game_id",
-                                         "game_mod",
-                                         "game_type",
-                                         "terrain",
-                                         "game_icon",
-                                         "password_icon",
-                                         "secure_icon",
-                                         "country_icon",
-                                         "full",
-                                         "empty")
-
-        self.player_list_model_format = ("name",
-                                         "score",
-                                         "ping")
+        self.server_list_model_format = SERVER_LIST_COLUMNS
+        self.player_list_model_format = PLAYER_LIST_COLUMNS
 
         self.filter_secure_list = ({"id": "None",  "text": i18n._("(all)")},
                                    {"id": "True",  "text": i18n._("True")},
                                    {"id": "False", "text": i18n._("False")})
 
-        self.filter_criteria = [{"column": "game_mod",  "type": "in",               "widget": "filter-mod"},
-                                {"column": "game_type", "type": "in",
-                                    "widget": "filter-type"},
-                                {"column": "terrain",   "type": "in",
-                                    "widget": "filter-terrain"},
-                                {"column": "ping",      "type": "<=",
-                                    "widget": "filter-ping"},
-                                {"column": "secure",    "type": "bool is ast bool",
-                                    "widget": "filter-secure"},
-                                {"column": "full",      "type": "not true if true",
-                                    "widget": "filter-notfull"},
-                                {"column": "empty",     "type": "not true if true",
-                                    "widget": "filter-notempty"},
-                                {"column": "password",  "type": "not true if true", "widget": "filter-nopassword"}]
+        self._filter_values = {}
 
         self.serverlist_notebook_pages = gtk_helpers.get_notebook_page_dict(self.gtk_widgets["serverlist-notebook"], {"servers": self.gtk_widgets["serverlist-scrolledwindow"],
                                                                                                                       "welcome": self.gtk_widgets["serverlist-welcome-label"],
@@ -478,6 +548,10 @@ class MainWindow:
         for list_entry in game_store_list:
             game_model.append(list_entry)
 
+    def apply_string_table(self) -> None:
+        """Apply the translated titles, labels and tooltips to the widgets."""
+        gtk_helpers.set_object_properties(self.gtk_widgets, GTK_STRING_TABLE)
+
     def show_game_page(self, game: str) -> None:
         """Set of actions to do after query is complete."""
         query_status = self.core.game_table.get_query_status(str(game))
@@ -597,60 +671,24 @@ class MainWindow:
 
     # Server list filtering
 
-    def server_filter_func(self, model: Gtk.TreeModel, treeiter: Gtk.TreeIter, *args) -> bool:
-        """Tests if row matches filter settings"""
-        filter_criteria = self.filter_criteria
-        server_list_model_format_index = self.server_list_model_format.index
-        result = None
-
-        # Cycle through all criteria and break if at least one isn't satisfied
-        for criterium in filter_criteria:
-            if result is not False:
-                column = criterium["column"]
-                comparison = criterium["type"]
-                column_index = server_list_model_format_index(column)
-                entry_value = model[treeiter][column_index]
-                comparison_value = criterium["value"]
-                if comparison_value in (None, "", "None"):
-                    result = True
-                else:
-                    if comparison == "==":
-                        result = entry_value == comparison_value
-                    elif comparison == "!=":
-                        result = entry_value != comparison_value
-                    elif comparison == "bool is ast bool":
-                        result = entry_value is ast.literal_eval(
-                            comparison_value)
-                    elif comparison == "not true if true":
-                        if comparison_value is True:
-                            result = entry_value != comparison_value
-                        else:
-                            result = True
-                    elif comparison == "<":
-                        if comparison_value == 0:
-                            result = True
-                        else:
-                            result = entry_value < comparison_value
-                    elif comparison == "<=":
-                        if comparison_value == 0:
-                            result = True
-                        else:
-                            result = entry_value <= comparison_value
-                    elif comparison == ">":
-                        result = entry_value > comparison_value
-                    elif comparison == "in":
-                        if entry_value is None:
-                            result = False
-                        else:
-                            result = comparison_value in entry_value
-        return result
+    def server_filter_func(self, model, treeiter, *args) -> bool:
+        """Report whether one server row satisfies every applied filter."""
+        row = model[treeiter]
+        for criterion in _FILTER_CRITERIA:
+            filter_value = self._filter_values.get(criterion.column)
+            if filter_value in _UNSET_FILTER_VALUES:
+                continue
+            row_value = row[SERVER_LIST_COLUMNS.index(criterion.column)]
+            if not criterion.matches(row_value, filter_value):
+                return False
+        return True
 
     def cb_server_filters_changed(self, *args):
-        filter_criteria = self.filter_criteria
-        for criterium in filter_criteria:
-            criterium["value"] = gtk_helpers.get_widget_value(
-                self.gtk_widgets[criterium["widget"]])
-
+        self._filter_values = {
+            criterion.column: gtk_helpers.get_widget_value(
+                self.gtk_widgets[criterion.widget])
+            for criterion in _FILTER_CRITERIA
+        }
         self.gtk_widgets["server-list-filter"].refilter()
 
     # Server selection
@@ -670,7 +708,8 @@ class MainWindow:
             gtk_helpers.set_widget_value(entry_field, text)
             gtk_helpers.set_widget_value(
                 game_selection, game, treeview_colnum=self.game_list_model_format.index("game_id"))
-        except:
+        except TypeError:
+            # No selection: get_widget_value returned None.
             pass
 
     def cb_server_list_view_row_activated(self, widget, path, column, *data):

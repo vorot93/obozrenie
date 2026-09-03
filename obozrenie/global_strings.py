@@ -16,82 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-from types import MappingProxyType
-
 import obozrenie.i18n as i18n
 
 PROJECT = i18n._("Obozrenie")
 DESCRIPTION = i18n._("Game Server Browser")
 COPYRIGHT = i18n._("© 2015-2017 Artem Vorotnikov")
 AUTHORS = [i18n._("Artem Vorotnikov")]
-ARTISTS = [i18n._("Artem Vorotnikov")]
 
 
-SEPARATOR_MSG = ("-------------------------------------------")
 CORECAT_MSG = i18n._("Core/")
 UICAT_MSG = i18n._("UI/")
 BACKENDCAT_MSG = i18n._("Adapter/")
 
 CORE_MSG = CORECAT_MSG + i18n._("Core")
-SETTINGS_MSG = CORECAT_MSG + i18n._("Settings")
 GTK_MSG = UICAT_MSG + i18n._("GTK+")
-HELPER_MSG = i18n._("Helpers")
 LAUNCHER_MSG = i18n._("Launcher")
-
-
-def N_(message: str) -> str:
-    """Mark a source message for extraction without translating it."""
-    return message
-
-
-_FILTER_LABEL_MESSAGE_IDS = MappingProxyType({
-    "filter-mod-label": N_("_Game Mod:"),
-    "filter-type-label": N_("Game _Type:"),
-    "filter-terrain-label": N_("Te_rrain:"),
-    "filter-ping-label": N_("Max _ping:"),
-    "filter-secure-label": N_("_Secure:"),
-})
-
-
-GTK_STRING_TABLE = {"main-window":                      {"title": PROJECT},
-                    "game-combobox":                    {"tooltip-text": i18n._("Select a game.")},
-                    "game-treeview-column":             {"title": i18n._("Available games")},
-                    "game-view-togglebutton":           {"tooltip-text": i18n._("Toggle game list view mode.")},
-                    "game-preferences-button":          {"tooltip-text": i18n._("Configure the selected game.")},
-                    "action-update-button":             {"tooltip-text": i18n._("Update server list.")},
-                    "action-info-button":               {"tooltip-text": i18n._("Show server information.")},
-                    "action-connect-button":            {"tooltip-text": i18n._("Connect to the selected server.")},
-                    "filters-button":                   {"tooltip-text": i18n._("Set up server filters.")},
-                    **{
-                        widget_id: {"label": i18n._(message_id)}
-                        for widget_id, message_id in _FILTER_LABEL_MESSAGE_IDS.items()
-                    },
-                    "filter-notfull":                   {"label": i18n._("Not full")},
-                    "filter-notempty":                  {"label": i18n._("Has players")},
-                    "filter-nopassword":                {"label": i18n._("No password")},
-                    "serverlist-view-name-column":      {"title": i18n._("Name")},
-                    "serverlist-view-host-column":      {"title": i18n._("Host")},
-                    "serverlist-view-ping-column":      {"title": i18n._("Ping")},
-                    "serverlist-view-players-column":   {"title": i18n._("Players")},
-                    "serverlist-view-game_mod-column":  {"title": i18n._("Game Mod")},
-                    "serverlist-view-game_type-column": {"title": i18n._("Game Type")},
-                    "serverlist-view-terrain-column":   {"title": i18n._("Terrain")},
-                    "serverlist-welcome-label":         {"label": i18n._("Welcome to Obozrenie!\nSelect a game or press refresh button below.")},
-                    "error-message-label":              {"label": i18n._("Oops. Something went wrong.")},
-                    "server-connect-host":              {"placeholder-text": i18n._("Host address"),
-                                                         "tooltip-text":     i18n._("Server address to connect to. Automatically filled on changing server list selection.")},
-                    "server-connect-pass":              {"placeholder-text": i18n._("Password"),
-                                                         "tooltip-text":     i18n._("The server password, if required.")},
-                    "serverinfo-dialog":                {"title": i18n._("Server information")},
-                    "serverinfo-name-label":            {"label": i18n._("Name:")},
-                    "serverinfo-host-label":            {"label": i18n._("Host:")},
-                    "serverinfo-game-label":            {"label": i18n._("Game:")},
-                    "serverinfo-terrain-label":         {"label": i18n._("Terrain:")},
-                    "serverinfo-players-label":         {"label": i18n._("Players:")},
-                    "serverinfo-ping-label":            {"label": i18n._("Ping:")},
-                    "serverinfo-connect-button":        {"label": i18n._("Connect")},
-                    "serverinfo-close-button":          {"label": i18n._("Close")},
-                    "serverinfo-players-name-column":   {"title": i18n._("Name")},
-                    "serverinfo-players-score-column":  {"title": i18n._("Score")},
-                    "serverinfo-players-ping-column":   {"title": i18n._("Ping")}
-                    }
