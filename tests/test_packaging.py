@@ -249,6 +249,7 @@ RUNTIME_TEST_FILES = {
     "test_gtk_behavior.py",
     "test_i18n.py",
     "test_launch.py",
+    "test_list_rows.py",
     "test_models.py",
     "test_network_calls.py",
     "test_networking.py",

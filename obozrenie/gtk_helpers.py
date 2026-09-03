@@ -25,6 +25,8 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import GLib, GdkPixbuf, Gtk
 
+from obozrenie.list_rows import country_code_to_flag_emoji  # noqa: F401
+
 
 def _scale_keeping_aspect(loader, image_width, image_height, box):
     """size-prepared handler: fit within box, preserving aspect ratio."""
@@ -112,18 +114,6 @@ def get_icon_dict(key_list, icon_formats, icon_root, width, height):
             icon_dict[entry] = fallback
 
     return icon_dict
-
-
-def country_code_to_flag_emoji(code):
-    """Convert an ISO 3166-1 alpha-2 country code to a flag emoji.
-
-    Returns "" for empty, None, "unknown", or otherwise invalid input, so
-    the result can be used directly as cell text (an empty string shows no
-    flag).
-    """
-    if not code or len(code) != 2 or not code.isalpha():
-        return ""
-    return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code.upper())
 
 
 def get_object_dict(builder, object_mapping):
