@@ -15,7 +15,6 @@ from obozrenie import (
     adapters,
     core as core_module,
     helpers,
-    http_client,
     network_calls,
 )
 from obozrenie.adapters import minetest, qstat, rigsofrods
