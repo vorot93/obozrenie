@@ -15,7 +15,8 @@ from unittest import mock
 
 from obozrenie import game_table
 from obozrenie import gtk as gtk_module
-from obozrenie import gtk_geoip, gtk_window
+from obozrenie import gtk_geoip, gtk_preferences, gtk_window
+from obozrenie import i18n
 from obozrenie import models
 from obozrenie import settings as settings_module
 from obozrenie.diagnostics import SafeDiagnostic
@@ -816,17 +817,14 @@ class ActionSensitivityTests(unittest.TestCase):
         table = self.make_game_table(servers)
         actions = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
         actions.core = RecordingCore(table)
-        actions.app = SimpleNamespace(
-            core=actions.core,
-            settings=SimpleNamespace(settings_table={
-                "common": {
-                    "selected-game-browser": "browser",
-                    "selected-game-connect": "connect",
-                    "server-host": host,
-                    "game-listview": True,
-                },
-            }),
-        )
+        actions.settings = SimpleNamespace(settings_table={
+            "common": {
+                "selected-game-browser": "browser",
+                "selected-game-connect": "connect",
+                "server-host": host,
+                "game-listview": True,
+            },
+        })
         actions.gtk_widgets = {
             "main-window": Widget(),
             "game-preferences-button": Widget(),
@@ -916,7 +914,7 @@ class ActionSensitivityTests(unittest.TestCase):
                 ("connect", "example.org:30000", "second secret"),
             ],
         )
-        self.assertEqual(actions.app.settings.settings_table["common"], {
+        self.assertEqual(actions.settings.settings_table["common"], {
             "selected-game-browser": "browser",
             "selected-game-connect": "connect",
             "server-host": "example.org:30000",
@@ -937,10 +935,10 @@ class ActionSensitivityTests(unittest.TestCase):
         ):
             actions.cb_connect_button_clicked()
             actions.cb_serverinfo_connect_button_clicked()
-            actions.app.settings.settings_table["common"][
+            actions.settings.settings_table["common"][
                 "selected-game-connect"
             ] = "retired"
-            actions.app.settings.settings_table["common"][
+            actions.settings.settings_table["common"][
                 "server-host"
             ] = "example.org:30000"
             actions.cb_connect_button_clicked()
@@ -955,7 +953,7 @@ class ActionSensitivityTests(unittest.TestCase):
             ("game", game, state)
         )
 
-        actions.app.settings.settings_table["common"][
+        actions.settings.settings_table["common"][
             "selected-game-browser"
         ] = "retired"
         with mock.patch.object(
@@ -968,7 +966,7 @@ class ActionSensitivityTests(unittest.TestCase):
         self.assertEqual(actions.core.refreshes, [])
         self.assertEqual(events, [])
 
-        actions.app.settings.settings_table["common"][
+        actions.settings.settings_table["common"][
             "selected-game-browser"
         ] = "browser"
         actions.core.game_table.begin_query("browser")
@@ -991,7 +989,7 @@ class ActionSensitivityTests(unittest.TestCase):
 
     def test_info_handler_rejects_an_invalid_game(self):
         actions = self.make_actions()
-        actions.app.settings.settings_table["common"][
+        actions.settings.settings_table["common"][
             "selected-game-connect"
         ] = "retired"
         actions.gtk_widgets["server-connect-game"].value = "retired"
@@ -1054,6 +1052,108 @@ class ActionSensitivityTests(unittest.TestCase):
             actions.cb_info_button_clicked()
 
         self.assertIs(raised.exception, broken)
+
+
+class SettingsBindingTests(unittest.TestCase):
+    def make_window(self):
+        window = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
+        window.settings = SimpleNamespace(settings_table={
+            "common": {
+                "selected-game-connect": "connect",
+                "selected-game-browser": "browser",
+                "server-host": "example.org:30000",
+                "game-listview": True,
+            },
+        })
+        window.gtk_widgets = {
+            "server-connect-game": Widget("connect"),
+            "game-treeview": Widget(("browser", "Browser Game", None, None)),
+            "server-connect-host": Widget("example.org:30000"),
+            "game-view-togglebutton": Widget(True),
+        }
+        return window
+
+    def test_bind_settings_shows_every_common_option_and_follows_changes(self):
+        window = self.make_window()
+        shown = []
+        bound = []
+        with mock.patch.object(
+            gtk_window.gtk_helpers, "set_widget_value",
+            side_effect=lambda widget, value, treeview_colnum=0: shown.append(
+                (widget.value, value, treeview_colnum)),
+        ), mock.patch.object(
+            gtk_window.gtk_helpers, "bind_widget_to_callback",
+            side_effect=lambda widget, callback: bound.append((widget.value, callback)),
+        ):
+            window.bind_settings()
+
+        self.assertEqual(shown, [
+            ("connect", "connect", 0),
+            (("browser", "Browser Game", None, None), "browser", 0),
+            ("example.org:30000", "example.org:30000", 0),
+            (True, True, 0),
+        ])
+        self.assertEqual(
+            [callback for _value, callback in bound],
+            [window.update_settings_table] * 4,
+        )
+
+    def test_update_settings_table_stores_widget_values_as_text(self):
+        window = self.make_window()
+        with mock.patch.object(
+            gtk_window.gtk_helpers, "get_widget_value",
+            side_effect=lambda widget: widget.value,
+        ):
+            window.update_settings_table()
+
+        self.assertEqual(window.settings.settings_table["common"], {
+            "selected-game-connect": "connect",
+            "selected-game-browser": "browser",
+            "server-host": "example.org:30000",
+            "game-listview": "True",
+        })
+
+    def test_update_settings_table_records_an_empty_tree_selection_as_none(self):
+        window = self.make_window()
+        window.gtk_widgets["game-treeview"].value = None
+        with mock.patch.object(
+            gtk_window.gtk_helpers, "get_widget_value",
+            side_effect=lambda widget: widget.value,
+        ):
+            window.update_settings_table()
+
+        self.assertEqual(
+            window.settings.settings_table["common"]["selected-game-browser"],
+            "None",
+        )
+
+
+class PreferencesSchemaTests(unittest.TestCase):
+    def test_packaged_game_defaults_keep_every_declared_nickname(self):
+        from obozrenie import resources
+
+        declared = gtk_preferences.game_options()
+
+        self.assertIn("nickname", declared)
+        self.assertEqual(declared["nickname"]["name"], i18n._("Nickname"))
+        self.assertEqual(
+            declared["nickname"]["description"],
+            i18n._("Your nickname."),
+        )
+
+        game_lists = resources.load_toml(
+            "settings", "internal", "game_lists.toml"
+        )
+        packaged = resources.load_toml("settings", "defaults", "games.toml")
+        nickname_games = {
+            game
+            for game, info in game_lists.items()
+            if "nickname" in info["settings"]
+        }
+
+        self.assertTrue(nickname_games)
+        for game in nickname_games:
+            self.assertIn("nickname", packaged[game])
 
 
 class QueryStateUITests(unittest.TestCase):
@@ -1133,7 +1233,6 @@ class QueryStateUITests(unittest.TestCase):
                 return False
 
         actions.core = RacingDuplicateCore(actions.core.game_table)
-        actions.app.core = actions.core
         stale_sensitivities = {
             "game-preferences-button": False,
             "action-update-button": True,
@@ -1193,7 +1292,6 @@ class QueryStateUITests(unittest.TestCase):
                 return token is not None
 
         actions.core = SynchronousFailureCore(actions.core.game_table)
-        actions.app.core = actions.core
         actions.gtk_widgets["action-update-button"].properties[
             "sensitive"
         ] = False
@@ -1286,6 +1384,7 @@ class QueryStateUITests(unittest.TestCase):
             SimpleNamespace(),
             builder,
             SimpleNamespace(game_table=table),
+            SimpleNamespace(settings_table={"common": {}}),
         )
 
         self.assertIn("error-message-content-label", actions.gtk_widgets)
@@ -1327,7 +1426,7 @@ master_uri = ["master://example.test:27950"]
         profile = root / "profile"
         profile.mkdir()
         settings = settings_module.Settings(
-            SimpleNamespace(game_table=table),
+            table,
             str(profile),
             resource_loader=load_resource,
         )

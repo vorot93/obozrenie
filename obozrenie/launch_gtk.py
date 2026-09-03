@@ -254,7 +254,7 @@ def main():
                 get_qstat_process_supervisor(),
                 get_network_call_pools(),
             )
-            settings_instance = Settings(core_instance, os.path.expanduser(PROFILE_PATH))
+            settings_instance = Settings(game_table, os.path.expanduser(PROFILE_PATH))
             app_instance = App(core_instance, settings_instance, services_instance)
             app_instance.run(None)
             if app_instance.handler_failure is not None:

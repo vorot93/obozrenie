@@ -20,15 +20,27 @@
 
 import contextlib
 import os
+from types import MappingProxyType
 
 import filelock
 
-from obozrenie import helpers, i18n, resources
+from obozrenie import helpers, resources
 from obozrenie.diagnostics import SafeDiagnostic, SafeDiagnosticError
 from obozrenie.global_settings import COMMON_SETTINGS_FILE, GAME_SETTINGS_FILE
 
 
 _PROFILE_LOCK_TIMEOUT_SECONDS = 5.0
+
+# The persisted common options, per settings group. The GTK window decides
+# which widget shows each one (`gtk_window.COMMON_OPTION_WIDGETS`).
+COMMON_OPTIONS = MappingProxyType({
+    "common": (
+        "selected-game-connect",
+        "selected-game-browser",
+        "server-host",
+        "game-listview",
+    ),
+})
 
 
 class SettingsLockError(SafeDiagnosticError):
@@ -45,17 +57,18 @@ class Settings:
 
     One bounded cross-process lock per profile serializes the user-table reads
     in `load` against the atomic writes in `save`, and is always released
-    before a caller's callbacks run.
+    before `load` returns.
     """
 
     def __init__(
         self,
-        core,
+        game_table,
         profile_path: str,
         resource_loader=resources.load_toml,
     ):
         """Loads base variables into the class."""
         self._resource_loader = resource_loader
+        self.game_table = game_table
 
         # User configs
         self.user_common_settings_path = os.path.join(
@@ -68,12 +81,7 @@ class Settings:
             mode=0o600,
         )
 
-        self.dynamic_widget_table = get_game_options()
-        self.common_settings_table = get_common_options()
-
         self.settings_table = {}
-
-        self.core = core
 
     @contextlib.contextmanager
     def _hold_profile_lock(self):
@@ -93,7 +101,7 @@ class Settings:
         finally:
             self._profile_lock.release()
 
-    def load(self, callback_postgenload=None) -> list[str]:
+    def load(self) -> list[str]:
         """Loads configuration."""
         default_common_settings_table = self._resource_loader(
             "settings", "defaults", "settings.toml"
@@ -103,7 +111,7 @@ class Settings:
         )
 
         # One acquisition covers both reads, so a concurrent save cannot land
-        # between them; it is released well before the callbacks below run.
+        # between them; it is released well before `load` returns.
         with self._hold_profile_lock():
             user_common_settings_table, common_warning = helpers.load_user_table(
                 self.user_common_settings_path)
@@ -116,9 +124,9 @@ class Settings:
             if warning is not None
         ]
 
-        for group in self.common_settings_table:
+        for group, options in COMMON_OPTIONS.items():
             self.settings_table[group] = {}  # type: dict
-            for option in self.common_settings_table[group]:
+            for option in options:
                 value = default_common_settings_table[group][option]
                 try:
                     value = user_common_settings_table[group][option]
@@ -127,39 +135,29 @@ class Settings:
 
                 self.settings_table[group][option] = value
 
-        for game in self.core.game_table.get_game_set():
-            for option in self.core.game_table.get_game_settings(game):
+        for game in self.game_table.get_game_set():
+            for option in self.game_table.get_game_settings(game):
                 value = default_game_settings_table[game][option]
                 try:
                     value = user_game_settings_table[game][option]
                 except (ValueError, KeyError, TypeError):
                     pass
 
-                self.core.game_table.set_game_setting(game, option, value)
+                self.game_table.set_game_setting(game, option, value)
 
         self.normalize_game_selection()
-
-        if callback_postgenload is not None:
-            for group in self.common_settings_table:
-                for option in self.common_settings_table[group]:
-                    callback_postgenload(
-                        self.common_settings_table,
-                        group,
-                        option,
-                        self.settings_table[group][option],
-                    )
 
         return warnings
 
     def normalize_game_selection(self) -> None:
         """Replace invalid selectors with the first configured game."""
-        games = self.core.game_table.get_game_set()
+        games = self.game_table.get_game_set()
         first_game = ""
         if games:
             first_game = min(
                 games,
                 key=lambda game_id: (
-                    self.core.game_table.get_game_info(game_id)["name"].casefold(),
+                    self.game_table.get_game_info(game_id)["name"].casefold(),
                     game_id,
                 ),
             )
@@ -176,12 +174,12 @@ class Settings:
                 option: self.settings_table[group][option]
                 for option in options
             }
-            for group, options in self.common_settings_table.items()
+            for group, options in COMMON_OPTIONS.items()
         }
         # Compile game settings table
         user_game_settings_table = {}
-        for game in self.core.game_table.get_game_set():
-            user_game_settings_table[game] = self.core.game_table.get_game_settings(
+        for game in self.game_table.get_game_set():
+            user_game_settings_table[game] = self.game_table.get_game_settings(
                 game)
 
         # Both atomic replacements happen under one acquisition, so a reader
@@ -193,57 +191,3 @@ class Settings:
             )
             helpers.save_table(self.user_game_settings_path,
                                user_game_settings_table)
-
-
-def get_common_options():
-    option_list = {
-        'common': {
-            'selected-game-connect': {'gtk_widget_name': "server-connect-game", 'gtk_widget_colnum': 0},
-            'selected-game-browser': {'gtk_widget_name': "Game_TreeView", 'gtk_widget_colnum': 0},
-            'server-host':   {'gtk_widget_name': "server-connect-host"},
-            'game-listview': {'gtk_widget_name': "Game_View_ToggleButton"}
-        }
-    }
-
-    return option_list
-
-
-def get_game_options():
-    option_list = {
-        'path':         {
-            'name':        i18n._("Game path"),
-            'description': i18n._("Path to the game."),
-            'gtk_type':    "Entry with Label"
-        },
-
-        'workdir':      {
-            'name':        i18n._("Working directory"),
-            'description': i18n._("Working directory of the game."),
-            'gtk_type':    "Entry with Label"
-        },
-
-        'master_uri':   {
-            'name':        i18n._("Master URI list"),
-            'description': i18n._("List of master servers to query."),
-            'gtk_type':    "Multiline Entry with Label"
-        },
-
-        'steam_launch': {
-            'name':        i18n._("Launch via Steam"),
-            'description': i18n._("Enables launching via Steam client. Required for VAC-enabled servers."),
-            'gtk_type':    "CheckButton"
-        },
-
-        'steam_path':   {
-            'name':        i18n._("Steam path"),
-            'description': i18n._("Steam client path."),
-            'gtk_type':    "Entry with Label"
-        },
-        'nickname':     {
-            'name':        i18n._("Nickname"),
-            'description': i18n._("Your nickname."),
-            'gtk_type':    "Entry with Label"
-        }
-    }
-
-    return option_list

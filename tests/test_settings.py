@@ -7,13 +7,12 @@ import threading
 import tomllib
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 import filelock
 import tomli_w
 
-from obozrenie import diagnostics, game_table, helpers, i18n, resources
+from obozrenie import diagnostics, game_table, helpers, resources
 from obozrenie import settings as settings_module
 
 
@@ -88,7 +87,7 @@ class SettingsPersistenceTests(unittest.TestCase):
             },
         })
         settings = settings_module.Settings(
-            SimpleNamespace(game_table=table),
+            table,
             str(root / "profile"),
             resource_loader=load_resource,
         )
@@ -662,11 +661,11 @@ class SettingsPersistenceTests(unittest.TestCase):
             self.assertEqual(warnings, [])
             self.assertEqual(settings.settings_table, self.LOADED_COMMON)
             self.assertEqual(
-                settings.core.game_table.get_game_settings("game"),
+                settings.game_table.get_game_settings("game"),
                 self.DEFAULT_GAMES["game"],
             )
 
-    def test_settings_load_merges_valid_user_tables_and_preserves_callbacks(self):
+    def test_settings_load_merges_valid_user_tables_and_releases_the_lock(self):
         with tempfile.TemporaryDirectory() as directory:
             settings = self._make_settings(directory)
             self._write_toml(
@@ -677,18 +676,10 @@ class SettingsPersistenceTests(unittest.TestCase):
                 settings.user_game_settings_path,
                 {"game": {"path": "user-game"}},
             )
-            callbacks = []
 
-            def record_callback(widget_table, group, option, value):
-                self.assertIs(widget_table, settings.common_settings_table)
-                # The lock covers the user-table reads alone: caller callbacks
-                # run arbitrary code, so no other process may be blocked on the
-                # profile while one of them is running.
-                self.assertFalse(settings._profile_lock.is_locked)
-                callbacks.append((group, option, value))
+            warnings = settings.load()
 
-            warnings = settings.load(callback_postgenload=record_callback)
-
+            self.assertFalse(settings._profile_lock.is_locked)
             self.assertEqual(warnings, [])
             self.assertEqual(settings.settings_table, {
                 "common": {
@@ -699,18 +690,12 @@ class SettingsPersistenceTests(unittest.TestCase):
                 },
             })
             self.assertEqual(
-                settings.core.game_table.get_game_settings("game"),
+                settings.game_table.get_game_settings("game"),
                 {
                     "path": "user-game",
                     "master_uri": ["master://default.example:27950"],
                 },
             )
-            self.assertEqual(callbacks, [
-                ("common", "selected-game-connect", "game"),
-                ("common", "selected-game-browser", "game"),
-                ("common", "server-host", "game.example"),
-                ("common", "game-listview", False),
-            ])
 
     def test_settings_load_recovers_each_malformed_user_table(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -731,7 +716,7 @@ class SettingsPersistenceTests(unittest.TestCase):
                 self.assertNotIn("secret-game-payload", warning)
             self.assertEqual(settings.settings_table, self.LOADED_COMMON)
             self.assertEqual(
-                settings.core.game_table.get_game_settings("game"),
+                settings.game_table.get_game_settings("game"),
                 self.DEFAULT_GAMES["game"],
             )
             for path, payload in (
@@ -934,36 +919,12 @@ class SettingsPersistenceTests(unittest.TestCase):
 
     def test_packaged_common_defaults_match_the_declared_common_options(self):
         packaged = resources.load_toml("settings", "defaults", "settings.toml")
-        declared = settings_module.get_common_options()
+        declared = settings_module.COMMON_OPTIONS
 
         self.assertEqual(set(packaged), set(declared))
         for group, options in declared.items():
             self.assertEqual(set(packaged[group]), set(options))
         self.assertNotIn("nickname", packaged["common"])
-
-    def test_packaged_game_defaults_keep_every_declared_nickname(self):
-        declared = settings_module.get_game_options()
-
-        self.assertIn("nickname", declared)
-        self.assertEqual(declared["nickname"]["name"], i18n._("Nickname"))
-        self.assertEqual(
-            declared["nickname"]["description"],
-            i18n._("Your nickname."),
-        )
-
-        game_lists = resources.load_toml(
-            "settings", "internal", "game_lists.toml"
-        )
-        packaged = resources.load_toml("settings", "defaults", "games.toml")
-        nickname_games = {
-            game
-            for game, info in game_lists.items()
-            if "nickname" in info["settings"]
-        }
-
-        self.assertTrue(nickname_games)
-        for game in nickname_games:
-            self.assertIn("nickname", packaged[game])
 
 
 class SettingsNormalizationTests(unittest.TestCase):
@@ -1021,7 +982,7 @@ class SettingsNormalizationTests(unittest.TestCase):
         })
 
         settings = settings_module.Settings(
-            SimpleNamespace(game_table=game_table.GameTable(game_config)),
+            game_table.GameTable(game_config),
             str(root / "profile"),
             resource_loader=load_resource,
         )
@@ -1116,20 +1077,7 @@ class SettingsNormalizationTests(unittest.TestCase):
                         settings.user_common_settings_path,
                         {"common": common_values},
                     )
-                selector_callbacks = []
-                callback_snapshots = []
-
-                def record_callback(widget_table, group, option, value):
-                    del widget_table
-                    common = settings.settings_table["common"]
-                    callback_snapshots.append((
-                        common.get("selected-game-browser"),
-                        common.get("selected-game-connect"),
-                    ))
-                    if option.startswith("selected-game-"):
-                        selector_callbacks.append((group, option, value))
-
-                settings.load(callback_postgenload=record_callback)
+                settings.load()
 
                 self.assertEqual(
                     settings.settings_table["common"]["selected-game-browser"],
@@ -1138,15 +1086,6 @@ class SettingsNormalizationTests(unittest.TestCase):
                 self.assertEqual(
                     settings.settings_table["common"]["selected-game-connect"],
                     "y-alpha",
-                )
-                self.assertEqual(selector_callbacks, [
-                    ("common", "selected-game-connect", "y-alpha"),
-                    ("common", "selected-game-browser", "y-alpha"),
-                ])
-                self.assertTrue(callback_snapshots)
-                self.assertEqual(
-                    set(callback_snapshots),
-                    {("y-alpha", "y-alpha")},
                 )
 
     def test_empty_game_set_normalizes_both_selectors_to_empty(self):
@@ -1185,7 +1124,7 @@ class SettingsNormalizationTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             settings = settings_module.Settings(
-                SimpleNamespace(game_table=game_table.GameTable(game_config)),
+                game_table.GameTable(game_config),
                 directory,
             )
 

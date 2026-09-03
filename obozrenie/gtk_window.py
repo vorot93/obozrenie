@@ -19,6 +19,7 @@
 """The main window: every handler the GtkBuilder documents bind by name."""
 
 import ast
+from types import MappingProxyType
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -105,6 +106,16 @@ _WIDGETS = {
     "serverinfo-players-ping-treeviewcolumn": "serverinfo-players-ping-column",
 }
 
+GAME_LIST_COLUMNS = ("game_id", "name", "game_icon", "status_icon")
+
+# Persisted common option -> (widget key, tree column holding the value).
+COMMON_OPTION_WIDGETS = MappingProxyType({
+    "selected-game-connect": ("server-connect-game", None),
+    "selected-game-browser": ("game-treeview", GAME_LIST_COLUMNS.index("game_id")),
+    "server-host": ("server-connect-host", None),
+    "game-listview": ("game-view-togglebutton", None),
+})
+
 
 def derive_action_sensitivity(
     browser_game_valid: bool,
@@ -142,18 +153,17 @@ class MainWindow:
 
     """Handlers and state of the main window and its dialogs."""
 
-    def __init__(self, app, builder, core_library):
+    def __init__(self, app, builder, core, settings):
         self.app = app
         self.builder = builder
-        self.core = core_library
+        self.core = core
+        self.settings = settings
+        self.game_options = gtk_preferences.game_options()
 
         self.gtk_widgets = {}
 
         self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, _WIDGETS)
-        self.game_list_model_format = ("game_id",
-                                       "name",
-                                       "game_icon",
-                                       "status_icon")
+        self.game_list_model_format = GAME_LIST_COLUMNS
 
         self.server_list_model_format = ("host",
                                          "password",
@@ -226,7 +236,7 @@ class MainWindow:
         )
 
     def cb_game_preferences_button_clicked(self, *args):
-        game = self.app.settings.settings_table["common"]["selected-game-browser"]
+        game = self.settings.settings_table["common"]["selected-game-browser"]
         if game not in self.core.game_table.get_game_set():
             return
         prefs_dialog = gtk_preferences.PreferencesDialog(self.gtk_widgets["main-window"],
@@ -235,7 +245,7 @@ class MainWindow:
                                                              game),
                                                          self.core.game_table.get_game_settings(
                                                              game),
-                                                         self.app.settings.dynamic_widget_table,
+                                                         self.game_options,
                                                          callback_start=self.apply_settings_to_preferences_dialog,
                                                          callback_close=self.update_game_settings_table)
         prefs_dialog.run()
@@ -245,8 +255,8 @@ class MainWindow:
         """Shows server information window."""
         dialog = self.gtk_widgets["serverinfo-dialog"]
 
-        game = self.app.settings.settings_table["common"]["selected-game-connect"]
-        host = self.app.settings.settings_table["common"]["server-host"]
+        game = self.settings.settings_table["common"]["selected-game-connect"]
+        host = self.settings.settings_table["common"]["server-host"]
         endpoint = _parse_endpoint(host)
         if game not in self.core.game_table.get_game_set() or endpoint is None:
             return
@@ -290,8 +300,8 @@ class MainWindow:
             dialog.hide()
 
     def cb_connect_button_clicked(self, *args):
-        game = self.app.settings.settings_table["common"]["selected-game-connect"]
-        server = self.app.settings.settings_table["common"]["server-host"]
+        game = self.settings.settings_table["common"]["selected-game-connect"]
+        server = self.settings.settings_table["common"]["server-host"]
         endpoint = _parse_endpoint(server)
         if game not in self.core.game_table.get_game_set() or endpoint is None:
             return
@@ -395,7 +405,7 @@ class MainWindow:
             treeview_revealer.set_reveal_child(False)
 
     def cb_game_treeview_selection_changed(self, *args):
-        game_id = self.app.settings.settings_table["common"]["selected-game-browser"]
+        game_id = self.settings.settings_table["common"]["selected-game-browser"]
         if game_id not in self.core.game_table.get_game_set():
             self.update_action_sensitivity()
             return
@@ -420,7 +430,7 @@ class MainWindow:
 
     def cb_update_button_clicked(self, *args):
         """Actions on server list update button click"""
-        game = self.app.settings.settings_table["common"]["selected-game-browser"]
+        game = self.settings.settings_table["common"]["selected-game-browser"]
         if game not in self.core.game_table.get_game_set():
             return
         if (
@@ -470,9 +480,9 @@ class MainWindow:
 
     def show_game_page(self, game: str) -> None:
         """Set of actions to do after query is complete."""
-        query_status = self.app.core.game_table.get_query_status(str(game))
-        server_table = self.app.core.game_table.get_servers_data(str(game))
-        selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
+        query_status = self.core.game_table.get_query_status(str(game))
+        server_table = self.core.game_table.get_servers_data(str(game))
+        selected_game = self.settings.settings_table["common"]["selected-game-browser"]
 
         model = self.gtk_widgets["server-list-sort"]
         view = self.gtk_widgets["serverlist-view"]
@@ -490,7 +500,7 @@ class MainWindow:
             elif query_status == QueryStatus.ERROR:
                 self.gtk_widgets["error-message-content-label"].set_property(
                     "label",
-                    self.app.core.game_table.get_query_error(str(game)),
+                    self.core.game_table.get_query_error(str(game)),
                 )
                 self.set_loading_state("error")
 
@@ -687,7 +697,7 @@ class MainWindow:
         )
 
     def update_action_sensitivity(self) -> dict[str, bool]:
-        common_settings = self.app.settings.settings_table["common"]
+        common_settings = self.settings.settings_table["common"]
         games = self.core.game_table.get_game_set()
         browser_game = common_settings.get("selected-game-browser")
         connect_game = gtk_helpers.get_widget_value(
@@ -722,9 +732,6 @@ class MainWindow:
                 "sensitive", sensitivity[action])
         return sensitivity
 
-    def cb_listed_widget_changed(self, *args):
-        self.update_settings_table()
-
     def apply_settings_to_preferences_dialog(self, game: str, widget_option_mapping: dict, dynamic_settings_table: dict) -> None:
         for option in widget_option_mapping:
             value = self.core.game_table.get_game_settings(game)[option]
@@ -732,20 +739,27 @@ class MainWindow:
                 value = "\n".join(value)
             gtk_helpers.set_widget_value(widget_option_mapping[option], value)
 
+    def bind_settings(self) -> None:
+        """Show the loaded common settings and follow every later change."""
+        common = self.settings.settings_table["common"]
+        for option, (widget_key, column) in COMMON_OPTION_WIDGETS.items():
+            widget = self.gtk_widgets[widget_key]
+            gtk_helpers.set_widget_value(
+                widget,
+                common[option],
+                treeview_colnum=0 if column is None else column,
+            )
+            gtk_helpers.bind_widget_to_callback(widget, self.update_settings_table)
+
     def update_settings_table(self, *args):
-        for group in self.widget_table:
-            for option in self.widget_table[group]:
-                # Define variables
-                widget_name = self.widget_table[group][option]["gtk_widget_name"]
-                widget = self.builder.get_object(widget_name)
-                value = gtk_helpers.get_widget_value(widget)
-                if isinstance(widget, Gtk.TreeView) and "gtk_widget_colnum" in self.widget_table[group][option].keys():
-                    colnum = self.widget_table[group][option]["gtk_widget_colnum"]
-                    try:
-                        value = value[colnum]
-                    except TypeError:
-                        pass
-                self.app.settings.settings_table[group][option] = str(value)
+        """Copy every bound widget's value into the settings table as text."""
+        common = self.settings.settings_table["common"]
+        for option, (widget_key, column) in COMMON_OPTION_WIDGETS.items():
+            value = gtk_helpers.get_widget_value(self.gtk_widgets[widget_key])
+            if column is not None and isinstance(value, tuple):
+                # A tree selection is the whole row; the option is one column.
+                value = value[column]
+            common[option] = str(value)
 
     def update_game_settings_table(self, game, widget_option_mapping, dynamic_settings_table, *args):
         for option in widget_option_mapping:
@@ -753,11 +767,3 @@ class MainWindow:
             if dynamic_settings_table[option]["gtk_type"] == "Multiline Entry with Label":
                 value = value.split("\n")
             self.core.game_table.set_game_setting(game, option, value)
-
-    def cb_post_settings_genload(self, widget_table, group, option, value):
-        self.widget_table = widget_table
-        widget_name = widget_table[group][option]["gtk_widget_name"]
-        widget = self.builder.get_object(widget_name)
-
-        gtk_helpers.set_widget_value(widget, value)
-        gtk_helpers.bind_widget_to_callback(widget, self.update_settings_table)

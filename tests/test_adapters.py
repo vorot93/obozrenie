@@ -5431,15 +5431,12 @@ class GtkServerBoundaryTests(unittest.TestCase):
         table = self.make_game_table(server)
         window = MainWindow.__new__(MainWindow)
         window.core = SimpleNamespace(game_table=table)
-        window.app = SimpleNamespace(
-            core=window.core,
-            settings=SimpleNamespace(settings_table={
-                "common": {
-                    "selected-game-connect": "g",
-                    "server-host": str(server.endpoint),
-                }
-            }),
-        )
+        window.settings = SimpleNamespace(settings_table={
+            "common": {
+                "selected-game-connect": "g",
+                "server-host": str(server.endpoint),
+            }
+        })
         dialog = Dialog()
         player_model = ListModel()
         window.gtk_widgets = {

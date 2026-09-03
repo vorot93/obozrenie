@@ -446,6 +446,7 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                         SimpleNamespace(),
                         Builder(),
                         SimpleNamespace(game_table=game_table.GameTable({})),
+                        SimpleNamespace(settings_table={"common": {}}),
                     )
 
         self.assertEqual(

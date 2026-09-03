@@ -498,7 +498,7 @@ class RepositoryHygieneTests(unittest.TestCase):
                     f"helper {name!r} referenced by obozrenie/ is missing",
                 )
 
-    def test_common_defaults_match_get_common_options_exactly(self):
+    def test_common_defaults_match_common_options_exactly(self):
         defaults_path = (
             PROJECT_ROOT
             / "obozrenie"
@@ -509,7 +509,7 @@ class RepositoryHygieneTests(unittest.TestCase):
         )
         defaults = tomllib.loads(defaults_path.read_bytes().decode("utf-8"))
 
-        declared = set(settings_module.get_common_options()["common"])
+        declared = set(settings_module.COMMON_OPTIONS["common"])
         self.assertEqual(set(defaults["common"]), declared)
 
     def test_gtk_module_does_not_import_signal(self):

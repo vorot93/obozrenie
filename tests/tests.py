@@ -897,11 +897,11 @@ class EntryPointTests(unittest.TestCase):
                 record_cleanup()
 
         class FakeSettings:
-            def __init__(instance, core_instance, profile_path):
+            def __init__(instance, game_table, profile_path):
                 events.append("Settings")
                 if failure == "Settings":
                     raise error
-                self.assertIs(core_instance, instances["core"])
+                self.assertIs(game_table, instances["game table"])
                 self.assertEqual(
                     profile_path,
                     os.path.expanduser(launch_gtk.PROFILE_PATH),

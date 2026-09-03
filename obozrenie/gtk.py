@@ -70,7 +70,7 @@ class App(Gtk.Application):
         self._pending_settings_warnings = []
         self._startup_dialogs_pending = False
 
-        self.window = MainWindow(self, self.builder, self.core)
+        self.window = MainWindow(self, self.builder, self.core, self.settings)
 
     def on_startup(self, app):
         """
@@ -85,8 +85,8 @@ class App(Gtk.Application):
 
             window.fill_game_store()
 
-            self._pending_settings_warnings = self.settings.load(
-                callback_postgenload=self.window.cb_post_settings_genload)
+            self._pending_settings_warnings = self.settings.load()
+            window.bind_settings()
 
             # Connect signals
             self.builder.connect_signals(self.window)
