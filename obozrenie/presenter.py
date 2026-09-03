@@ -292,8 +292,12 @@ class MainPresenter:
             common[option] = str(getattr(self.view, reader)())
 
     def render_loaded_state(self) -> None:
-        """Render the bound state once the view reports to this presenter."""
-        self.browser_game_changed()
+        """Render the bound state once the view reports to this presenter.
+
+        The browser game is not re-reported here: GTK 3 never refreshed at
+        startup either, so the welcome page stays until the user picks a
+        game or presses refresh.
+        """
         self.sidebar_toggled()
         self.filters_changed()
         self.connect_data_changed()

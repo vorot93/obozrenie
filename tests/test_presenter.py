@@ -667,11 +667,14 @@ class SettingsBindingTests(unittest.TestCase):
         view.calls.clear()
         view.filters = {"mod": "x"}
 
-        with mock.patch.object(presenter.GLib, "idle_add"):
+        with mock.patch.object(presenter.GLib, "idle_add") as idle_add:
             instance.render_loaded_state()
 
-        # The browser game is EMPTY, so the first render refreshes it.
-        self.assertEqual([game for game, _callback in instance.core.refreshes], ["browser"])
+        # Startup renders the bound controls and nothing more, so the
+        # welcome page stays.
+        self.assertEqual(instance.core.refreshes, [])
+        idle_add.assert_not_called()
+        self.assertIsNone(view.page)
         self.assertEqual(view.refilters, 1)
         self.assertEqual(instance._filter_values["mod"], "x")
         self.assertEqual(instance.settings.settings_table["common"]["game-listview"], "True")
