@@ -49,6 +49,7 @@ class GameRow(GObject.Object):
     game_id = GObject.Property(type=str, default="")
     name = GObject.Property(type=str, default="")
     icon = GObject.Property(type=object)
+    # type=object allows None default; type=str silently becomes "" even with default=None
     status_icon = GObject.Property(type=object)
 
     def __init__(self, game_id: str, name: str, icon=None) -> None:
