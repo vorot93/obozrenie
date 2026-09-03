@@ -22,8 +22,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-import obozrenie.gtk_helpers as gtk_helpers
-import obozrenie.i18n as i18n
+from obozrenie import gtk_helpers, i18n
 
 
 def get_checkbutton(label_text="", tooltip_text=""):

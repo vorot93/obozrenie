@@ -513,14 +513,20 @@ class RepositoryHygieneTests(unittest.TestCase):
         self.assertEqual(set(defaults["common"]), declared)
 
     def test_gtk_module_does_not_import_signal(self):
-        gtk_source = (PROJECT_ROOT / "obozrenie" / "gtk.py").read_bytes().decode(
-            "utf-8"
-        )
-        self.assertNotIn(
-            "\nimport signal\n",
-            f"\n{gtk_source}",
-            "obozrenie/gtk.py must not import the unused `signal` module",
-        )
+        # The GTK layer used to be one module; it is now `gtk.py` plus the
+        # window, GeoIP offer, and preferences modules it split into, so the
+        # scan must cover all of them or a later split silently drops it.
+        gtk_module_paths = sorted((PROJECT_ROOT / "obozrenie").glob("gtk*.py"))
+        self.assertTrue(gtk_module_paths, "no obozrenie/gtk*.py modules found")
+        for path in gtk_module_paths:
+            relative_path = path.relative_to(PROJECT_ROOT)
+            with self.subTest(path=relative_path):
+                gtk_source = path.read_bytes().decode("utf-8")
+                self.assertNotIn(
+                    "\nimport signal\n",
+                    f"\n{gtk_source}",
+                    f"{relative_path} must not import the unused `signal` module",
+                )
 
 
 class LiveContractTests(unittest.TestCase):

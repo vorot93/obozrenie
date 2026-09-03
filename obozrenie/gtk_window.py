@@ -264,8 +264,6 @@ class MainWindow:
         self.settings = settings
         self.game_options = gtk_preferences.game_options()
 
-        self.gtk_widgets = {}
-
         self.gtk_widgets = gtk_helpers.get_object_dict(self.builder, _WIDGETS)
         self.game_list_model_format = GAME_LIST_COLUMNS
         self.server_list_model_format = SERVER_LIST_COLUMNS

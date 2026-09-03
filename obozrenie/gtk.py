@@ -89,13 +89,13 @@ class App(Gtk.Application):
             window.bind_settings()
 
             # Connect signals
-            self.builder.connect_signals(self.window)
+            self.builder.connect_signals(window)
             window.gtk_widgets["server-list-filter"].set_visible_func(
                 window.server_filter_func)
 
             gtk_helpers.set_widget_value(
-                self.window.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
-            for entry in self.window.filter_secure_list:
+                window.gtk_widgets["game-combobox"], self.settings.settings_table["common"]["selected-game-browser"])
+            for entry in window.filter_secure_list:
                 window.gtk_widgets["filter-secure"].append(
                     entry["id"], entry["text"])
             window.cb_game_treeview_togglebutton_clicked()
@@ -103,7 +103,7 @@ class App(Gtk.Application):
             window.cb_server_connect_data_changed()
 
             # Add main window
-            main_window = self.window.gtk_widgets["main-window"]
+            main_window = window.gtk_widgets["main-window"]
             self.add_window(main_window)
 
             # Create menu actions
@@ -111,8 +111,8 @@ class App(Gtk.Application):
             quit_action = Gio.SimpleAction.new("quit", None)
 
             about_action.connect(
-                "activate", self.window.cb_about, main_window)
-            quit_action.connect("activate", self.window.cb_quit, self)
+                "activate", window.cb_about, main_window)
+            quit_action.connect("activate", window.cb_quit, self)
 
             self.add_action(about_action)
             self.add_action(quit_action)

@@ -124,7 +124,17 @@ is run by discovery from its own directory, where `tests/tests.py` shadows
 the `tests` package name, so shared fixtures live in the module that uses
 them.
 
-macOS, when the suite imports GTK (`IconLoadingTests`, `CountryEmojiTests`, `ListStoreHelperTests`, and all of `tests.test_gtk_behavior`):
+macOS: any test that imports a `gtk*` module or `gi` needs the library path
+the launcher's re-exec would otherwise set, since a bare import does not go
+through it — in `tests/tests.py`, `IconLoadingTests`, `CountryEmojiTests`,
+`ListStoreHelperTests` (guarded by `skipTest`), and the unguarded
+`GameTableTests.test_gtk_fill_game_store_renders_game_table_data`; all of
+`tests.test_gtk_behavior`; `tests.test_adapters.GtkServerBoundaryTests`;
+and, in `tests.test_resources.ResourceTests`, the three
+methods that construct `MainWindow` or load pixbufs —
+`test_zip_backed_resources_support_text_bytes_toml_ui_and_icons`,
+`test_application_icons_render_at_small_and_large_sizes`, and
+`test_main_window_loads_about_logo_from_zip_resource_bytes`:
 
     DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib" uv run python -m unittest discover -s tests -p 'test*.py' -v
 

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GeoIP database discovery and download for Obozrenie."""
+"""GeoIP database discovery, download, and host-to-country-code lookup for Obozrenie."""
 
 from __future__ import annotations
 

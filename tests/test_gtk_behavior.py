@@ -1127,6 +1127,15 @@ class SettingsBindingTests(unittest.TestCase):
             "None",
         )
 
+    def test_widget_table_and_persisted_option_table_cover_the_same_keys(self):
+        """`bind_settings` looks up every `COMMON_OPTIONS` key in
+        `COMMON_OPTION_WIDGETS`; a key present in only one table is either an
+        unshown persisted option or a `KeyError` in `bind_settings`."""
+        self.assertEqual(
+            set(gtk_window.COMMON_OPTION_WIDGETS),
+            set(settings_module.COMMON_OPTIONS["common"]),
+        )
+
 
 class ServerFilterTests(unittest.TestCase):
     COLUMNS = gtk_window.SERVER_LIST_COLUMNS
@@ -1730,6 +1739,68 @@ master_uri = ["master://example.test:27950"]
                     ("offer", window),
                 ],
             )
+
+    def test_on_startup_fills_game_store_before_load_and_binds_settings_before_connect_signals(self):
+        """Pin the spec's on_startup order: `fill_game_store`, then
+        `settings.load`, then `bind_settings`, then `builder.connect_signals`
+        — each step only starts once the one before it has finished."""
+        self.enterContext(mock.patch.object(gtk_module.helpers, "debug_msg"))
+        with tempfile.TemporaryDirectory() as directory:
+            settings = self.make_settings(directory)
+            real_load = settings.load
+            counts_at_load_start = []
+
+            def recording_load(*args, **kwargs):
+                counts_at_load_start.append((
+                    controller.fill_game_store.call_count,
+                    controller.bind_settings.call_count,
+                ))
+                return real_load(*args, **kwargs)
+
+            settings.load = recording_load
+
+            controller = mock.Mock()
+            controller.filter_secure_list = ()
+            controller.gtk_widgets = {
+                "server-list-filter": mock.Mock(),
+                "game-combobox": mock.Mock(),
+                "filter-secure": mock.Mock(),
+                "main-window": mock.Mock(),
+            }
+            bind_settings_count_at_connect = []
+
+            def record_bind_settings_count(*_args, **_kwargs):
+                bind_settings_count_at_connect.append(
+                    controller.bind_settings.call_count)
+
+            app = SimpleNamespace(
+                window=controller,
+                settings=settings,
+                builder=mock.Mock(),
+                add_window=mock.Mock(),
+                add_action=mock.Mock(),
+                set_app_menu=mock.Mock(),
+                quit=mock.Mock(),
+            )
+            app.builder.connect_signals.side_effect = record_bind_settings_count
+
+            with mock.patch.object(gtk_module, "Gio"), mock.patch.object(
+                gtk_module.gtk_helpers, "set_widget_value",
+            ):
+                gtk_module.App.on_startup(app, app)
+
+        # `fill_game_store` had already run once, and `bind_settings` had
+        # not run at all, by the time `settings.load` started.
+        self.assertEqual(counts_at_load_start, [(1, 0)])
+        # `bind_settings` had already run — exactly once — by the time
+        # `connect_signals` fired, and never again after.
+        self.assertEqual(bind_settings_count_at_connect, [1])
+        self.assertEqual(controller.bind_settings.call_count, 1)
+        ordered_calls = [
+            name for name, _args, _kwargs in controller.mock_calls
+            if name in ("fill_game_store", "bind_settings")
+        ]
+        self.assertEqual(ordered_calls, ["fill_game_store", "bind_settings"])
 
     def test_refused_offer_releases_startup_admission_at_once(self):
         window = mock.Mock()
