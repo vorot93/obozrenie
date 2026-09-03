@@ -15,6 +15,7 @@ from unittest import mock
 
 from obozrenie import game_table
 from obozrenie import gtk as gtk_module
+from obozrenie import gtk_geoip, gtk_window
 from obozrenie import models
 from obozrenie import settings as settings_module
 from obozrenie.diagnostics import SafeDiagnostic
@@ -579,7 +580,7 @@ class GtkIntegerModelTests(unittest.TestCase):
 
 class LaunchErrorTests(unittest.TestCase):
     def make_actions(self, core):
-        actions = gtk_module.GUIActions.__new__(gtk_module.GUIActions)
+        actions = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
         actions.core = core
         actions.gtk_widgets = {"main-window": object()}
         return actions
@@ -650,8 +651,8 @@ class LaunchErrorTests(unittest.TestCase):
 
     def test_error_dialog_is_reusable_modal_and_parented(self):
         self.assertTrue(
-            hasattr(gtk_module.GUIActions, "show_error_dialog"),
-            "GUIActions must expose one reusable error-dialog method",
+            hasattr(gtk_window.MainWindow, "show_error_dialog"),
+            "MainWindow must expose one reusable error-dialog method",
         )
         actions = self.make_actions(LaunchCoreStub())
         dialog = mock.Mock()
@@ -679,7 +680,7 @@ class LaunchErrorTests(unittest.TestCase):
 
 class AboutDialogTests(unittest.TestCase):
     def test_about_dialog_always_uses_the_packaged_logo_pixbuf(self):
-        actions = gtk_module.GUIActions.__new__(gtk_module.GUIActions)
+        actions = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
         actions.logo = object()
         dialog = mock.Mock()
 
@@ -720,7 +721,7 @@ class ActionSensitivityTests(unittest.TestCase):
         return table
 
     def derive(self, **state):
-        return gtk_module.derive_action_sensitivity(**state)
+        return gtk_window.derive_action_sensitivity(**state)
 
     def test_empty_and_independent_selections_gate_their_own_actions(self):
         cases = (
@@ -813,7 +814,7 @@ class ActionSensitivityTests(unittest.TestCase):
 
     def make_actions(self, host="example.org:30000", servers=()):
         table = self.make_game_table(servers)
-        actions = gtk_module.GUIActions.__new__(gtk_module.GUIActions)
+        actions = gtk_window.MainWindow.__new__(gtk_window.MainWindow)
         actions.core = RecordingCore(table)
         actions.app = SimpleNamespace(
             core=actions.core,
@@ -957,7 +958,9 @@ class ActionSensitivityTests(unittest.TestCase):
         actions.app.settings.settings_table["common"][
             "selected-game-browser"
         ] = "retired"
-        with mock.patch.object(gtk_module.templates, "PreferencesDialog") as dialog:
+        with mock.patch.object(
+            gtk_window.gtk_preferences, "PreferencesDialog"
+        ) as dialog:
             actions.cb_game_preferences_button_clicked()
             actions.cb_update_button_clicked()
 
@@ -1279,7 +1282,7 @@ class QueryStateUITests(unittest.TestCase):
     def test_controller_maps_the_shipped_error_content_label(self):
         builder = Builder()
         table = game_table.GameTable({})
-        actions = gtk_module.GUIActions(
+        actions = gtk_window.MainWindow(
             SimpleNamespace(),
             builder,
             SimpleNamespace(game_table=table),
@@ -1347,7 +1350,7 @@ master_uri = ["master://example.test:27950"]
         """
         quits = []
         app = SimpleNamespace(
-            guiactions=mock.Mock(),
+            window=mock.Mock(),
             settings=settings,
             handler_failure=None,
             status="starting",
@@ -1456,9 +1459,9 @@ master_uri = ["master://example.test:27950"]
 
             settings.load = recording_load
             window = mock.Mock()
-            guiactions = mock.Mock()
-            guiactions.filter_secure_list = ()
-            guiactions.gtk_widgets = {
+            controller = mock.Mock()
+            controller.filter_secure_list = ()
+            controller.gtk_widgets = {
                 "server-list-filter": mock.Mock(),
                 "game-combobox": mock.Mock(),
                 "filter-secure": mock.Mock(),
@@ -1476,7 +1479,7 @@ master_uri = ["master://example.test:27950"]
                     return True
 
             app = SimpleNamespace(
-                guiactions=guiactions,
+                window=controller,
                 settings=settings,
                 services=SimpleNamespace(
                     geoip_downloads=RecordingCoordinator(),
@@ -1541,7 +1544,7 @@ master_uri = ["master://example.test:27950"]
                 events.append(("warning-end", warning))
                 return False
 
-            guiactions.show_error_dialog.side_effect = show_error_dialog
+            controller.show_error_dialog.side_effect = show_error_dialog
 
             with mock.patch.object(
                 gtk_module.GLib,
@@ -1589,8 +1592,8 @@ master_uri = ["master://example.test:27950"]
 
     def test_refused_offer_releases_startup_admission_at_once(self):
         window = mock.Mock()
-        guiactions = mock.Mock()
-        guiactions.gtk_widgets = {"main-window": window}
+        controller = mock.Mock()
+        controller.gtk_widgets = {"main-window": window}
         offers = []
 
         class RefusingCoordinator:
@@ -1601,7 +1604,7 @@ master_uri = ["master://example.test:27950"]
                 return False
 
         app = SimpleNamespace(
-            guiactions=guiactions,
+            window=controller,
             services=SimpleNamespace(geoip_downloads=RefusingCoordinator()),
             _pending_settings_warnings=[],
             _startup_dialogs_pending=False,
@@ -1626,14 +1629,14 @@ master_uri = ["master://example.test:27950"]
                 self.assertIs(callback(*args), False)
 
         self.assertEqual(len(offers), 2)
-        guiactions.show_error_dialog.assert_not_called()
+        controller.show_error_dialog.assert_not_called()
         self.assertEqual(window.present.call_count, 2)
         self.assertEqual(window.show_all.call_count, 0)
 
     def test_every_activation_presents_without_showing_hidden_descendants(self):
         window = mock.Mock()
-        guiactions = mock.Mock()
-        guiactions.gtk_widgets = {"main-window": window}
+        controller = mock.Mock()
+        controller.gtk_widgets = {"main-window": window}
 
         class RecordingCoordinator:
             """Fail the assertions if a held activation reaches for another offer."""
@@ -1647,7 +1650,7 @@ master_uri = ["master://example.test:27950"]
 
         coordinator = RecordingCoordinator()
         app = SimpleNamespace(
-            guiactions=guiactions,
+            window=controller,
             services=SimpleNamespace(geoip_downloads=coordinator),
             _pending_settings_warnings=["unseen warning"],
             _startup_dialogs_pending=True,
@@ -1675,7 +1678,7 @@ master_uri = ["master://example.test:27950"]
         # dispatcher, shows another warning dialog, or accepts a second
         # GeoIP offer.
         self.assertEqual(idle_calls, [])
-        guiactions.show_error_dialog.assert_not_called()
+        controller.show_error_dialog.assert_not_called()
         self.assertEqual(coordinator.offers, [])
         self.assertTrue(app._startup_dialogs_pending)
         self.assertEqual(app._pending_settings_warnings, ["unseen warning"])
@@ -1686,7 +1689,7 @@ class ApplicationShutdownTests(unittest.TestCase):
         # `on_shutdown` reads `status`, and `on_startup` can fail on its very
         # first line — a closed stdout is enough — so the attribute cannot be
         # created there.
-        with mock.patch.object(gtk_module, "GUIActions"), \
+        with mock.patch.object(gtk_module, "MainWindow"), \
                 mock.patch.object(gtk_module, "load_builder_resources"):
             app = gtk_module.App(mock.Mock(), mock.Mock(), mock.Mock())
 
@@ -2054,7 +2057,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
             gtk_module.Gtk, "ProgressBar", side_effect=_FakeWidget))
         self.enterContext(mock.patch.object(
             gtk_module.GLib, "idle_add", side_effect=self.idle))
-        self.coordinator = gtk_module.GeoIPDownloadCoordinator(self.core)
+        self.coordinator = gtk_geoip.GeoIPDownloadCoordinator(self.core)
 
     def make_dialog(self, **kwargs):
         dialog = _FakeDialog(self.events, **kwargs)
@@ -2064,7 +2067,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
     def install_transfers(self, **behaviour):
         factory = _TransferFactory(**behaviour)
         self.enterContext(mock.patch.object(
-            gtk_module.geoip, "GeoIPDatabaseDownload", factory))
+            gtk_geoip.geoip, "GeoIPDatabaseDownload", factory))
         self.addCleanup(factory.release_all)
         return factory
 
@@ -2177,16 +2180,16 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
             dialog.content.children[-1].calls,
             [("hide",), ("show",)],
         )
-        self.assertEqual(transfer.destination, gtk_module.geoip.CACHE_DB_PATH)
+        self.assertEqual(transfer.destination, gtk_geoip.geoip.CACHE_DB_PATH)
         self.assertEqual(transfer.keywords, {})
         self.assertGreaterEqual(
             transfer.deadline,
-            started + gtk_module.geoip.DOWNLOAD_TIMEOUT_SECONDS,
+            started + gtk_geoip.geoip.DOWNLOAD_TIMEOUT_SECONDS,
         )
         self.assertLessEqual(
             transfer.deadline,
             time.monotonic()
-            + gtk_module.geoip.DOWNLOAD_TIMEOUT_SECONDS,
+            + gtk_geoip.geoip.DOWNLOAD_TIMEOUT_SECONDS,
         )
 
         self.assertIs(self.offer(self.refused), False)

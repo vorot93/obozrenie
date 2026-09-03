@@ -38,42 +38,6 @@ from obozrenie.models import Endpoint, Player, Server
 
 class HelpersTests(unittest.TestCase):
     """Tests for helpers"""
-    module = helpers
-    @classmethod
-    def unit_dict_to_list(cls):
-        """Does helper convert dict table into a list table based on specified format correctly?"""
-        spec_dict_table = [{'a': 'A1', 'b': 'B1', 'c': 'C1', 'd': 'D1', 'e': 'E1'}, {'d': 'D2', 'e': 'E2', 'a': 'A2'}]
-        spec_key_list = ('a',
-                         'e',
-                         'd')
-
-        func = cls.module.dict_to_list
-        spec_args = {'dict_table': spec_dict_table, 'key_list': spec_key_list}
-        spec_result = [['A1', 'E1', 'D1'], ['A2', 'E2', 'D2']]
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_dict_to_list(self):
-        unit = self.unit_dict_to_list()
-        self.assertTrue(unit['expectation'] == unit['result'])
-
-    @classmethod
-    def unit_sort_dict_table(cls):
-        """Checks how helper function sorts dictionary tables"""
-        spec_dict_table = [{'name': 'Olga', 'age': 32, 'gender': 'F'}, {'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}]
-        spec_sort_key = 'name'
-
-        func = cls.module.sort_dict_table
-        spec_args = {'dict_table': spec_dict_table, 'sort_key': spec_sort_key}
-        spec_result = [{'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}, {'name': 'Olga', 'age': 32, 'gender': 'F'}]
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_sort_dict_table(self):
-        unit = self.unit_sort_dict_table()
-        self.assertTrue(unit['expectation'] == unit['result'])
 
     def test_log_safe_diagnostic_reports_fixed_text_never_the_exception(self):
         class HostileError(Exception):
@@ -345,7 +309,7 @@ class GameTableTests(unittest.TestCase):
         self.assertNotIn("steam_app_id", table.get_game_info("gesource"))
 
     def test_gtk_fill_game_store_renders_game_table_data(self):
-        from obozrenie.gtk import GUIActions
+        from obozrenie.gtk_window import MainWindow
 
         class ListModel(list):
             pass
@@ -358,7 +322,7 @@ class GameTableTests(unittest.TestCase):
                 "settings": [],
             },
         })
-        window = GUIActions.__new__(GUIActions)
+        window = MainWindow.__new__(MainWindow)
         model = ListModel()
         window.core = SimpleNamespace(game_table=table)
         window.game_icons = {"q3a": "game-icon"}
@@ -551,6 +515,51 @@ class IconLoadingTests(unittest.TestCase):
                     24,
                     24,
                 )
+
+
+class ListStoreHelperTests(unittest.TestCase):
+    """Tests for the list-store row helpers."""
+
+    def _gtk_helpers(self):
+        try:
+            from obozrenie import gtk_helpers
+        except (ImportError, ValueError):
+            self.skipTest("GTK/GdkPixbuf not available")
+        return gtk_helpers
+
+    def unit_dict_to_list(self):
+        """Does helper convert dict table into a list table based on specified format correctly?"""
+        spec_dict_table = [{'a': 'A1', 'b': 'B1', 'c': 'C1', 'd': 'D1', 'e': 'E1'}, {'d': 'D2', 'e': 'E2', 'a': 'A2'}]
+        spec_key_list = ('a',
+                         'e',
+                         'd')
+
+        func = self._gtk_helpers().dict_to_list
+        spec_args = {'dict_table': spec_dict_table, 'key_list': spec_key_list}
+        spec_result = [['A1', 'E1', 'D1'], ['A2', 'E2', 'D2']]
+
+        result = func(**spec_args)
+        return {'expectation': spec_result, 'result': result}
+
+    def test_dict_to_list(self):
+        unit = self.unit_dict_to_list()
+        self.assertTrue(unit['expectation'] == unit['result'])
+
+    def unit_sort_dict_table(self):
+        """Checks how helper function sorts dictionary tables"""
+        spec_dict_table = [{'name': 'Olga', 'age': 32, 'gender': 'F'}, {'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}]
+        spec_sort_key = 'name'
+
+        func = self._gtk_helpers().sort_dict_table
+        spec_args = {'dict_table': spec_dict_table, 'sort_key': spec_sort_key}
+        spec_result = [{'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}, {'name': 'Olga', 'age': 32, 'gender': 'F'}]
+
+        result = func(**spec_args)
+        return {'expectation': spec_result, 'result': result}
+
+    def test_sort_dict_table(self):
+        unit = self.unit_sort_dict_table()
+        self.assertTrue(unit['expectation'] == unit['result'])
 
 
 class CountryEmojiTests(unittest.TestCase):
@@ -884,6 +893,7 @@ class EntryPointTests(unittest.TestCase):
                 instance.handler_failure = handler_failure
 
         gtk_module = ModuleType("obozrenie.gtk")
+        gtk_geoip_module = ModuleType("obozrenie.gtk_geoip")
         if failure == "GTK import":
             def fail_gtk_import(name):
                 if name in {"App", "GeoIPDownloadCoordinator", "core"}:
@@ -892,10 +902,11 @@ class EntryPointTests(unittest.TestCase):
                 raise AttributeError(name)
 
             gtk_module.__getattr__ = fail_gtk_import
+            gtk_geoip_module.__getattr__ = fail_gtk_import
         else:
             gtk_module.App = FakeApp
-            gtk_module.GeoIPDownloadCoordinator = FakeCoordinator
             gtk_module.core = SimpleNamespace(Core=FakeCore)
+            gtk_geoip_module.GeoIPDownloadCoordinator = FakeCoordinator
 
         def ensure_macos_library_path():
             events.append("macOS setup")
@@ -945,8 +956,10 @@ class EntryPointTests(unittest.TestCase):
                 qstat_processes.install_qstat_process_supervisor,
                 previous_supervisor,
             )
-            patches.enter_context(
-                mock.patch.dict(sys.modules, {"obozrenie.gtk": gtk_module}))
+            patches.enter_context(mock.patch.dict(sys.modules, {
+                "obozrenie.gtk": gtk_module,
+                "obozrenie.gtk_geoip": gtk_geoip_module,
+            }))
             patches.enter_context(mock.patch.object(
                 launch_gtk,
                 "_ensure_macos_library_path",

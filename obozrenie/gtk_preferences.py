@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Contains templates for insertion into GUI body"""
+"""The per-game preferences dialog and the option widgets it is built from."""
 
 import gi
 gi.require_version('Gtk', '3.0')

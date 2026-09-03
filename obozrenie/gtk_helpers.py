@@ -231,3 +231,25 @@ def bind_widget_to_callback(widget, callback, *data):
 
     elif isinstance(widget, Gtk.TreeView):
         widget.get_selection().connect("changed", callback, data)
+
+
+def sort_dict_table(dict_table: list, sort_key) -> list:
+    sorted_dict_list = sorted(dict_table, key=lambda k: k[sort_key])
+
+    return sorted_dict_list
+
+
+def dict_to_list(dict_table, key_list):
+    list_table = []
+
+    if dict_table is not None:
+        for entry in dict_table:
+            list_table.append([])
+
+            for key in key_list:
+                try:
+                    list_table[-1].append(entry[key])
+                except KeyError:
+                    list_table[-1].append(None)
+
+    return list_table

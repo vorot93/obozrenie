@@ -1257,9 +1257,9 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                   <!-- This row is deliberately never shown: it only carries
                        the selected server's game id for the dialog's own
                        connect handler to read back (see
-                       GUIActions.cb_serverinfo_connect_button_clicked in
-                       gtk.py). Visibility is declared here, like every other
-                       widget's, so it stays a decision rather than a
+                       MainWindow.cb_serverinfo_connect_button_clicked in
+                       gtk_window.py). Visibility is declared here, like every
+                       other widget's, so it stays a decision rather than a
                        default. -->
                   <object class="GtkLabel" id="serverinfo-gameid-label">
                     <property name="visible">False</property>

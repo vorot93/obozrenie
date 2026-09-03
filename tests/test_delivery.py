@@ -456,6 +456,9 @@ class RepositoryHygieneTests(unittest.TestCase):
     # their last caller (`load_table`) with `load_user_table`. `deepcopy` lost
     # its last caller when the game table moved to its own module and its call
     # sites switched to `copy.deepcopy` directly (see obozrenie/game_table.py).
+    # `sort_dict_table` and `dict_to_list` are not dead: they build GTK
+    # list-store rows and nothing else, so they live in `gtk_helpers` now and
+    # must not reappear here (see obozrenie/gtk_helpers.py).
     DEAD_HELPERS = (
         "Bunch",
         "enum",
@@ -467,14 +470,14 @@ class RepositoryHygieneTests(unittest.TestCase):
         "remove_all_occurences_from_list",
         "load_table",
         "deepcopy",
+        "sort_dict_table",
+        "dict_to_list",
     )
     # The exact set `obozrenie/` still calls `helpers.<name>` for.
     RETAINED_HELPERS = (
         "debug_msg",
         "log_safe_diagnostic",
         "enforce_array",
-        "sort_dict_table",
-        "dict_to_list",
         "load_user_table",
         "save_table",
     )

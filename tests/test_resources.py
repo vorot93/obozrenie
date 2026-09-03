@@ -418,10 +418,10 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                         delta=0.15,
                     )
 
-    def test_gui_actions_loads_about_logo_from_zip_resource_bytes(self):
+    def test_main_window_loads_about_logo_from_zip_resource_bytes(self):
         resources = resource_module()
         from obozrenie import game_table
-        from obozrenie import gtk as gtk_module
+        from obozrenie import gtk_window
 
         logo = b"""<svg xmlns="http://www.w3.org/2000/svg" width="7" height="5">
 <rect width="7" height="5" fill="red"/>
@@ -442,7 +442,7 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
             with zipfile.ZipFile(archive_path) as archive:
                 root = zipfile.Path(archive, at="obozrenie/data/")
                 with mock.patch.object(resources, "ROOT", root):
-                    actions = gtk_module.GUIActions(
+                    actions = gtk_window.MainWindow(
                         SimpleNamespace(),
                         Builder(),
                         SimpleNamespace(game_table=game_table.GameTable({})),

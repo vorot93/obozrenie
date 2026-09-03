@@ -5335,12 +5335,12 @@ class GtkServerBoundaryTests(unittest.TestCase):
         return table
 
     def test_server_records_are_converted_when_rows_enter_the_model(self):
-        from obozrenie.gtk import GUIActions
+        from obozrenie.gtk_window import MainWindow
 
         class ListModel(list):
             pass
 
-        window = GUIActions.__new__(GUIActions)
+        window = MainWindow.__new__(MainWindow)
         model = ListModel()
         window.gtk_widgets = {
             "server-list-model": model,
@@ -5370,10 +5370,10 @@ class GtkServerBoundaryTests(unittest.TestCase):
 
         with (
             mock.patch(
-                "obozrenie.gtk.gtk_helpers.get_widget_value",
+                "obozrenie.gtk_window.gtk_helpers.get_widget_value",
                 side_effect=("", None),
             ),
-            mock.patch("obozrenie.gtk.gtk_helpers.set_widget_value"),
+            mock.patch("obozrenie.gtk_window.gtk_helpers.set_widget_value"),
         ):
             window.fill_server_list_model([server])
 
@@ -5393,7 +5393,7 @@ class GtkServerBoundaryTests(unittest.TestCase):
         )
 
     def test_server_record_is_converted_for_the_information_dialog(self):
-        from obozrenie.gtk import GUIActions
+        from obozrenie.gtk_window import MainWindow
 
         class Widget:
             def __init__(self):
@@ -5429,7 +5429,7 @@ class GtkServerBoundaryTests(unittest.TestCase):
             players=(Player("Ada"),),
         )
         table = self.make_game_table(server)
-        window = GUIActions.__new__(GUIActions)
+        window = MainWindow.__new__(MainWindow)
         window.core = SimpleNamespace(game_table=table)
         window.app = SimpleNamespace(
             core=window.core,
@@ -5459,7 +5459,7 @@ class GtkServerBoundaryTests(unittest.TestCase):
             widget.value = value
 
         with mock.patch(
-            "obozrenie.gtk.gtk_helpers.set_widget_value",
+            "obozrenie.gtk_window.gtk_helpers.set_widget_value",
             side_effect=set_widget_value,
         ):
             window.cb_info_button_clicked()

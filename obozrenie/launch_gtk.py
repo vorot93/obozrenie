@@ -38,7 +38,7 @@ from obozrenie.settings import Settings
 
 if TYPE_CHECKING:
     from obozrenie.core import Core
-    from obozrenie.gtk import GeoIPDownloadCoordinator
+    from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
 
 
 # Every owned service gets this long, in total, to finish closing.
@@ -238,7 +238,8 @@ def main():
     try:
         try:
             _ensure_macos_library_path()
-            from obozrenie.gtk import App, GeoIPDownloadCoordinator, core
+            from obozrenie.gtk import App, core
+            from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
             core_instance = core.Core()
             started_owners.append(core_instance)
             coordinator_instance = GeoIPDownloadCoordinator(core_instance)
