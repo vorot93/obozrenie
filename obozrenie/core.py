@@ -18,7 +18,6 @@
 
 """Core functions for Obozrenie Game Server Browser."""
 
-import contextlib
 import ipaddress
 import os
 import socket
@@ -28,12 +27,10 @@ from collections.abc import Mapping
 from dataclasses import replace
 from enum import Enum, auto
 
-import filelock
 import maxminddb
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
-from obozrenie.option_lists import *
 
 from obozrenie import adapters, geoip, helpers, i18n, launch, ping, resources
 from obozrenie.diagnostics import (
@@ -52,7 +49,6 @@ from obozrenie.network_calls import (
 
 
 _GEOIP_DNS_BATCH_TIMEOUT_SECONDS = 5.0
-_PROFILE_LOCK_TIMEOUT_SECONDS = 5.0
 
 
 def _query_failure_message() -> str:
@@ -617,170 +613,6 @@ class Core:
         launch_process = threading.Thread(target=launch_target, daemon=True)
         launch_process.start()
         return True
-
-
-class SettingsLockError(SafeDiagnosticError):
-    def __init__(self) -> None:
-        super().__init__(SafeDiagnostic(
-            "Another process holds the settings profile lock."
-        ))
-
-
-class Settings:
-
-    """Settings main class.
-    Contains methods for saving and loading user settings and setting lists.
-
-    One bounded cross-process lock per profile serializes the user-table reads
-    in `load` against the atomic writes in `save`, and is always released
-    before a caller's callbacks run.
-    """
-
-    def __init__(
-        self,
-        core: Core,
-        profile_path: str,
-        resource_loader=resources.load_toml,
-    ):
-        """Loads base variables into the class."""
-        self._resource_loader = resource_loader
-
-        # User configs
-        self.user_common_settings_path = os.path.join(
-            profile_path, COMMON_SETTINGS_FILE)
-        self.user_game_settings_path = os.path.join(
-            profile_path, GAME_SETTINGS_FILE)
-        self._profile_lock = filelock.FileLock(
-            f"{profile_path}.lock",
-            timeout=_PROFILE_LOCK_TIMEOUT_SECONDS,
-            mode=0o600,
-        )
-
-        self.dynamic_widget_table = get_game_options()
-        self.common_settings_table = get_common_options()
-
-        self.settings_table = {}
-
-        self.core = core
-
-    @contextlib.contextmanager
-    def _hold_profile_lock(self):
-        """Hold the profile lock for the duration of one settings operation.
-
-        Acquisition is bounded, so contention becomes the payload-free
-        `SettingsLockError` instead of an unbounded wait. The `filelock`
-        timeout is suppressed rather than chained: its own message names the
-        lock file, which an uncaught traceback would otherwise print.
-        """
-        try:
-            self._profile_lock.acquire()
-        except filelock.Timeout:
-            raise SettingsLockError from None
-        try:
-            yield
-        finally:
-            self._profile_lock.release()
-
-    def load(self, callback_postgenload=None) -> list[str]:
-        """Loads configuration."""
-        default_common_settings_table = self._resource_loader(
-            "settings", "defaults", "settings.toml"
-        )
-        default_game_settings_table = self._resource_loader(
-            "settings", "defaults", "games.toml"
-        )
-
-        # One acquisition covers both reads, so a concurrent save cannot land
-        # between them; it is released well before the callbacks below run.
-        with self._hold_profile_lock():
-            user_common_settings_table, common_warning = helpers.load_user_table(
-                self.user_common_settings_path)
-            user_game_settings_table, game_warning = helpers.load_user_table(
-                self.user_game_settings_path)
-
-        warnings = [
-            warning
-            for warning in (common_warning, game_warning)
-            if warning is not None
-        ]
-
-        for group in self.common_settings_table:
-            self.settings_table[group] = {}  # type: dict
-            for option in self.common_settings_table[group]:
-                value = default_common_settings_table[group][option]
-                try:
-                    value = user_common_settings_table[group][option]
-                except (ValueError, KeyError, TypeError):
-                    pass
-
-                self.settings_table[group][option] = value
-
-        for game in self.core.game_table.get_game_set():
-            for option in self.core.game_table.get_game_settings(game):
-                value = default_game_settings_table[game][option]
-                try:
-                    value = user_game_settings_table[game][option]
-                except (ValueError, KeyError, TypeError):
-                    pass
-
-                self.core.game_table.set_game_setting(game, option, value)
-
-        self.normalize_game_selection()
-
-        if callback_postgenload is not None:
-            for group in self.common_settings_table:
-                for option in self.common_settings_table[group]:
-                    callback_postgenload(
-                        self.common_settings_table,
-                        group,
-                        option,
-                        self.settings_table[group][option],
-                    )
-
-        return warnings
-
-    def normalize_game_selection(self) -> None:
-        """Replace invalid selectors with the first configured game."""
-        games = self.core.game_table.get_game_set()
-        first_game = ""
-        if games:
-            first_game = min(
-                games,
-                key=lambda game_id: (
-                    self.core.game_table.get_game_info(game_id)["name"].casefold(),
-                    game_id,
-                ),
-            )
-
-        common_settings = self.settings_table["common"]
-        for option in ("selected-game-browser", "selected-game-connect"):
-            if common_settings.get(option) not in games:
-                common_settings[option] = first_game
-
-    def save(self) -> None:
-        """Saves configuration."""
-        persistent_common_settings = {
-            group: {
-                option: self.settings_table[group][option]
-                for option in options
-            }
-            for group, options in self.common_settings_table.items()
-        }
-        # Compile game settings table
-        user_game_settings_table = {}
-        for game in self.core.game_table.get_game_set():
-            user_game_settings_table[game] = self.core.game_table.get_game_settings(
-                game)
-
-        # Both atomic replacements happen under one acquisition, so a reader
-        # never observes a half-updated profile.
-        with self._hold_profile_lock():
-            helpers.save_table(
-                self.user_common_settings_path,
-                persistent_common_settings,
-            )
-            helpers.save_table(self.user_game_settings_path,
-                               user_game_settings_table)
 
 
 if __name__ == "__main__":

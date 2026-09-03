@@ -13,7 +13,8 @@ from unittest import mock
 import filelock
 import tomli_w
 
-from obozrenie import core, diagnostics, game_table, helpers, i18n, option_lists, resources
+from obozrenie import diagnostics, game_table, helpers, i18n, resources
+from obozrenie import settings as settings_module
 
 
 def toml_bytes(data):
@@ -86,7 +87,7 @@ class SettingsPersistenceTests(unittest.TestCase):
                 "settings": ["path", "master_uri"],
             },
         })
-        settings = core.Settings(
+        settings = settings_module.Settings(
             SimpleNamespace(game_table=table),
             str(root / "profile"),
             resource_loader=load_resource,
@@ -909,9 +910,9 @@ class SettingsPersistenceTests(unittest.TestCase):
 
             blocker.acquire()
             try:
-                with self.assertRaises(core.SettingsLockError) as caught:
+                with self.assertRaises(settings_module.SettingsLockError) as caught:
                     settings.load()
-                with self.assertRaises(core.SettingsLockError):
+                with self.assertRaises(settings_module.SettingsLockError):
                     settings.save()
             finally:
                 blocker.release()
@@ -933,7 +934,7 @@ class SettingsPersistenceTests(unittest.TestCase):
 
     def test_packaged_common_defaults_match_the_declared_common_options(self):
         packaged = resources.load_toml("settings", "defaults", "settings.toml")
-        declared = option_lists.get_common_options()
+        declared = settings_module.get_common_options()
 
         self.assertEqual(set(packaged), set(declared))
         for group, options in declared.items():
@@ -941,7 +942,7 @@ class SettingsPersistenceTests(unittest.TestCase):
         self.assertNotIn("nickname", packaged["common"])
 
     def test_packaged_game_defaults_keep_every_declared_nickname(self):
-        declared = option_lists.get_game_options()
+        declared = settings_module.get_game_options()
 
         self.assertIn("nickname", declared)
         self.assertEqual(declared["nickname"]["name"], i18n._("Nickname"))
@@ -1019,7 +1020,7 @@ class SettingsNormalizationTests(unittest.TestCase):
             }),
         })
 
-        settings = core.Settings(
+        settings = settings_module.Settings(
             SimpleNamespace(game_table=game_table.GameTable(game_config)),
             str(root / "profile"),
             resource_loader=load_resource,
@@ -1183,7 +1184,7 @@ class SettingsNormalizationTests(unittest.TestCase):
             "settings", "internal", "game_lists.toml"
         )
         with tempfile.TemporaryDirectory() as directory:
-            settings = core.Settings(
+            settings = settings_module.Settings(
                 SimpleNamespace(game_table=game_table.GameTable(game_config)),
                 directory,
             )

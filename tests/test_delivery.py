@@ -13,7 +13,8 @@ from unittest import mock
 import requests
 import yaml
 
-from obozrenie import helpers, option_lists
+from obozrenie import helpers
+from obozrenie import settings as settings_module
 from obozrenie.diagnostics import SafeDiagnostic
 from obozrenie.models import Endpoint
 
@@ -505,7 +506,7 @@ class RepositoryHygieneTests(unittest.TestCase):
         )
         defaults = tomllib.loads(defaults_path.read_bytes().decode("utf-8"))
 
-        declared = set(option_lists.get_common_options()["common"])
+        declared = set(settings_module.get_common_options()["common"])
         self.assertEqual(set(defaults["common"]), declared)
 
     def test_gtk_module_does_not_import_signal(self):

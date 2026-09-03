@@ -895,10 +895,7 @@ class EntryPointTests(unittest.TestCase):
         else:
             gtk_module.App = FakeApp
             gtk_module.GeoIPDownloadCoordinator = FakeCoordinator
-            gtk_module.core = SimpleNamespace(
-                Core=FakeCore,
-                Settings=FakeSettings,
-            )
+            gtk_module.core = SimpleNamespace(Core=FakeCore)
 
         def ensure_macos_library_path():
             events.append("macOS setup")
@@ -957,6 +954,8 @@ class EntryPointTests(unittest.TestCase):
             ))
             patches.enter_context(mock.patch.object(
                 launch_gtk, "ApplicationServices", FakeServices))
+            patches.enter_context(mock.patch.object(
+                launch_gtk, "Settings", FakeSettings))
             patches.enter_context(
                 mock.patch("builtins.print", side_effect=print_error))
             if not real_cleanup:

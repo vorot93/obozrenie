@@ -34,6 +34,7 @@ from obozrenie.qstat_processes import (
     QStatProcessSupervisor,
     get_qstat_process_supervisor,
 )
+from obozrenie.settings import Settings
 
 if TYPE_CHECKING:
     from obozrenie.core import Core
@@ -248,7 +249,7 @@ def main():
                 get_qstat_process_supervisor(),
                 get_network_call_pools(),
             )
-            settings_instance = core.Settings(core_instance, os.path.expanduser(PROFILE_PATH))
+            settings_instance = Settings(core_instance, os.path.expanduser(PROFILE_PATH))
             app_instance = App(core_instance, settings_instance, services_instance)
             app_instance.run(None)
             if app_instance.handler_failure is not None:

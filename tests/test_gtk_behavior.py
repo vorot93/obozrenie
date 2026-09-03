@@ -13,10 +13,10 @@ from pathlib import Path
 from types import MethodType, SimpleNamespace
 from unittest import mock
 
-from obozrenie import core
 from obozrenie import game_table
 from obozrenie import gtk as gtk_module
 from obozrenie import models
+from obozrenie import settings as settings_module
 from obozrenie.diagnostics import SafeDiagnostic
 from obozrenie.models import Endpoint, Player, Server
 
@@ -1323,7 +1323,7 @@ master_uri = ["master://example.test:27950"]
         })
         profile = root / "profile"
         profile.mkdir()
-        settings = core.Settings(
+        settings = settings_module.Settings(
             SimpleNamespace(game_table=table),
             str(profile),
             resource_loader=load_resource,
