@@ -253,6 +253,7 @@ RUNTIME_TEST_FILES = {
     "test_models.py",
     "test_network_calls.py",
     "test_networking.py",
+    "test_presenter.py",
     "test_resources.py",
     "test_settings.py",
     "test_transport.py",

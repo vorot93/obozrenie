@@ -157,67 +157,67 @@ msgstr ""
 msgid "Downloading GeoIP database…"
 msgstr "Загрузка базы данных GeoIP…"
 
-#: obozrenie/gtk_preferences.py:96
+#: obozrenie/gtk_preferences.py:95
 #, python-format
 msgid "No widget generated for type %(widget_type)s"
 msgstr "Виджет не создан для типа %(widget_type)s"
 
-#: obozrenie/gtk_preferences.py:157
+#: obozrenie/gtk_preferences.py:156 obozrenie/presenter.py:364
 #, python-format
 msgid "%(game)s preferences"
 msgstr "Настройки %(game)s"
 
-#: obozrenie/gtk_preferences.py:161
+#: obozrenie/gtk_preferences.py:160
 msgid "Save"
 msgstr "Сохранить"
 
-#: obozrenie/gtk_preferences.py:176
+#: obozrenie/gtk_preferences.py:175 obozrenie/presenter.py:60
 msgid "Game path"
 msgstr "Путь"
 
-#: obozrenie/gtk_preferences.py:177
+#: obozrenie/gtk_preferences.py:176 obozrenie/presenter.py:61
 msgid "Path to the game."
 msgstr "Путь к игре."
 
-#: obozrenie/gtk_preferences.py:182
+#: obozrenie/gtk_preferences.py:181 obozrenie/presenter.py:65
 msgid "Working directory"
 msgstr "Рабочий каталог"
 
-#: obozrenie/gtk_preferences.py:183
+#: obozrenie/gtk_preferences.py:182 obozrenie/presenter.py:66
 msgid "Working directory of the game."
 msgstr "Рабочий каталог игры."
 
-#: obozrenie/gtk_preferences.py:188
+#: obozrenie/gtk_preferences.py:187 obozrenie/presenter.py:70
 msgid "Master URI list"
 msgstr "Список мастер-серверов"
 
-#: obozrenie/gtk_preferences.py:189
+#: obozrenie/gtk_preferences.py:188 obozrenie/presenter.py:71
 msgid "List of master servers to query."
 msgstr "Опрашиваемые мастер-сервера."
 
-#: obozrenie/gtk_preferences.py:194
+#: obozrenie/gtk_preferences.py:193 obozrenie/presenter.py:75
 msgid "Launch via Steam"
 msgstr "Запуск через Steam"
 
-#: obozrenie/gtk_preferences.py:195
+#: obozrenie/gtk_preferences.py:194 obozrenie/presenter.py:76
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
 "Включает запуск через клиент Steam. Необходимо для игры на VAC-защищённых"
 " серверах."
 
-#: obozrenie/gtk_preferences.py:200
+#: obozrenie/gtk_preferences.py:199 obozrenie/presenter.py:80
 msgid "Steam path"
 msgstr "Путь к Steam"
 
-#: obozrenie/gtk_preferences.py:201
+#: obozrenie/gtk_preferences.py:200 obozrenie/presenter.py:81
 msgid "Steam client path."
 msgstr "Путь к клиенту Steam."
 
-#: obozrenie/gtk_preferences.py:205
+#: obozrenie/gtk_preferences.py:204 obozrenie/presenter.py:85
 msgid "Nickname"
 msgstr "Имя"
 
-#: obozrenie/gtk_preferences.py:206
+#: obozrenie/gtk_preferences.py:205 obozrenie/presenter.py:86
 msgid "Your nickname."
 msgstr "Ваше имя."
 
@@ -385,24 +385,24 @@ msgstr "Закрыть"
 msgid "Score"
 msgstr "Счёт"
 
-#: obozrenie/gtk_window.py:274
+#: obozrenie/gtk_window.py:272
 msgid "(all)"
 msgstr "(все)"
 
-#: obozrenie/gtk_window.py:275
+#: obozrenie/gtk_window.py:273
 msgid "True"
 msgstr "Да"
 
-#: obozrenie/gtk_window.py:276
+#: obozrenie/gtk_window.py:274
 msgid "False"
 msgstr "Нет"
 
-#: obozrenie/gtk_window.py:351
+#: obozrenie/gtk_window.py:349 obozrenie/presenter.py:390
 #, python-format
 msgid "%(player_count)s / %(player_limit)s"
 msgstr "%(player_count)s из %(player_limit)s"
 
-#: obozrenie/gtk_window.py:419
+#: obozrenie/gtk_window.py:417 obozrenie/presenter.py:495
 #, python-format
 msgid "Unable to launch the game: %(error)s"
 msgstr "Не удалось запустить игру: %(error)s"
