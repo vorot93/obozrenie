@@ -33,7 +33,6 @@ from obozrenie import helpers, i18n, resources
 from obozrenie.diagnostics import (
     SafeDiagnostic,
     SafeDiagnosticError,
-    diagnostic_for_exception,
 )
 from obozrenie.global_strings import BACKENDCAT_MSG
 from obozrenie.models import Endpoint, Player, Server
@@ -78,16 +77,6 @@ def _query_error(text: str) -> QStatQueryError:
     the log has to be declared rather than passed to the exception alone.
     """
     return QStatQueryError(SafeDiagnostic(text))
-
-
-def _log_cleanup_diagnostic(error: BaseException) -> None:
-    """Report a cleanup failure that must never replace a primary one."""
-    try:
-        helpers.debug_msg([QSTAT_MSG, diagnostic_for_exception(error)])
-    except Exception:
-        # A query's own failure is propagating through the frame that calls
-        # this, so a failing report is dropped rather than raised into it.
-        pass
 
 
 def find_qstat() -> str:
@@ -255,7 +244,7 @@ def _run_qstat(
             # This only ever runs while the query's own failure is
             # propagating: a failing stop is reported, never allowed to
             # replace it, and neither is a failing report.
-            _log_cleanup_diagnostic(error)
+            helpers.log_safe_diagnostic(QSTAT_MSG, error)
         finally:
             # Closing the pipes is unconditional: a stop that failed must not
             # leave this process holding the descriptors as well.

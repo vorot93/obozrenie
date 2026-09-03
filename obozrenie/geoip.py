@@ -70,6 +70,7 @@ _CHUNK_SIZE = 65536
 _GEOIP_MSG = CORECAT_MSG + "GeoIP"
 _OPENER_THREAD_NAME = "obozrenie-geoip-open"
 _CLOSER_THREAD_NAME = "obozrenie-geoip-close"
+_WATCHDOG_THREAD_NAME = "obozrenie-geoip-deadline"
 
 
 class _TransferHelperError(SafeDiagnosticError, RuntimeError):
@@ -120,6 +121,19 @@ def find_database():
 def _remove_quiet(path):
     try:
         os.remove(path)
+    except OSError:
+        pass
+
+
+def _close_descriptor_quiet(descriptor: int) -> None:
+    """Close one raw descriptor, tolerating a failing close.
+
+    The descriptor is released either way, and this only runs after the
+    failure that left it open has been reported, so a second failure here
+    is not worth the worker's death.
+    """
+    try:
+        os.close(descriptor)
     except OSError:
         pass
 
@@ -477,12 +491,10 @@ class GeoIPDatabaseDownload:
             self._report(error)
             return None
         finally:
-            try:
-                if descriptor is not None:
-                    os.close(descriptor)
-            finally:
-                if temporary_path is not None:
-                    _remove_quiet(temporary_path)
+            if descriptor is not None:
+                _close_descriptor_quiet(descriptor)
+            if temporary_path is not None:
+                _remove_quiet(temporary_path)
 
     def _stream_into(self, body, progress_cb) -> bool:
         """Stream the response into `body`; report whether it completed."""
@@ -497,7 +509,14 @@ class GeoIPDatabaseDownload:
             opened = opener.claim(self._deadline - time.monotonic())
             if opened is None:
                 # The wait ended before the peer finished its header, so this
-                # transfer is over; the helper closes what it opens next.
+                # transfer is over; the helper closes what it opens next. What
+                # ended it was cancellation, the watchdog, or the wait's own
+                # bound running out — and that bound is the deadline, however
+                # the clock rounds the last microseconds, so it is recorded as
+                # the deadline here rather than left for a check the clock may
+                # not yet agree with.
+                if not self._cancelled.is_set():
+                    self._expired.set()
                 return False
             context, response = opened
             with contextlib.ExitStack() as stack:
@@ -570,6 +589,7 @@ class GeoIPDatabaseDownload:
                 max(0.0, self._deadline - time.monotonic()),
                 self._expire,
             )
+            watchdog.name = _WATCHDOG_THREAD_NAME
             self._watchdog = watchdog
         _start_daemon(watchdog)
         opener.start()

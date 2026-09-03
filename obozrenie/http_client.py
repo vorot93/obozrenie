@@ -29,7 +29,9 @@ class HttpFailureKind(Enum):
     DECODE = auto()
     TLS = auto()
     INVALID_REQUEST = auto()
-    REDIRECT_POLICY = auto()
+    # The HTTPS policy rejected the configured URL itself or a redirect;
+    # the diagnostic says which.
+    HTTPS_POLICY = auto()
     STATUS = auto()
     RESPONSE_TOO_LARGE = auto()
     REQUEST = auto()
@@ -206,7 +208,7 @@ def describe_http_failure(error: BaseException) -> HttpFailure | None:
         return None
     if isinstance(error, HttpsPolicyError):
         return HttpFailure(
-            HttpFailureKind.REDIRECT_POLICY,
+            HttpFailureKind.HTTPS_POLICY,
             None,
             error.diagnostic,
         )
@@ -330,7 +332,10 @@ def _get_json(url, timeout, max_bytes, deadline):
     ) as response:
         _check_deadline(deadline)
         body = bytearray()
-        for chunk in response.iter_content(chunk_size=64 * 1024):
+        # One transport read at a time, so the deadline and size checks
+        # below are reached within one read interval however slowly the
+        # peer sends, instead of once per completed chunk.
+        for chunk in iter_response_body(response, 64 * 1024):
             _check_deadline(deadline)
             body.extend(chunk)
             if len(body) > max_bytes:

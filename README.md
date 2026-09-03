@@ -164,8 +164,10 @@ be read at all — the wrong permissions, for example — is not recovered that
 way: Obozrenie reports `Settings file could not be read.` as a startup failure
 and stops instead of starting on the defaults. A settings file it cannot write
 reports `Settings file could not be written.` the same way when the session
-ends. Neither message repeats the file's path or the operating system's own
-error text.
+ends, and a malformed file whose private backup cannot be written — the
+settings directory is full or not writable — reports `Settings backup could
+not be written.` and stops the same way at startup. None of these messages
+repeats the file's path or the operating system's own error text.
 
 ## Translations
 The interface language follows the standard gettext message-locale variables:

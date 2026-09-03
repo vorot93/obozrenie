@@ -56,6 +56,13 @@ def installed_network_pools():
             patcher.stop()
 
 
+class _RawBody(io.BytesIO):
+    """A raw stream with urllib3's `read1` signature."""
+
+    def read1(self, size=-1, decode_content=None):
+        return super().read1(size)
+
+
 def _streamed_response(body, *, encoding=None):
     """Build one terminal response the HTTP boundary can stream and close."""
     response = requests.Response()
@@ -66,7 +73,7 @@ def _streamed_response(body, *, encoding=None):
     if encoding is not None:
         response.headers["Content-Type"] += f"; charset={encoding}"
     response.encoding = encoding
-    response.raw = io.BytesIO(body)
+    response.raw = _RawBody(body)
     return response
 
 
@@ -1516,6 +1523,55 @@ class MinetestAdapterTests(_FailClosedHttpAdapterTestCase):
         self.assertFalse(succeeded)
         self.assertIs(outcome, error)
         get_json.assert_called_once_with(master, deadline=mock.ANY)
+        debug_msg.assert_not_called()
+
+    def test_empty_configured_master_list_is_an_empty_success(self):
+        # No configured source means nothing to request and nothing to
+        # isolate: the query succeeds with no records, no request, and no
+        # diagnostic, rather than reporting that every master failed.
+        with (
+            mock.patch("obozrenie.http_client.get_json") as get_json,
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
+        ):
+            servers = minetest.stat_master(
+                "minetest",
+                {"name": "Minetest"},
+                [],
+            )
+
+        self.assertEqual(servers, [])
+        get_json.assert_not_called()
+        debug_msg.assert_not_called()
+
+    def test_base_exception_from_a_fetch_propagates_by_identity_unisolated(self):
+        class FetchAbort(BaseException):
+            pass
+
+        abort = FetchAbort("interrupted while fetching")
+        masters = [
+            "https://first.example/list",
+            "https://second.example/list",
+        ]
+        with (
+            mock.patch(
+                "obozrenie.http_client.get_json",
+                side_effect=abort,
+            ) as get_json,
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
+        ):
+            succeeded, outcome = _capture_value_or_error(
+                lambda: minetest.stat_master(
+                    "minetest",
+                    {"name": "Minetest"},
+                    masters,
+                )
+            )
+
+        self.assertFalse(succeeded)
+        self.assertIs(outcome, abort)
+        # Isolation is for the failures the classifier owns: an interruption
+        # stops the batch at once, requests no later master, and logs nothing.
+        get_json.assert_called_once_with(masters[0], deadline=mock.ANY)
         debug_msg.assert_not_called()
 
     def test_failed_later_master_preserves_earlier_results(self):
@@ -3525,6 +3581,118 @@ class QStatProcessSupervisorTests(unittest.TestCase):
         self.assertEqual(supervisor.registered_processes, ())
         self.assert_finite_waits(child.wait_timeouts)
 
+    def test_discarded_child_keeps_its_reaper_when_a_pipe_will_not_close(self):
+        # The race-losing spawn closes the pipes of a child no caller will
+        # ever receive. A pipe that fails to close is no reason to lose the
+        # child, skip the reaper, or replace the closed-supervisor error.
+        supervisor = self.make_supervisor()
+        child = self.make_child(pipes=True)
+
+        class FailingPipe:
+            """Fail the first close, then close the wrapped pipe for real."""
+
+            def __init__(self, pipe):
+                self._pipe = pipe
+                self.close_attempts = 0
+
+            def close(self):
+                self.close_attempts += 1
+                if self.close_attempts == 1:
+                    raise OSError(5, "Input/output error")
+                self._pipe.close()
+
+            @property
+            def closed(self):
+                return self._pipe.closed
+
+        child.stdin = FailingPipe(child.stdin)
+
+        def closing_popen(command, **popen_kwargs):
+            # Close sweeps the registry while this child is being born.
+            supervisor.begin_close()
+            return child
+
+        with (
+            mock.patch.object(
+                qstat_processes.subprocess, "Popen", side_effect=closing_popen
+            ),
+            self.assertRaises(qstat_processes.QStatSupervisorClosedError),
+        ):
+            supervisor.spawn(["/opt/bin/qstat"])
+
+        self.assertEqual(child.signals, ["kill"])
+        self.assertEqual(supervisor.registered_processes, (child,))
+        self.assertEqual(child.stdin.close_attempts, 1)
+        # The other pipe is still closed, and the reaper still owns the child.
+        self.assertTrue(child.stdout.closed)
+        self.assertTrue(child.observed_by_reaper.wait(1))
+
+        child.exit(-9)
+        supervisor.join_until(time.monotonic() + 1.0)
+        self.assertEqual(supervisor.registered_processes, ())
+
+    def test_discarded_child_keeps_its_reaper_when_the_kill_signal_fails(self):
+        # A signal that cannot be delivered to a child no caller will ever
+        # receive changes nothing about who owns it: the pipes are still
+        # closed, the reaper still retains it, and the caller still gets the
+        # closed-supervisor error rather than the signal's failure.
+        supervisor = self.make_supervisor()
+        child = self.make_child(pipes=True)
+        signal_failure = PermissionError(1, "Operation not permitted")
+        kill = child.kill
+
+        def failing_kill():
+            kill()
+            raise signal_failure
+
+        child.kill = failing_kill
+
+        def closing_popen(command, **popen_kwargs):
+            supervisor.begin_close()
+            return child
+
+        with (
+            mock.patch.object(
+                qstat_processes.subprocess, "Popen", side_effect=closing_popen
+            ),
+            self.assertRaises(qstat_processes.QStatSupervisorClosedError),
+        ):
+            supervisor.spawn(["/opt/bin/qstat"])
+
+        self.assertEqual(child.signals, ["kill"])
+        self.assertEqual(supervisor.registered_processes, (child,))
+        self.assertTrue(child.stdin.closed)
+        self.assertTrue(child.stdout.closed)
+        self.assertTrue(child.observed_by_reaper.wait(1))
+
+        child.exit(-9)
+        supervisor.join_until(time.monotonic() + 1.0)
+        self.assertEqual(supervisor.registered_processes, ())
+
+    def test_reaper_that_could_not_start_is_never_retried(self):
+        # The reaper is one shot: a `start()` that raises may still have
+        # launched the thread, so a second reaper could reap another's child.
+        # Deferred handles simply stay registered, and joins return at once.
+        supervisor = self.make_supervisor()
+        first = self.make_child()
+        second = self.make_child()
+        starts = []
+
+        def refuse_start(thread):
+            starts.append(thread.name)
+            raise RuntimeError("can't start new thread")
+
+        with mock.patch.object(threading.Thread, "start", refuse_start):
+            supervisor.defer_reap(first)
+            supervisor.defer_reap(second)
+
+        self.assertEqual(starts, [qstat_processes._REAPER_THREAD_NAME])
+        self.assertEqual(set(supervisor.registered_processes), {first, second})
+        started = time.monotonic()
+        supervisor.join_until(time.monotonic() + 1.0)
+        self.assertLess(time.monotonic() - started, 0.5)
+        self.assertEqual(set(supervisor.registered_processes), {first, second})
+
     def test_failure_cleanup_terminates_then_kills_using_only_finite_waits(self):
         with installed_qstat_supervisor() as supervisor:
             child = self.make_child(pipes=True)
@@ -3862,7 +4030,13 @@ class QStatAdapterTests(unittest.TestCase):
         self.assertTrue(process.stdin.closed)
         self.assertTrue(process.stdout.closed)
 
-    def assert_qstat_adapter_error(self, outcome, expected_pattern):
+    def assert_qstat_adapter_error(
+        self,
+        outcome,
+        expected_pattern,
+        *,
+        output_received=False,
+    ):
         runner_options = (
             {"side_effect": outcome}
             if isinstance(outcome, BaseException)
@@ -3871,6 +4045,7 @@ class QStatAdapterTests(unittest.TestCase):
         with (
             mock.patch.object(qstat, "find_qstat", return_value="/opt/bin/qstat"),
             mock.patch.object(qstat, "_run_qstat", **runner_options),
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
             self.assertRaisesRegex(RuntimeError, expected_pattern) as raised,
         ):
             qstat.stat_master(
@@ -3879,6 +4054,20 @@ class QStatAdapterTests(unittest.TestCase):
                 ["master://master.example:27900"],
             )
 
+        # The query announced itself, and announced output that arrived
+        # before it failed to parse; nothing about the failure is logged
+        # here, since Core reports it as the declared diagnostic below.
+        logged = [call.args[0] for call in debug_msg.call_args_list]
+        self.assertEqual(
+            [entry[:2] for entry in logged],
+            [[qstat.QSTAT_MSG, "Quake II"]] * (2 if output_received else 1),
+        )
+        self.assertEqual(logged[0][2], "Requesting server info.")
+        if output_received:
+            self.assertTrue(
+                logged[1][2].startswith("Received server info. Elapsed time: ")
+            )
+        self.assertNotIn("SECRET UNTRUSTED OUTPUT", str(logged))
         self.assertNotIn("SECRET UNTRUSTED OUTPUT", str(raised.exception))
         self.assertTrue(raised.exception.__suppress_context__)
         # Core logs a declared diagnostic instead of stringifying a failure,
@@ -5018,6 +5207,7 @@ time.sleep(10)
                 "_run_qstat",
                 return_value=QSTAT_SINGLE_SERVER_LIST_XML.encode("utf-8"),
             ) as run_qstat,
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
         ):
             servers = qstat.stat_master(
                 "q2",
@@ -5029,6 +5219,20 @@ time.sleep(10)
             )
         finished = time.monotonic()
 
+        # One request line, one receipt line, one parse line, each carrying
+        # only the adapter prefix, the game name, and a fixed text.
+        logged = [call.args[0] for call in debug_msg.call_args_list]
+        self.assertEqual(
+            [entry[:2] for entry in logged],
+            [[qstat.QSTAT_MSG, "Quake II"]] * 3,
+        )
+        self.assertEqual(logged[0][2], "Requesting server info.")
+        self.assertTrue(
+            logged[1][2].startswith("Received server info. Elapsed time: ")
+        )
+        self.assertTrue(
+            logged[2][2].startswith("Parsed QStat response. Elapsed time: ")
+        )
         self.assertEqual(run_qstat.call_count, 1)
         arguments, keywords = run_qstat.call_args
         self.assertEqual(
@@ -5109,6 +5313,7 @@ time.sleep(10)
         self.assert_qstat_adapter_error(
             b"<qstat><server>SECRET UNTRUSTED OUTPUT</qstat>",
             r"malformed XML",
+            output_received=True,
         )
 
 

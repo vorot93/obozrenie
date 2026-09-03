@@ -1159,21 +1159,15 @@ class App(Gtk.Application):
         with a failure status, and reporting it as its declared diagnostic
         keeps the exception's own text out of the log.
 
-        Recording comes first and the report is best effort, as it is in
-        `core._log_safe_diagnostic`: the failure being recorded can be the
-        output stream itself, and every caller does something after this call
-        — quitting a failed startup, above all — that a second failure out of
-        the report would skip.
+        Recording comes first and the report is best effort: the failure
+        being recorded can be the output stream itself, and every caller does
+        something after this call — quitting a failed startup, above all —
+        that a second failure out of the report would skip, which is exactly
+        what `helpers.log_safe_diagnostic` guarantees.
         """
-        diagnostic = diagnostic_for_exception(error)
         if self.handler_failure is None:
-            self.handler_failure = diagnostic
-        try:
-            helpers.debug_msg([GTK_MSG, diagnostic])
-        except Exception:
-            # The failure is already recorded; a report that cannot be
-            # written is dropped rather than raised into the handler.
-            pass
+            self.handler_failure = diagnostic_for_exception(error)
+        helpers.log_safe_diagnostic(GTK_MSG, error)
 
     def on_activate(self, app):
         """Present the window and, once, run the startup dialogs behind it.

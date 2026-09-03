@@ -39,7 +39,6 @@ from obozrenie import adapters, geoip, helpers, i18n, launch, ping, resources
 from obozrenie.diagnostics import (
     SafeDiagnostic,
     SafeDiagnosticError,
-    diagnostic_for_exception,
 )
 from obozrenie.models import Endpoint, Server
 from obozrenie.network_calls import (
@@ -79,12 +78,9 @@ def _query_failure_message() -> str:
 
 
 def _log_safe_diagnostic(error: BaseException) -> None:
-    """Log one exception as fixed safe text, never as its stringification."""
-    try:
-        helpers.debug_msg([CORE_MSG, diagnostic_for_exception(error)])
-    except Exception:
-        # Diagnostics are best effort and cannot change terminal query state.
-        pass
+    """Report one Core failure as fixed safe text; never raises."""
+    # Diagnostics are best effort and cannot change terminal query state.
+    helpers.log_safe_diagnostic(CORE_MSG, error)
 
 
 def _log_cleanup_diagnostic(error: BaseException) -> None:

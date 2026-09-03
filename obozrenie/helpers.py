@@ -27,7 +27,11 @@ import tomli_w
 import time
 from dataclasses import dataclass
 
-from obozrenie.diagnostics import SafeDiagnostic, SafeDiagnosticError
+from obozrenie.diagnostics import (
+    SafeDiagnostic,
+    SafeDiagnosticError,
+    diagnostic_for_exception,
+)
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
@@ -64,6 +68,17 @@ class SettingsWriteError(SafeDiagnosticError, OSError):
         super().__init__(SafeDiagnostic("Settings file could not be written."))
 
 
+class SettingsBackupError(SafeDiagnosticError, OSError):
+    """A malformed user settings file could not be archived beside itself.
+
+    Declared, suppressed and typed exactly as `SettingsReadError` is, and for
+    the same reasons: the original names the profile directory.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(SafeDiagnostic("Settings backup could not be written."))
+
+
 def debug_msg_str(msg):
     return " | ".join([time.strftime('%F %T')] + [str(part) for part in msg])
 
@@ -71,6 +86,21 @@ def debug_msg_str(msg):
 def debug_msg(msg=None):
     if msg is not None:
         print(debug_msg_str(msg))
+
+
+def log_safe_diagnostic(prefix: str, error: BaseException) -> None:
+    """Log one exception as its fixed safe text, never as its stringification.
+
+    Reporting is best effort. The failure being reported is often the log
+    stream itself, and every caller has something to finish after this call
+    — re-raising a primary failure, quitting the application — that a second
+    failure out of the report would skip, so a report that cannot be written
+    is dropped here rather than raised.
+    """
+    try:
+        debug_msg([prefix, diagnostic_for_exception(error)])
+    except Exception:
+        pass
 
 
 def enforce_array(entry_array):
@@ -170,7 +200,9 @@ def _private_sibling_writer(directory: str, prefix: str):
     The one failure this *does* handle itself is one in this shared setup,
     before the caller ever sees a path to roll back with: it then removes the
     file `mkstemp` just made, matching the stronger of the two current
-    callers' guarantees against a dangling temporary file.
+    callers' guarantees against a dangling temporary file. That removal is
+    best effort, like every rollback in this module: it runs while the setup
+    failure is propagating and must not replace it with its own.
     """
     descriptor, sibling_path = tempfile.mkstemp(dir=directory, prefix=prefix)
     entered = False
@@ -188,38 +220,55 @@ def _private_sibling_writer(directory: str, prefix: str):
         if not entered:
             try:
                 os.unlink(sibling_path)
-            except FileNotFoundError:
+            except OSError:
                 pass
 
 
+def _remove_partial_backup(backup_path: str, reservation: os.stat_result) -> None:
+    """Remove a partial archive while the name still holds this call's file.
+
+    Removal is best effort: it runs while the write failure that left the
+    archive partial is propagating, and a rollback that fails — the profile
+    directory's permissions changed underneath it — must not replace that
+    failure with its own.
+    """
+    try:
+        partial = os.lstat(backup_path)
+        if (partial.st_dev, partial.st_ino) == (
+            reservation.st_dev,
+            reservation.st_ino,
+        ):
+            os.unlink(backup_path)
+    except OSError:
+        pass
+
+
 def _write_invalid_backup(path: str, payload: bytes) -> str:
-    """Archive malformed bytes in a private sibling of their source."""
+    """Archive malformed bytes in a private sibling of their source.
+
+    Every filesystem failure here is declared as `SettingsBackupError`, for
+    the reason the read and save paths declare theirs: the original names
+    the profile directory, and the fixed text is all a failed startup
+    reports.
+    """
     directory = os.path.dirname(path) or "."
     installed = False
-    with _private_sibling_writer(
-        directory, f"{os.path.basename(path)}.invalid-"
-    ) as (backup_path, backup_open_object, reservation):
-        try:
-            backup_open_object.write(payload)
-            backup_open_object.flush()
-            os.fsync(backup_open_object.fileno())
-            # The archive is durable from here on, so a failure in the
-            # implicit close below must not take it away again.
-            installed = True
-        finally:
-            if not installed:
-                # Remove a partial archive only while the name still holds the
-                # very file this call created.
-                try:
-                    partial = os.lstat(backup_path)
-                except FileNotFoundError:
-                    pass
-                else:
-                    if (partial.st_dev, partial.st_ino) == (
-                        reservation.st_dev,
-                        reservation.st_ino,
-                    ):
-                        os.unlink(backup_path)
+    try:
+        with _private_sibling_writer(
+            directory, f"{os.path.basename(path)}.invalid-"
+        ) as (backup_path, backup_open_object, reservation):
+            try:
+                backup_open_object.write(payload)
+                backup_open_object.flush()
+                os.fsync(backup_open_object.fileno())
+                # The archive is durable from here on, so a failure in the
+                # implicit close below must not take it away again.
+                installed = True
+            finally:
+                if not installed:
+                    _remove_partial_backup(backup_path, reservation)
+    except OSError:
+        raise SettingsBackupError from None
     return backup_path
 
 
@@ -269,7 +318,8 @@ def save_table(path, data):
     Every filesystem failure here is declared as `SettingsWriteError` so the
     reason survives a log that may not print the exception's own text. The
     rollback below is a `finally`, so it still removes an unpublished sibling
-    on the way out of a declared failure.
+    on the way out of a declared failure, and it is best effort, so a
+    rollback that fails cannot replace that declared failure with its own.
     """
     path = os.fspath(path)
     directory = os.path.dirname(path)
@@ -298,5 +348,8 @@ def save_table(path, data):
         if temporary_path is not None:
             try:
                 os.unlink(temporary_path)
-            except FileNotFoundError:
+            except OSError:
+                # A sibling that cannot be removed — the directory's
+                # permissions changed underneath this save — is not a reason
+                # to hide the failure propagating through this `finally`.
                 pass

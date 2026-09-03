@@ -467,6 +467,7 @@ class RepositoryHygieneTests(unittest.TestCase):
     # The exact set `obozrenie/` still calls `helpers.<name>` for.
     RETAINED_HELPERS = (
         "debug_msg",
+        "log_safe_diagnostic",
         "enforce_array",
         "deepcopy",
         "sort_dict_table",
@@ -517,6 +518,13 @@ class RepositoryHygieneTests(unittest.TestCase):
 
 
 class LiveContractTests(unittest.TestCase):
+    # What the script prints to stderr for two retried attempts: only an
+    # attempt that is retried announces a retry, so the third never does.
+    RETRIES_BEFORE_THIRD_ATTEMPT = (
+        "Minetest transient failure on attempt 1; retrying.\n"
+        "Minetest transient failure on attempt 2; retrying.\n"
+    )
+
     def live_contracts(self):
         self.assertTrue(LIVE_SCRIPT_PATH.is_file(), "live contract script is missing")
         module_name = "_obozrenie_live_contracts_test"
@@ -727,9 +735,9 @@ class LiveContractTests(unittest.TestCase):
                 ),
             ),
             (
-                "redirect policy",
+                "HTTPS policy",
                 live.http_client.HttpsPolicyError(
-                    SafeDiagnostic("redirect-policy-message-secret")
+                    SafeDiagnostic("https-policy-message-secret")
                 ),
             ),
             (
@@ -967,6 +975,7 @@ class LiveContractTests(unittest.TestCase):
         )
         for name, make_error in failures:
             with self.subTest(failure=name):
+                stderr = io.StringIO()
                 with (
                     mock.patch.object(
                         live.time,
@@ -978,6 +987,7 @@ class LiveContractTests(unittest.TestCase):
                         "get_json",
                         side_effect=[make_error(index) for index in range(3)],
                     ) as get_json,
+                    contextlib.redirect_stderr(stderr),
                     self.assertRaisesRegex(
                         live.LiveContractError,
                         "Minetest.*3 attempts",
@@ -992,6 +1002,10 @@ class LiveContractTests(unittest.TestCase):
 
                 self.assertEqual(len(get_json.call_args_list), 3)
                 self.assertEqual(
+                    stderr.getvalue(),
+                    self.RETRIES_BEFORE_THIRD_ATTEMPT,
+                )
+                self.assertEqual(
                     [call.kwargs for call in get_json.call_args_list],
                     [
                         {"deadline": 220.0},
@@ -1003,6 +1017,7 @@ class LiveContractTests(unittest.TestCase):
     def test_transient_failures_can_recover_on_the_third_attempt(self):
         live = self.live_contracts()
         decode_error = json.JSONDecodeError("bad json", "{", 1)
+        stderr = io.StringIO()
         with (
             mock.patch.object(
                 live.time,
@@ -1018,6 +1033,7 @@ class LiveContractTests(unittest.TestCase):
                     MINETEST_PAYLOAD,
                 ],
             ) as get_json,
+            contextlib.redirect_stderr(stderr),
         ):
             servers = live.fetch_validated(
                 "Minetest",
@@ -1031,9 +1047,11 @@ class LiveContractTests(unittest.TestCase):
             [call.kwargs["deadline"] for call in get_json.call_args_list],
             [130.0, 131.0, 132.0],
         )
+        self.assertEqual(stderr.getvalue(), self.RETRIES_BEFORE_THIRD_ATTEMPT)
 
     def test_text_decode_failures_can_recover_on_the_third_attempt(self):
         live = self.live_contracts()
+        stderr = io.StringIO()
         with (
             mock.patch.object(
                 live.time,
@@ -1059,6 +1077,7 @@ class LiveContractTests(unittest.TestCase):
                     MINETEST_PAYLOAD,
                 ],
             ) as get_json,
+            contextlib.redirect_stderr(stderr),
         ):
             servers = live.fetch_validated(
                 "Minetest",
@@ -1072,6 +1091,7 @@ class LiveContractTests(unittest.TestCase):
             [call.kwargs["deadline"] for call in get_json.call_args_list],
             [130.0, 131.0, 132.0],
         )
+        self.assertEqual(stderr.getvalue(), self.RETRIES_BEFORE_THIRD_ATTEMPT)
 
     def test_decoded_schema_and_all_malformed_entries_fail_without_retry(self):
         live = self.live_contracts()
@@ -1205,15 +1225,22 @@ class LiveContractTests(unittest.TestCase):
     def test_main_closes_pools_once_after_success_exception_and_base_exception(self):
         live = self.live_contracts()
         success = {"minetest": [], "rigsofrods": []}
+        stdout = io.StringIO()
         with (
             mock.patch.object(live, "run_contracts", return_value=success),
             mock.patch.object(
                 live.network_calls,
                 "close_network_call_pools",
             ) as close,
+            contextlib.redirect_stdout(stdout),
         ):
             self.assertIs(live.main(), success)
         self.assertEqual(len(close.call_args_list), 1)
+        self.assertEqual(
+            stdout.getvalue(),
+            "minetest: 0 valid server record(s)\n"
+            "rigsofrods: 0 valid server record(s)\n",
+        )
 
         class StopLiveContract(BaseException):
             pass

@@ -358,7 +358,7 @@ class SettingsPersistenceTests(unittest.TestCase):
                 {path.name},
             )
 
-    def test_load_user_table_propagates_mkstemp_exhaustion_without_touching_source(self):
+    def test_load_user_table_declares_mkstemp_exhaustion_without_touching_source(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.toml"
             payload = b'[common]\nsecret-exhaustion-payload = "unterminated\n'
@@ -372,10 +372,14 @@ class SettingsPersistenceTests(unittest.TestCase):
                 "mkstemp",
                 side_effect=failure,
             ):
-                with self.assertRaises(FileExistsError) as caught:
+                with self.assertRaises(helpers.SettingsBackupError) as caught:
                     helpers.load_user_table(path)
 
-            self.assertIs(caught.exception, failure)
+            # The archive path declares its failure exactly as the read and
+            # save paths do: the original, which names the directory, is
+            # suppressed rather than chained.
+            self.assertIsNone(caught.exception.__cause__)
+            self.assertTrue(caught.exception.__suppress_context__)
             after = path.stat()
             self.assertEqual(path.read_bytes(), payload)
             self.assertEqual(
@@ -425,10 +429,10 @@ class SettingsPersistenceTests(unittest.TestCase):
                 "fdopen",
                 side_effect=open_partial_writer,
             ):
-                with self.assertRaises(OSError) as caught:
+                with self.assertRaises(helpers.SettingsBackupError) as caught:
                     helpers.load_user_table(path)
 
-            self.assertIs(caught.exception, failure)
+            self.assertIsNone(caught.exception.__cause__)
             self.assertEqual(partial_writes, [len(payload) // 2])
             after = path.stat()
             self.assertEqual(path.read_bytes(), payload)
@@ -479,10 +483,10 @@ class SettingsPersistenceTests(unittest.TestCase):
                 "fdopen",
                 side_effect=open_failing_closer,
             ):
-                with self.assertRaises(OSError) as caught:
+                with self.assertRaises(helpers.SettingsBackupError) as caught:
                     helpers.load_user_table(path)
 
-            self.assertIs(caught.exception, failure)
+            self.assertIsNone(caught.exception.__cause__)
             # The payload was written, flushed and fsynced before the close
             # failed, so the archive is already durable and must survive.
             backups = list(path.parent.glob(f"{path.name}.invalid-*"))
@@ -524,6 +528,94 @@ class SettingsPersistenceTests(unittest.TestCase):
         self.assertIsNone(error.__cause__)
         self.assertTrue(error.__suppress_context__)
         self.assertNotIn(str(path), str(error))
+
+    def test_load_user_table_declares_a_backup_failure_without_the_path(self):
+        # A malformed profile whose archive cannot be written is the one
+        # settings filesystem failure that used to reach the user as a bare
+        # type name; it is declared like the read and save failures are.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.toml"
+            payload = b'[common]\nsecret-backup-payload = "unterminated\n'
+            path.write_bytes(payload)
+            failure = PermissionError(13, "Permission denied", str(path))
+
+            with mock.patch.object(
+                helpers.tempfile, "mkstemp", side_effect=failure
+            ):
+                with self.assertRaises(helpers.SettingsBackupError) as caught:
+                    helpers.load_user_table(path)
+
+            self.assertEqual(path.read_bytes(), payload)
+            self.assertEqual(
+                {entry.name for entry in path.parent.iterdir()},
+                {path.name},
+            )
+
+        error = caught.exception
+        self.assertIsInstance(error, OSError)
+        self.assertEqual(
+            diagnostics.diagnostic_for_exception(error),
+            diagnostics.SafeDiagnostic("Settings backup could not be written."),
+        )
+        self.assertEqual(str(error), "Settings backup could not be written.")
+        self.assertIsNone(error.__cause__)
+        self.assertTrue(error.__suppress_context__)
+        self.assertNotIn(str(path), str(error))
+
+    def test_backup_rollback_failure_never_masks_the_declared_error(self):
+        # A partial archive whose removal fails as well — a permission change
+        # on the profile directory in the meantime — still reports the write
+        # failure it was rolling back from, never the rollback's own.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.toml"
+            payload = b'[common]\nsecret-rollback-payload = "unterminated\n'
+            path.write_bytes(payload)
+            write_failure = OSError(28, "No space left on device")
+            rollback_failure = PermissionError(13, "Permission denied")
+
+            with (
+                mock.patch.object(
+                    helpers.os, "fsync", side_effect=write_failure
+                ),
+                mock.patch.object(
+                    helpers.os, "unlink", side_effect=rollback_failure
+                ) as unlink,
+                self.assertRaises(helpers.SettingsBackupError) as caught,
+            ):
+                helpers.load_user_table(path)
+
+            unlink.assert_called_once()
+            self.assertIsNone(caught.exception.__cause__)
+            # The declaration suppresses the write failure it was rolling
+            # back from — not the rollback's own, which a rollback that did
+            # not tolerate it would have put in its place.
+            self.assertIs(caught.exception.__context__, write_failure)
+            self.assertEqual(path.read_bytes(), payload)
+
+    def test_save_table_rollback_failure_never_masks_the_declared_error(self):
+        # A permission change on the profile directory between the temporary
+        # write and the rollback makes the unlink fail as well; the caller
+        # still receives the declared write failure, not the rollback's raw
+        # PermissionError.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.toml"
+            write_failure = OSError(28, "No space left on device")
+            rollback_failure = PermissionError(13, "Permission denied")
+
+            with (
+                mock.patch.object(
+                    helpers.os, "fsync", side_effect=write_failure
+                ),
+                mock.patch.object(
+                    helpers.os, "unlink", side_effect=rollback_failure
+                ) as unlink,
+                self.assertRaises(helpers.SettingsWriteError) as caught,
+            ):
+                helpers.save_table(path, {"table": {"value": 1}})
+
+            unlink.assert_called_once()
+            self.assertIsNone(caught.exception.__cause__)
+            self.assertIs(caught.exception.__context__, write_failure)
 
     def test_save_table_declares_a_write_failure_without_the_path(self):
         with tempfile.TemporaryDirectory() as directory:

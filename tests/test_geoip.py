@@ -1,7 +1,4 @@
 import contextlib
-import gzip
-import http.client
-import io
 import os
 import socket
 import stat
@@ -14,7 +11,6 @@ from unittest import mock
 
 import maxminddb
 import requests
-import urllib3
 from requests.structures import CaseInsensitiveDict
 
 from obozrenie import (
@@ -1045,7 +1041,8 @@ class DatabaseDownloadTests(unittest.TestCase):
         # when another thread releases it, so what it proves is that the
         # watchdog fires on time, releases the read from outside it, and
         # reports the deadline once. That the bound holds over the transport
-        # which really enforces it is `RealTransportDownloadTests`.
+        # which really enforces it is `RealTransportDownloadTests` in
+        # `tests/test_transport.py`.
         validate = self.stub_validation()
         clock = SimpleNamespace(now=1000.0)
         self.enterContext(
@@ -1100,6 +1097,117 @@ class DatabaseDownloadTests(unittest.TestCase):
             ],
         )
 
+    def test_header_wait_that_runs_out_reports_the_deadline_once(self):
+        # The wait for a response can return a few microseconds before the
+        # clock reaches the deadline, so neither the watchdog nor the
+        # transfer's own check has recorded expiry yet. A wait that runs out
+        # is the deadline all the same, and it is reported exactly once.
+        validate = self.stub_validation()
+        clock = SimpleNamespace(now=1000.0)
+        self.enterContext(
+            mock.patch.object(
+                geoip,
+                "time",
+                SimpleNamespace(monotonic=lambda: clock.now),
+            )
+        )
+        self.enterContext(
+            mock.patch.object(geoip._ResponseOpener, "start", lambda self: None)
+        )
+        self.enterContext(
+            mock.patch.object(
+                geoip._ResponseOpener, "claim", lambda self, timeout: None
+            )
+        )
+        transfer = geoip.GeoIPDatabaseDownload(self.destination, clock.now + 0.5)
+
+        self.assertIsNone(transfer.run())
+
+        validate.assert_not_called()
+        self.assertEqual(self.entries(), [])
+        self.assertEqual(
+            self.debug_msg.call_args_list,
+            [
+                mock.call([
+                    geoip._GEOIP_MSG,
+                    SafeDiagnostic("GeoIP download exceeded its time limit."),
+                ])
+            ],
+        )
+
+    def test_cancellation_before_the_open_arms_and_starts_nothing(self):
+        # A cancellation that lands after `run()`'s first check but before
+        # the deadline is armed is seen in `_begin`: no watchdog, no opener
+        # thread, no request, and nothing to report.
+        validate = self.stub_validation()
+        opened = self.install(
+            _FakeResponse(_forbidden_stream("a cancelled transfer read a body"))
+        )
+        transfer = self.make_transfer()
+        real_opener = geoip._ResponseOpener
+
+        class CancellingOpener(real_opener):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                transfer.cancel()
+
+            def start(self):
+                raise AssertionError("a cancelled transfer started its opener")
+
+        with (
+            mock.patch.object(geoip, "_ResponseOpener", CancellingOpener),
+            mock.patch.object(
+                geoip.threading,
+                "Timer",
+                side_effect=AssertionError(
+                    "a cancelled transfer armed its watchdog"
+                ),
+            ) as timer,
+        ):
+            self.assertIsNone(transfer.run())
+
+        timer.assert_not_called()
+        self.assertEqual(opened.calls, [])
+        validate.assert_not_called()
+        self.assertEqual(self.entries(), [])
+        self.debug_msg.assert_not_called()
+
+    def test_a_descriptor_that_will_not_close_cannot_escape_the_worker(self):
+        # `os.fdopen` failing leaves the transfer holding the raw descriptor;
+        # if closing that descriptor fails as well, the worker still returns
+        # None over one reported reason instead of dying on the close.
+        validate = self.stub_validation()
+        self.install(_FakeResponse((b"body",)))
+        transfer = self.make_transfer()
+        open_failure = OSError(24, "Too many open files")
+        close_failure = OSError(5, "Input/output error")
+
+        with (
+            mock.patch.object(geoip.os, "fdopen", side_effect=open_failure),
+            mock.patch.object(
+                geoip.os, "close", side_effect=close_failure
+            ) as close,
+        ):
+            result = transfer.run()
+        # The close that failed above never released the descriptor.
+        close.assert_called_once()
+        os.close(close.call_args.args[0])
+
+        self.assertIsNone(result)
+        validate.assert_not_called()
+        self.assertEqual(self.entries(), [])
+        self.assertEqual(
+            self.debug_msg.call_args_list,
+            [
+                mock.call([
+                    geoip._GEOIP_MSG,
+                    SafeDiagnostic(
+                        "Unexpected OSError; exception details omitted."
+                    ),
+                ])
+            ],
+        )
+
     def test_a_process_out_of_threads_fails_the_transfer_it_cannot_bound(
         self,
     ):
@@ -1111,7 +1219,11 @@ class DatabaseDownloadTests(unittest.TestCase):
         refused = SafeDiagnostic(
             "GeoIP download could not start a helper thread."
         )
-        for refuse in ("every helper", geoip._OPENER_THREAD_NAME):
+        for refuse in (
+            "every helper",
+            geoip._WATCHDOG_THREAD_NAME,
+            geoip._OPENER_THREAD_NAME,
+        ):
             with self.subTest(refuse=refuse):
                 self.debug_msg.reset_mock()
                 with contextlib.ExitStack() as stack:
@@ -1416,318 +1528,6 @@ class DatabaseDownloadTests(unittest.TestCase):
                 ])
             ],
         )
-
-
-def _header(declared, *extra_lines):
-    """Build one 200 response header declaring `declared` body bytes."""
-    lines = ["HTTP/1.1 200 OK", f"Content-Length: {declared}", *extra_lines]
-    return ("\r\n".join(lines) + "\r\n\r\n").encode("ascii")
-
-
-class _FakePeer:
-    """Stand in for one connected socket, without opening one.
-
-    A peer hands its prepared wire response out one byte per read, so
-    `http.client` and `urllib3` perform exactly the byte-granular reads a
-    trickling server provokes: one read per header byte, and a body read
-    that can return as soon as a single byte has arrived. Once the prepared
-    bytes run out the peer stalls — neither closed nor sending — until its
-    read side is shut down or its own bounded stall passes, which is what a
-    silent connection looks like from above.
-    """
-
-    def __init__(self, wire, *, interval=0.0, slow_from=0, stall=1.0):
-        self.wire = bytes(wire)
-        self.interval = interval
-        self.stall = stall
-        self.reads = 0
-        self.closes = 0
-        self.closed = False
-        self.shut = threading.Event()
-        self.body_started = threading.Event()
-        self.file_closed = threading.Event()
-        self._slow_from = slow_from
-        self._served = 0
-
-    # The part of the socket protocol `http.client` and `urllib3` use.
-    def makefile(self, mode="rb", buffering=None):
-        return io.BufferedReader(_PeerReader(self))
-
-    def settimeout(self, value):
-        """Accept the timeout urllib3 sets; this peer bounds itself."""
-
-    def shutdown(self, how):
-        """Shut this peer's read side down, exactly as `SHUT_RD` does."""
-        self.shut.set()
-
-    def close(self):
-        self.closes += 1
-        self.closed = True
-        self.shut.set()
-
-    def serve(self) -> bytes:
-        """Return one byte, end of file, or block as a stalled peer does."""
-        self.reads += 1
-        if self.shut.is_set():
-            return b""
-        if self._served >= len(self.wire):
-            self.shut.wait(self.stall)
-            return b""
-        if self._served >= self._slow_from:
-            self.body_started.set()
-            if self.interval and self.shut.wait(self.interval):
-                return b""
-        served = self.wire[self._served:self._served + 1]
-        self._served += 1
-        return served
-
-
-class _PeerReader(io.RawIOBase):
-    """The connection file `http.client` reads one peer through."""
-
-    def __init__(self, peer):
-        super().__init__()
-        self._peer = peer
-
-    def readable(self):
-        return True
-
-    def close(self):
-        self._peer.file_closed.set()
-        super().close()
-
-    def readinto(self, buffer):
-        if self.closed:
-            raise ValueError("read of a closed connection file")
-        if self._peer.closed:
-            raise OSError("read from a closed socket")
-        served = self._peer.serve()
-        if not served:
-            return 0
-        buffer[0] = served[0]
-        return 1
-
-
-class _FakePeerAdapter(requests.adapters.HTTPAdapter):
-    """Serve one peer through the transport classes Requests really uses.
-
-    Everything below this adapter is the shipped stack: `http.client` parses
-    the status line and the headers, `urllib3` owns the body reads and the
-    read-side shutdown, and `requests` wraps both. Only the socket is a
-    fake, so no port is ever opened and no timing depends on one.
-    """
-
-    def __init__(self, peer):
-        super().__init__()
-        self._peer = peer
-
-    def send(self, request, **_options):
-        peer = self._peer
-        parsed = http.client.HTTPResponse(
-            peer,
-            method=request.method,
-            url=request.url,
-        )
-        # Reading the status line and the headers happens here, inside the
-        # send a caller waits for, exactly as it does over a real socket.
-        parsed.begin()
-        raw = urllib3.HTTPResponse(
-            body=parsed,
-            headers=urllib3.HTTPHeaderDict(parsed.msg.items()),
-            status=parsed.status,
-            version=parsed.version,
-            reason=parsed.reason,
-            preload_content=False,
-            decode_content=False,
-            original_response=parsed,
-            enforce_content_length=True,
-            request_method=request.method,
-            request_url=request.url,
-            connection=peer,
-            sock_shutdown=peer.shutdown,
-        )
-        return self.build_response(request, raw)
-
-
-class RealTransportDownloadTests(unittest.TestCase):
-    """The transfer's bounds, proved against the stack that enforces them.
-
-    `DatabaseDownloadTests` replaces the response; these tests replace only
-    the socket, so `requests`, `urllib3` and `http.client` are the shipped
-    classes — the ones whose buffered reads and buffer locks decide whether
-    a deadline or a cancellation can end a read at all.
-    """
-
-    URL = "https://peer.invalid/dbip-country.mmdb"
-
-    def setUp(self):
-        self.directory = self.enterContext(tempfile.TemporaryDirectory())
-        self.destination = os.path.join(self.directory, "dbip-country.mmdb")
-        self.debug_msg = self.enterContext(
-            mock.patch.object(helpers, "debug_msg")
-        )
-
-    def serve(self, peer):
-        """Answer every HTTPS request of this test from one fake peer."""
-        session_class = requests.Session
-
-        def open_session():
-            session = session_class()
-            session.mount("https://", _FakePeerAdapter(peer))
-            return session
-
-        self.enterContext(
-            mock.patch.object(http_client.requests, "Session", open_session)
-        )
-        return peer
-
-    def transfer(self, seconds, **options):
-        return geoip.GeoIPDatabaseDownload(
-            self.destination,
-            time.monotonic() + seconds,
-            url=self.URL,
-            **options,
-        )
-
-    def stub_validation(self):
-        return self.enterContext(
-            mock.patch.object(geoip, "_validate_database")
-        )
-
-    def entries(self):
-        return sorted(os.listdir(self.directory))
-
-    def assert_reported_the_deadline(self):
-        self.assertEqual(
-            self.debug_msg.call_args_list,
-            [
-                mock.call([
-                    geoip._GEOIP_MSG,
-                    SafeDiagnostic("GeoIP download exceeded its time limit."),
-                ])
-            ],
-        )
-
-    def test_trickling_body_cannot_outlast_the_absolute_deadline(self):
-        # One byte every 10 ms satisfies every read wait without ever
-        # completing a 64 KiB buffered chunk, so a transfer that reads whole
-        # chunks reaches no check of its own and ends only when this peer
-        # stops — three seconds past a deadline of four tenths of one.
-        validate = self.stub_validation()
-        header = _header(100000)
-        peer = self.serve(
-            _FakePeer(
-                header + b"x" * 200,
-                interval=0.01,
-                slow_from=len(header),
-            )
-        )
-        transfer = self.transfer(0.4)
-
-        started = time.monotonic()
-        result = transfer.run()
-        elapsed = time.monotonic() - started
-
-        self.assertIsNone(result)
-        self.assertTrue(peer.body_started.is_set())
-        self.assertLess(elapsed, 0.9)
-        validate.assert_not_called()
-        self.assertEqual(self.entries(), [])
-        self.assert_reported_the_deadline()
-
-    def test_cancel_returns_without_waiting_for_the_blocked_reader(self):
-        # `Response.close()` closes the buffered reader first, and CPython's
-        # buffered close takes the very lock the worker's read holds, so a
-        # cancellation that closes would wait out that read on the caller's
-        # own thread — here the thread pressing "Not now".
-        validate = self.stub_validation()
-        header = _header(100000)
-        peer = self.serve(
-            _FakePeer(
-                header + b"x" * 40,
-                interval=0.05,
-                slow_from=len(header),
-            )
-        )
-        transfer = self.transfer(30.0)
-        outcome = []
-
-        worker = threading.Thread(
-            target=lambda: outcome.append(transfer.run()),
-            name="geoip-transfer",
-            daemon=True,
-        )
-        worker.start()
-        try:
-            self.assertTrue(peer.body_started.wait(1.0))
-            started = time.monotonic()
-            transfer.cancel()
-            returned_in = time.monotonic() - started
-            worker.join(1.0)
-            stopped_in = time.monotonic() - started
-        finally:
-            peer.shut.set()
-            worker.join(1.0)
-
-        self.assertLess(returned_in, 0.1)
-        self.assertFalse(worker.is_alive())
-        self.assertLess(stopped_in, 0.5)
-        self.assertEqual(outcome, [None])
-        validate.assert_not_called()
-        self.assertEqual(self.entries(), [])
-        self.debug_msg.assert_not_called()
-
-    def test_trickling_header_phase_cannot_outlast_the_deadline(self):
-        # A peer that trickles its status line holds whichever thread
-        # entered the HTTP boundary, and there is no response to interrupt
-        # yet, so only a worker that can abandon that thread is bounded.
-        validate = self.stub_validation()
-        peer = self.serve(_FakePeer(_header(4) + b"body", interval=0.05))
-        transfer = self.transfer(0.3)
-
-        started = time.monotonic()
-        result = transfer.run()
-        elapsed = time.monotonic() - started
-        # The abandoned helper finishes the hop it began; it must close what
-        # it receives and install nothing.
-        peer.interval = 0.0
-
-        self.assertIsNone(result)
-        self.assertLess(elapsed, 0.9)
-        self.assertTrue(peer.file_closed.wait(1.0))
-        self.assertGreaterEqual(peer.closes, 1)
-        validate.assert_not_called()
-        self.assertEqual(self.entries(), [])
-        self.assert_reported_the_deadline()
-
-    def test_byte_granular_reads_reassemble_one_decoded_body(self):
-        validated = []
-        self.enterContext(
-            mock.patch.object(geoip, "_validate_database", validated.append)
-        )
-        body = b"mmdb-bytes-" * 50
-        compressed = gzip.compress(body)
-        self.serve(
-            _FakePeer(
-                _header(len(compressed), "Content-Encoding: gzip")
-                + compressed
-            )
-        )
-        transfer = self.transfer(5.0)
-        progress = []
-
-        result = transfer.run(
-            lambda downloaded, total: progress.append((downloaded, total))
-        )
-
-        self.assertEqual(result, self.destination)
-        [validated_path] = validated
-        self.assertNotEqual(validated_path, self.destination)
-        with open(self.destination, "rb") as handle:
-            self.assertEqual(handle.read(), body)
-        self.assertEqual(progress[-1], (len(body), len(compressed)))
-        self.assertEqual(self.entries(), [os.path.basename(self.destination)])
-        self.debug_msg.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import dataclasses
 import unittest
 
 from obozrenie.diagnostics import (
@@ -50,6 +51,24 @@ class SafeDiagnosticTests(unittest.TestCase):
         ):
             with self.subTest(value=value):
                 self.assertEqual(str(safe_url(value)), "<invalid URL>")
+
+    def test_safe_diagnostic_is_frozen_and_slotted(self):
+        # A diagnostic is handed around by identity and logged later, so
+        # nothing may change its text or hang a payload on it in between.
+        diagnostic = SafeDiagnostic("Fixed text.")
+
+        with self.assertRaises(dataclasses.FrozenInstanceError):
+            diagnostic.text = "changed"
+        # A frozen, slotted dataclass refuses a new attribute with
+        # `FrozenInstanceError`, or with `TypeError` on interpreters whose
+        # `slots=True` rebuild leaves the generated `__setattr__` holding the
+        # pre-rebuild class, so its `super(cls, self)` rejects the instance
+        # (CPython gh-90562); either way nothing is stored.
+        with self.assertRaises((AttributeError, TypeError)):
+            diagnostic.payload = "secret"
+        self.assertFalse(hasattr(diagnostic, "payload"))
+        self.assertFalse(hasattr(diagnostic, "__dict__"))
+        self.assertEqual(diagnostic, SafeDiagnostic("Fixed text."))
 
     def test_unexpected_exception_diagnostic_never_calls_str_or_repr(self):
         class HostileError(Exception):

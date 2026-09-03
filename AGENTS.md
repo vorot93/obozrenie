@@ -85,6 +85,12 @@ Lifecycle focused suites:
     .venv/bin/python -m unittest tests.test_adapters.QStatProcessSupervisorTests -v
     .venv/bin/python -m unittest tests.test_geoip.DatabaseDownloadTests tests.test_gtk_behavior.GeoIPDownloadCoordinatorTests tests.test_gtk_behavior.ApplicationShutdownTests -v
 
+The offline run prints nothing but the unittest summary: a test that reaches
+code which logs or prints captures that output
+(`mock.patch.object(helpers, "debug_msg")`, `contextlib.redirect_stdout`,
+`contextlib.redirect_stderr`) and asserts it, so a stray line in a run is a
+test that forgot to.
+
 No test performs real network I/O. `tests/test_networking.py` replaces
 `obozrenie.http_client.requests.Session` with its `_FakeSession` seam (a list
 of scripted responses/exceptions, or a `request=` handler when the number of
@@ -96,20 +102,27 @@ and closed. Adapter suites inherit the same guard from
 `requests.Session` and `requests.get` to raise outright. Route new HTTP-facing
 tests through that seam rather than a real endpoint.
 
-`RealTransportDownloadTests` in `tests/test_geoip.py` is the one suite that
-runs the shipped transport instead of replacing it, because the GeoIP
-transfer's bounds are properties of `http.client`, `urllib3` and `requests`
-themselves — buffered reads, the buffer lock a close waits for, and the
-read-side shutdown that does not. It mounts a `requests.adapters.HTTPAdapter`
-subclass on the owned session whose `send` builds a real
-`http.client.HTTPResponse` over a `_FakePeer`: an object implementing the part
-of the socket protocol those classes use (`makefile`, `settimeout`,
-`shutdown`, `close`) and handing out a prepared wire response one byte per
-read. No socket, port, or thread of the peer's own is involved, timings come
-from the peer's own interval, and every wait is bounded at one second. A
-behavioural claim about how fast a read, a deadline, or a cancellation ends
-belongs in that suite; a claim about the transfer's own bookkeeping belongs in
-`DatabaseDownloadTests`, whose response fakes cannot see the transport.
+`tests/test_transport.py` holds the only suites that run the shipped
+transport instead of replacing it — `RealTransportDownloadTests` for the
+GeoIP transfer and `RealTransportJsonTests` for `get_json` — because their
+bounds and byte-granular body reads are properties of `http.client`,
+`urllib3` and `requests` themselves: buffered reads, the buffer lock a close
+waits for, the read-side shutdown that does not, and chunked framing and
+content decoding under `raw.read1`. They mount a
+`requests.adapters.HTTPAdapter` subclass on the owned session whose `send`
+builds a real `http.client.HTTPResponse` over a `FakePeer`: an object
+implementing the part of the socket protocol those classes use (`makefile`,
+`settimeout`, `shutdown`, `close`) and handing out a prepared wire response
+one byte per read. No socket, port, or thread of the peer's own is involved,
+timings come from the peer's own interval, and every wait is bounded at one
+second. A behavioural claim about how fast a read, a deadline, or a
+cancellation ends, or about what the shipped stack delivers for a given wire
+body, belongs there; a claim about the transfer's own bookkeeping belongs in
+`DatabaseDownloadTests` in `tests/test_geoip.py`, whose response fakes cannot
+see the transport. Test modules never import one another: the runtime suite
+is run by discovery from its own directory, where `tests/tests.py` shadows
+the `tests` package name, so shared fixtures live in the module that uses
+them.
 
 macOS, when the suite imports GTK (`IconLoadingTests`, `CountryEmojiTests`):
 

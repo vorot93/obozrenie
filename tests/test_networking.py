@@ -123,6 +123,27 @@ class _ResponseBody(io.BytesIO):
         self.was_read = True
         return super().read(size)
 
+    def read1(self, size=-1, decode_content=None):
+        # urllib3's `HTTPResponse.read1` signature: one transport read.
+        self.was_read = True
+        return super().read1(size)
+
+
+class _TransportReadBody(_ResponseBody):
+    """A raw stream that serves one prepared piece per transport read."""
+
+    def __init__(self, pieces):
+        super().__init__(b"".join(pieces))
+        self._pieces = list(pieces)
+        self.read1_calls = []
+
+    def read1(self, size=-1, decode_content=None):
+        self.read1_calls.append((size, decode_content))
+        self.was_read = True
+        if not self._pieces:
+            return b""
+        return self._pieces.pop(0)
+
 
 class _HttpResponse(requests.Response):
     def __init__(self):
@@ -1053,7 +1074,7 @@ class HttpClientTests(unittest.TestCase):
             ),
             (
                 policy_error,
-                http_client.HttpFailureKind.REDIRECT_POLICY,
+                http_client.HttpFailureKind.HTTPS_POLICY,
                 None,
             ),
             (status_error, http_client.HttpFailureKind.STATUS, 503),
@@ -1140,6 +1161,11 @@ class HttpClientTests(unittest.TestCase):
         stages = []
         recording = False
 
+        class LifecycleBody(_TransportReadBody):
+            def read1(self, size=-1, decode_content=None):
+                response.record("bounded stream")
+                return super().read1(size, decode_content)
+
         class LifecycleResponse(_HttpResponse):
             def __init__(self):
                 self._encoding_value = None
@@ -1147,7 +1173,7 @@ class HttpClientTests(unittest.TestCase):
                 self.status_code = 200
                 self.reason = "OK"
                 self.url = "https://example.invalid/servers"
-                self.raw = _ResponseBody(b"")
+                self.raw = LifecycleBody([b'{"servers": []}'])
 
             def record(self, stage):
                 if recording:
@@ -1160,12 +1186,6 @@ class HttpClientTests(unittest.TestCase):
             def raise_for_status(self):
                 self.record("status")
                 return super().raise_for_status()
-
-            def iter_content(self, chunk_size=1, decode_unicode=False):
-                self.record("bounded stream")
-                self.assert_chunk_size = chunk_size
-                self.assert_decode_unicode = decode_unicode
-                yield b'{"servers": []}'
 
             @property
             def encoding(self):
@@ -1211,6 +1231,9 @@ class HttpClientTests(unittest.TestCase):
                 "request and redirects",
                 "response context",
                 "status",
+                # One transport read delivers the body; the next reports
+                # its end.
+                "bounded stream",
                 "bounded stream",
                 "encoding",
                 "JSON",
@@ -1223,8 +1246,7 @@ class HttpClientTests(unittest.TestCase):
         self.assertIsNot(worker, caller_thread)
         self.assertTrue(worker.daemon)
         self.assertEqual(worker.name, "obozrenie-http")
-        self.assertEqual(response.assert_chunk_size, 64 * 1024)
-        self.assertIs(response.assert_decode_unicode, False)
+        self.assertEqual(response.raw.read1_calls, [(64 * 1024, True)] * 2)
         self.assertEqual(
             session.calls,
             [
@@ -1433,9 +1455,9 @@ class HttpClientTests(unittest.TestCase):
         self.assertEqual(len(session.calls), 1)
         self.assertTrue(session.was_closed)
 
-    def test_deadline_between_chunks_wins_before_size_validation(self):
+    def test_deadline_between_transport_reads_wins_before_size_validation(self):
         response = _http_response(b"")
-        response.iter_content = mock.Mock(return_value=iter((b"null", b" ")))
+        response.raw = _TransportReadBody([b"null", b" "])
         error, _session, monotonic = self._call_with_deadline_clock(
             response,
             (-1, -1, -1, -1, 0),
@@ -1445,7 +1467,9 @@ class HttpClientTests(unittest.TestCase):
         self.assertIs(type(error), requests.Timeout)
         self.assertTrue(response.was_closed)
         self.assertEqual(monotonic.call_count, 5)
-        response.iter_content.assert_called_once_with(chunk_size=64 * 1024)
+        # The deadline is checked after every transport read, so the piece
+        # that would breach the size limit is read but never counted.
+        self.assertEqual(response.raw.read1_calls, [(64 * 1024, True)] * 2)
 
     def test_deadline_before_decode_wins_over_unknown_encoding(self):
         response = _http_response(b"null", encoding="unknown-secret-codec")
@@ -2137,6 +2161,27 @@ class HttpClientTests(unittest.TestCase):
         self.assertEqual(second_session.calls, [secure_call])
         self.assertTrue(first_session.was_closed)
         self.assertTrue(second_session.was_closed)
+
+    def test_get_json_reads_the_body_one_transport_read_at_a_time(self):
+        # `iter_content` fills a whole 64 KiB chunk before it yields, so a
+        # master that trickles bytes would hold the pool slot past every
+        # deadline check between chunks. The body is read through
+        # `raw.read1`, which returns after one transport read, and the
+        # buffered path is never used.
+        body = _TransportReadBody([b'{"ser', b'vers": ', b'[]}'])
+        response = _http_response(b"")
+        response.raw = body
+        response.iter_content = mock.Mock(
+            side_effect=AssertionError("body read through iter_content")
+        )
+        self._set_sessions(_FakeSession((response,)))
+
+        result = http_client.get_json("https://example.invalid/servers")
+
+        self.assertEqual(result, {"servers": []})
+        self.assertEqual(body.read1_calls, [(64 * 1024, True)] * 4)
+        response.iter_content.assert_not_called()
+        self.assertTrue(response.was_closed)
 
     def test_malformed_json_is_one_isolated_decode_failure(self):
         response = _http_response(b'{"servers": ]')

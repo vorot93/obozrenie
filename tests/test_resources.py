@@ -405,8 +405,8 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                     "icons", "hicolor", "scalable", "apps", filename
                 )
             )
-            with self.subTest(filename=filename):
-                for size in (32, 256):
+            for size in (32, 256):
+                with self.subTest(filename=filename, size=size):
                     pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
                         icon_path, size, size
                     )

@@ -3236,6 +3236,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         callbacks = []
         launched = []
         messages = []
+        abort = StartAbort("thread start interrupted after launch")
 
         def callback(game):
             callbacks.append((game, threading.get_ident()))
@@ -3255,7 +3256,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             def start(self):
                 super().start()
                 launched.append(self)
-                raise StartAbort("thread start interrupted after launch")
+                raise abort
 
         raised = None
         try:
@@ -3278,7 +3279,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             for thread in launched:
                 thread.join(1)
 
-        self.assertIs(type(raised), StartAbort)
+        self.assertIs(raised, abort)
         self.assertEqual(
             _diagnostic_texts(messages),
             ["Unexpected StartAbort; exception details omitted."],
@@ -3801,11 +3802,12 @@ class CoreLifecycleTests(CoreQueryTestCase):
             self.seed_servers(core, servers, game=game)
         real_fail_query = core.game_table.fail_query
         cancelled = []
+        abort = CancelAbort("close interrupted")
 
         def fail_query(game, token, error):
             cancelled.append(game)
             if len(cancelled) == 1:
-                raise CancelAbort("close interrupted")
+                raise abort
             return real_fail_query(game, token, error)
 
         callbacks = []
@@ -3831,7 +3833,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
                 worker.join(1)
 
         self.assertEqual([worker for worker in workers if worker.is_alive()], [])
-        self.assertIs(type(raised), CancelAbort)
+        self.assertIs(raised, abort)
         self.assertEqual(len(cancelled), 2)
         self.assertNotEqual(cancelled[0], cancelled[1])
         interrupted, retried = cancelled
@@ -4133,6 +4135,123 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertIs(
             core.game_table.get_query_status("g"),
             core.game_table.QUERY_STATUS.READY,
+        )
+
+    def test_join_until_skips_a_registered_thread_that_has_not_launched(self):
+        # Admission registers the worker thread before it starts, so a join
+        # that runs in between finds a thread with no identity: it has
+        # nothing it can wait for, returns at once, and leaves the thread
+        # tracked, because it is about to run and only its admitting caller
+        # could prove otherwise.
+        entered = {"g": threading.Event()}
+        release = threading.Event()
+        core = self.make_core(self.blocking_adapter(entered, release))
+        joins = []
+        launched = []
+        joins_before_launch = []
+
+        class ObservedLaunchThread(threading.Thread):
+            def start(self):
+                started = time.monotonic()
+                core.join_until(time.monotonic() + 1.0)
+                joins_before_launch.append(
+                    (time.monotonic() - started, list(joins))
+                )
+                super().start()
+                launched.append(self)
+
+            def join(self, timeout=None):
+                joins.append(timeout)
+                super().join(timeout)
+
+        callbacks = []
+        try:
+            with mock.patch(
+                "obozrenie.core.threading.Thread", ObservedLaunchThread
+            ):
+                admitted = core.update_server_list("g", callbacks.append)
+            self.assertTrue(entered["g"].wait(1))
+            # Once running, that same registration is what a join waits on.
+            core.join_until(time.monotonic() + 0.2)
+            joined_while_blocked = list(joins)
+        finally:
+            release.set()
+            for thread in launched:
+                thread.join(1)
+
+        self.assertIs(admitted, True)
+        [(elapsed_before_launch, seen_before_launch)] = joins_before_launch
+        self.assertLess(elapsed_before_launch, 0.5)
+        self.assertEqual(seen_before_launch, [])
+        self.assertEqual(len(joined_while_blocked), 1)
+        self.assertGreater(joined_while_blocked[0], 0)
+        self.assertLessEqual(joined_while_blocked[0], 0.2)
+        self.assertFalse(launched[0].is_alive())
+        self.assertEqual(callbacks, ["g"])
+
+    def test_late_worker_failure_after_close_is_logged_but_never_published(self):
+        completion_won = threading.Event()
+        release_worker = threading.Event()
+
+        class LateFailureAttempt(core_module._QueryAttempt):
+            """Win the completion race, then wait for the test to close Core."""
+
+            def _take_completion(self):
+                won = super()._take_completion()
+                if won:
+                    completion_won.set()
+                    if not release_worker.wait(1):
+                        raise AssertionError(
+                            "test did not release the query worker"
+                        )
+                return won
+
+        failure = RuntimeError("adapter failed while close began")
+
+        def stat_master(*_args):
+            raise failure
+
+        adapter = type(
+            "Adapter", (), {"stat_master": staticmethod(stat_master)}
+        )
+        core = self.make_core(adapter)
+        old_servers = self.old_servers_for("g")
+        self.seed_servers(core, old_servers)
+        callbacks = []
+        messages = []
+        workers = []
+
+        try:
+            with mock.patch.object(
+                core_module, "_QueryAttempt", LateFailureAttempt
+            ), mock.patch(
+                "obozrenie.core.helpers.debug_msg", messages.append
+            ):
+                admitted, worker = self.launch_query(core, callbacks.append)
+                workers.append(worker)
+                self.assertTrue(completion_won.wait(1))
+                # The worker already owns completion, so close cannot
+                # terminalize its attempt; only the closing check inside the
+                # failure report can hold its publication back.
+                core.begin_close()
+                release_worker.set()
+                worker.join(1)
+        finally:
+            release_worker.set()
+            for worker in workers:
+                worker.join(1)
+
+        self.assertIs(admitted, True)
+        self.assertEqual([worker for worker in workers if worker.is_alive()], [])
+        # Close owns the outcome, but the failure itself is still reported.
+        self.assertEqual(
+            _diagnostic_texts(messages),
+            ["Unexpected RuntimeError; exception details omitted."],
+        )
+        self.assertEqual(callbacks, [])
+        self.assertEqual(
+            self.published_state(core),
+            (core.game_table.QUERY_STATUS.WORKING, None, old_servers),
         )
 
     def test_join_until_uses_one_absolute_deadline_for_all_tracked_threads(self):

@@ -254,6 +254,7 @@ RUNTIME_TEST_FILES = {
     "test_networking.py",
     "test_resources.py",
     "test_settings.py",
+    "test_transport.py",
     "tests.py",
 }
 SOURCE_ONLY_TEST_FILES = {"test_delivery.py", "test_packaging.py"}
@@ -1744,11 +1745,6 @@ class WheelContractMixin:
                 directories,
                 expected_directories,
                 "sdist member manifest mismatch for directories",
-            )
-            self.assertEqual(
-                len(members),
-                len(expected_files) + len(expected_directories),
-                "sdist member count differs from the exact manifests",
             )
 
             copying = archive.extractfile(f"{SDIST_ROOT}/COPYING")

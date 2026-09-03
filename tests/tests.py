@@ -32,7 +32,7 @@ from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 from obozrenie import adapters, helpers, launch
-from obozrenie.diagnostics import SafeDiagnostic
+from obozrenie.diagnostics import SafeDiagnostic, SafeDiagnosticError
 from obozrenie.models import Endpoint, Player, Server
 
 
@@ -74,6 +74,47 @@ class HelpersTests(unittest.TestCase):
     def test_sort_dict_table(self):
         unit = self.unit_sort_dict_table()
         self.assertTrue(unit['expectation'] == unit['result'])
+
+    def test_log_safe_diagnostic_reports_fixed_text_never_the_exception(self):
+        class HostileError(Exception):
+            def __str__(self):
+                raise AssertionError("str called")
+
+            def __repr__(self):
+                raise AssertionError("repr called")
+
+        declared = SafeDiagnostic("Declared safe diagnostic.")
+        messages = []
+        with mock.patch.object(helpers, "debug_msg", messages.append):
+            helpers.log_safe_diagnostic("Prefix", HostileError("secret"))
+            helpers.log_safe_diagnostic("Prefix", SafeDiagnosticError(declared))
+
+        self.assertEqual(
+            messages,
+            [
+                [
+                    "Prefix",
+                    SafeDiagnostic(
+                        "Unexpected HostileError; exception details omitted."
+                    ),
+                ],
+                ["Prefix", declared],
+            ],
+        )
+        self.assertIs(messages[1][1], declared)
+
+    def test_log_safe_diagnostic_swallows_a_report_that_cannot_be_written(self):
+        # The failure being reported is often the log stream itself, so a
+        # report that fails is dropped rather than raised into a caller that
+        # is re-raising a primary failure or quitting the application.
+        with mock.patch.object(
+            helpers,
+            "debug_msg",
+            side_effect=OSError(9, "Bad file descriptor"),
+        ) as report:
+            helpers.log_safe_diagnostic("Prefix", RuntimeError("primary"))
+
+        report.assert_called_once()
 
 
 class LauncherTests(unittest.TestCase):

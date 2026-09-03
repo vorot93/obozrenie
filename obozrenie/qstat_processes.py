@@ -27,18 +27,33 @@ def _closed_error() -> QStatSupervisorClosedError:
 
 
 def _kill_quietly(process: subprocess.Popen) -> None:
-    """Kill one child, tolerating a child that has already gone."""
+    """Kill one child, tolerating a signal that cannot be delivered.
+
+    The child has usually already gone; whatever else keeps the signal from
+    its own child, the handle stays registered and the reaper retains it
+    until an exit is observed, so the failure changes nothing about who owns
+    the child and must not replace the reason its caller already has —
+    close, or a spawn that lost the race against it.
+    """
     try:
         process.kill()
-    except ProcessLookupError:
+    except OSError:
         pass
 
 
 def _close_pipes(process: subprocess.Popen) -> None:
-    """Close the parent ends of a child's pipes, if it opened any."""
+    """Close the parent ends of a child's pipes, if it opened any.
+
+    Only a child no caller will ever receive is closed here, so a pipe that
+    fails to close is not a failure anyone can act on: the other pipes are
+    still closed, and the caller keeps the reason it already has.
+    """
     for pipe in (process.stdin, process.stdout, process.stderr):
         if pipe is not None:
-            pipe.close()
+            try:
+                pipe.close()
+            except OSError:
+                pass
 
 
 def _exit_observed(process: subprocess.Popen) -> bool:
@@ -126,23 +141,30 @@ class QStatProcessSupervisor:
                     self._pending.add(process)
                 self._idle.notify_all()
             if abandoned:
-                # Nothing will ever use this child, and no caller received the
-                # handle, so it is stopped and its pipes closed here.
-                _kill_quietly(process)
-                _close_pipes(process)
-                self._ensure_reaper()
+                self._discard_child(process)
 
         if not closing:
             return process
 
         # Close swept the registry before this child was registered, so this
-        # caller kills it: registered first, killed second, never lost. No
-        # caller ever receives the handle, so its pipes are this method's to
-        # close.
-        _kill_quietly(process)
-        _close_pipes(process)
-        self._ensure_reaper()
+        # caller kills it: registered first, killed second, never lost.
+        self._discard_child(process)
         raise _closed_error()
+
+    def _discard_child(self, process: subprocess.Popen) -> None:
+        """Stop and retain a child no caller will ever receive.
+
+        Nothing will ever use this child and no caller received the handle,
+        so it is stopped and its pipes closed here, each step tolerating its
+        own failure; the reaper takes it from there — whatever the stop or
+        the closes did, since a child that is registered but never reaped
+        would be exactly the lost handle this supervisor exists to prevent.
+        """
+        try:
+            _kill_quietly(process)
+            _close_pipes(process)
+        finally:
+            self._ensure_reaper()
 
     def defer_reap(self, process: subprocess.Popen) -> None:
         """Hand one child that outlived its caller's bound to the reaper."""

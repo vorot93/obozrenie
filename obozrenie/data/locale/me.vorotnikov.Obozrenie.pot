@@ -17,69 +17,69 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: obozrenie/core.py:78
+#: obozrenie/core.py:77
 msgid "Unable to refresh the server list."
 msgstr ""
 
-#: obozrenie/core.py:163
+#: obozrenie/core.py:159
 #, python-format
 msgid "<Game Table - games: %(game_num)i, id: %(gt_id)i>"
 msgstr ""
 
-#: obozrenie/core.py:197
+#: obozrenie/core.py:193
 msgid "Invalid game specified."
 msgstr ""
 
-#: obozrenie/core.py:202
+#: obozrenie/core.py:198
 #, python-format
 msgid "Game not found: %(game)s"
 msgstr ""
 
-#: obozrenie/core.py:236 obozrenie/core.py:308
+#: obozrenie/core.py:232 obozrenie/core.py:304
 msgid "game id"
 msgstr ""
 
-#: obozrenie/core.py:238
+#: obozrenie/core.py:234
 msgid "option"
 msgstr ""
 
-#: obozrenie/core.py:241 obozrenie/core.py:313
+#: obozrenie/core.py:237 obozrenie/core.py:309
 #, python-format
 msgid "Invalid %(param)s specified."
 msgstr ""
 
-#: obozrenie/core.py:310
+#: obozrenie/core.py:306
 msgid "hostname"
 msgstr ""
 
-#: obozrenie/core.py:320
+#: obozrenie/core.py:316
 #, python-format
 msgid "Server not found: %(host)s"
 msgstr ""
 
-#: obozrenie/core.py:509
+#: obozrenie/core.py:505
 msgid "GeoIP database not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:515
+#: obozrenie/core.py:511
 #, python-format
 msgid "GeoIP database %(path)s opened successfully."
 msgstr ""
 
-#: obozrenie/core.py:519
+#: obozrenie/core.py:515
 msgid "Failed to open GeoIP database. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/core.py:824
+#: obozrenie/core.py:820
 msgid "Please specify a valid game id."
 msgstr ""
 
-#: obozrenie/core.py:842 obozrenie/launch.py:335
+#: obozrenie/core.py:838 obozrenie/launch.py:335
 #, python-format
 msgid "Please configure the executable path for %(game)s."
 msgstr ""
 
-#: obozrenie/core.py:1036
+#: obozrenie/core.py:1032
 msgid ""
 "This is the core module of Obozrenie Game Server Browser. Please run an "
 "appropriate UI instead."
@@ -341,11 +341,11 @@ msgstr ""
 msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/gtk.py:1229
+#: obozrenie/gtk.py:1223
 msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/gtk.py:1233
+#: obozrenie/gtk.py:1227
 msgid "Initialization failed. Aborting."
 msgstr ""
 
@@ -363,7 +363,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: obozrenie/helpers.py:254
+#: obozrenie/helpers.py:303
 msgid "Invalid user settings were backed up and defaults were restored."
 msgstr ""
 
@@ -438,25 +438,25 @@ msgstr ""
 msgid "Skipped malformed Minetest server entries: %(count)i."
 msgstr ""
 
-#: obozrenie/adapters/qstat.py:46
+#: obozrenie/adapters/qstat.py:45
 msgid "QStat"
 msgstr ""
 
-#: obozrenie/adapters/qstat.py:444
+#: obozrenie/adapters/qstat.py:433
 #, python-format
 msgid "Skipped malformed QStat server entries: %(count)i."
 msgstr ""
 
-#: obozrenie/adapters/qstat.py:505
+#: obozrenie/adapters/qstat.py:494
 msgid "Requesting server info."
 msgstr ""
 
-#: obozrenie/adapters/qstat.py:530
+#: obozrenie/adapters/qstat.py:519
 #, python-format
 msgid "Received server info. Elapsed time: %(stat_time)s s."
 msgstr ""
 
-#: obozrenie/adapters/qstat.py:548
+#: obozrenie/adapters/qstat.py:537
 #, python-format
 msgid "Parsed QStat response. Elapsed time: %(parse_time)s ms"
 msgstr ""
