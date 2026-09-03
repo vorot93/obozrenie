@@ -19,7 +19,6 @@
 """Helper functions for processing data."""
 
 import contextlib
-import copy
 import os
 import tempfile
 import tomllib
@@ -107,10 +106,6 @@ def enforce_array(entry_array):
     if not isinstance(entry_array, list):
         entry_array = [entry_array]
     return entry_array
-
-
-def deepcopy(value):
-    return copy.deepcopy(value)
 
 
 def sort_dict_table(dict_table: list, sort_key) -> list:

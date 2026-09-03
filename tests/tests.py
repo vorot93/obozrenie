@@ -322,7 +322,7 @@ class RigsofrodsTests(unittest.TestCase):
 
 class GameTableTests(unittest.TestCase):
     def _table(self, config):
-        from obozrenie.core import GameTable
+        from obozrenie.game_table import GameTable
         return GameTable(config)
 
     def test_invalid_set_game_setting_names_the_param(self):

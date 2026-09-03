@@ -18,8 +18,9 @@ from obozrenie import (
     network_calls,
 )
 from obozrenie.adapters import minetest, qstat, rigsofrods
-from obozrenie.core import Core, GameTable
+from obozrenie.core import Core
 from obozrenie.diagnostics import SafeDiagnostic, SafeDiagnosticError
+from obozrenie.game_table import GameTable, QueryStatus
 from obozrenie.models import Endpoint, Player, Server
 
 
@@ -124,10 +125,7 @@ class QueryStateTests(unittest.TestCase):
         self.table = GameTable(CONFIG)
 
     def test_query_status_is_public_enum(self):
-        from obozrenie.core import QueryStatus
-
         self.assertTrue(issubclass(QueryStatus, Enum))
-        self.assertIs(self.table.QUERY_STATUS, QueryStatus)
 
     def test_begin_query_returns_one_opaque_token_atomically(self):
         gate = threading.Barrier(8)
@@ -169,7 +167,7 @@ class QueryStateTests(unittest.TestCase):
         # The admission result is an opaque identity, not a reusable flag.
         self.assertNotIsInstance(admitted[0], bool)
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.WORKING
+            self.table.get_query_status("g"), QueryStatus.WORKING
         )
         self.assertIs(self.table.finish_query("g", admitted[0], []), True)
 
@@ -194,7 +192,7 @@ class QueryStateTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.WORKING
+            self.table.get_query_status("g"), QueryStatus.WORKING
         )
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
         self.assertIsNone(self.table.get_query_error("g"))
@@ -204,7 +202,7 @@ class QueryStateTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.READY
+            self.table.get_query_status("g"), QueryStatus.READY
         )
         self.assertEqual(self.table.get_servers_data("g"), [fresh_server])
         # A committed token is consumed and cannot commit a second time.
@@ -231,7 +229,7 @@ class QueryStateTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.WORKING
+            self.table.get_query_status("g"), QueryStatus.WORKING
         )
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
         self.assertIsNone(self.table.get_query_error("g"))
@@ -241,7 +239,7 @@ class QueryStateTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.ERROR
+            self.table.get_query_status("g"), QueryStatus.ERROR
         )
         self.assertEqual(self.table.get_query_error("g"), "fresh error")
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
@@ -257,7 +255,7 @@ class QueryStateTests(unittest.TestCase):
         self.table.finish_query("g", self.table.begin_query("g"), [new_server])
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.READY
+            self.table.get_query_status("g"), QueryStatus.READY
         )
         self.assertEqual(self.table.get_servers_data("g"), [new_server])
         self.assertIsNone(self.table.get_query_error("g"))
@@ -268,7 +266,7 @@ class QueryStateTests(unittest.TestCase):
         self.assertIsNotNone(self.table.begin_query("g"))
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.WORKING
+            self.table.get_query_status("g"), QueryStatus.WORKING
         )
         self.assertIsNone(self.table.get_query_error("g"))
 
@@ -280,27 +278,27 @@ class QueryStateTests(unittest.TestCase):
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
         self.assertEqual(self.table.get_query_error("g"), "safe message")
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.ERROR
+            self.table.get_query_status("g"), QueryStatus.ERROR
         )
 
     def test_finish_query_requires_working_status(self):
         old_server = Server(endpoint=Endpoint("old.example", 1), game_id="g")
         new_server = Server(endpoint=Endpoint("new.example", 1), game_id="g")
         for status in (
-            self.table.QUERY_STATUS.EMPTY,
-            self.table.QUERY_STATUS.READY,
-            self.table.QUERY_STATUS.ERROR,
+            QueryStatus.EMPTY,
+            QueryStatus.READY,
+            QueryStatus.ERROR,
         ):
             with self.subTest(status=status):
                 table = GameTable(CONFIG)
                 expected_servers = []
                 expected_error = None
                 spent_token = None
-                if status is table.QUERY_STATUS.READY:
+                if status is QueryStatus.READY:
                     spent_token = table.begin_query("g")
                     table.finish_query("g", spent_token, [old_server])
                     expected_servers = [old_server]
-                elif status is table.QUERY_STATUS.ERROR:
+                elif status is QueryStatus.ERROR:
                     table.finish_query(
                         "g", table.begin_query("g"), [old_server]
                     )
@@ -319,18 +317,18 @@ class QueryStateTests(unittest.TestCase):
 
     def test_fail_query_requires_working_status(self):
         for status in (
-            self.table.QUERY_STATUS.EMPTY,
-            self.table.QUERY_STATUS.READY,
-            self.table.QUERY_STATUS.ERROR,
+            QueryStatus.EMPTY,
+            QueryStatus.READY,
+            QueryStatus.ERROR,
         ):
             with self.subTest(status=status):
                 table = GameTable(CONFIG)
                 expected_error = None
                 spent_token = None
-                if status is table.QUERY_STATUS.READY:
+                if status is QueryStatus.READY:
                     spent_token = table.begin_query("g")
                     table.finish_query("g", spent_token, [])
-                elif status is table.QUERY_STATUS.ERROR:
+                elif status is QueryStatus.ERROR:
                     spent_token = table.begin_query("g")
                     table.fail_query("g", spent_token, "old error")
                     expected_error = "old error"
@@ -371,7 +369,7 @@ class QueryStateTests(unittest.TestCase):
         self.assertEqual(str(raised), "GameTable error must be an exact str.")
         self.assertEqual(
             self.table.get_query_status("g"),
-            self.table.QUERY_STATUS.WORKING,
+            QueryStatus.WORKING,
         )
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
         self.assertIsNone(self.table.get_query_error("g"))
@@ -380,7 +378,7 @@ class QueryStateTests(unittest.TestCase):
 
         self.assertEqual(
             self.table.get_query_status("g"),
-            self.table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
         self.assertEqual(self.table.get_query_error("g"), "safe failure")
@@ -414,7 +412,7 @@ class QueryStateTests(unittest.TestCase):
         self.assertEqual(str(raised), "GameTable error must be an exact str.")
         self.assertEqual(
             self.table.get_query_status("g"),
-            self.table.QUERY_STATUS.WORKING,
+            QueryStatus.WORKING,
         )
         self.assertIsNone(self.table.get_query_error("g"))
 
@@ -426,7 +424,7 @@ class QueryStateTests(unittest.TestCase):
         self.assertEqual(stored_error, exact_error)
         self.assertEqual(
             self.table.get_query_status("g"),
-            self.table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
 
     def test_server_records_survive_focused_and_full_copy_accessors(self):
@@ -522,7 +520,7 @@ class QueryStateTests(unittest.TestCase):
             "GameTable servers[1] must be an exact Server record.",
         )
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.WORKING
+            self.table.get_query_status("g"), QueryStatus.WORKING
         )
         self.assertIsNone(self.table.get_query_error("g"))
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
@@ -530,7 +528,7 @@ class QueryStateTests(unittest.TestCase):
         self.assertIs(self.table.fail_query("g", token, "safe failure"), True)
 
         self.assertEqual(
-            self.table.get_query_status("g"), self.table.QUERY_STATUS.ERROR
+            self.table.get_query_status("g"), QueryStatus.ERROR
         )
         self.assertEqual(self.table.get_query_error("g"), "safe failure")
         self.assertEqual(self.table.get_servers_data("g"), [old_server])
@@ -638,7 +636,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(resolutions, ["fake"])
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_update_reserves_before_worker_and_completes_on_worker_thread(self):
@@ -673,7 +671,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertIs(admitted, True)
         self.assertTrue(worker_entered)
         self.assertEqual(
-            status_while_blocked, core.game_table.QUERY_STATUS.WORKING
+            status_while_blocked, QueryStatus.WORKING
         )
         self.assertTrue(callback_ran)
         self.assertEqual(len(worker_threads), 1)
@@ -681,7 +679,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callback_games, ["g"])
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_update_rejects_duplicate_before_spawning(self):
@@ -700,7 +698,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, [])
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.WORKING,
+            QueryStatus.WORKING,
         )
 
     def test_startup_failure_finalizes_admitted_query_synchronously(self):
@@ -761,7 +759,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                     {
                         "raised": None,
                         "admitted": True,
-                        "status": core.game_table.QUERY_STATUS.ERROR,
+                        "status": QueryStatus.ERROR,
                         "error": "Unable to refresh the server list.",
                         "servers": old_servers,
                         "callbacks": [("g", caller_thread)],
@@ -883,7 +881,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     "one.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -896,7 +894,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
                 (
                     "two.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -911,7 +909,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         committed = core.game_table.get_servers_data("g")
         self.assertEqual(
@@ -1011,7 +1009,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_rtt_mutate_then_raise_uses_untouched_input_snapshot(self):
@@ -1115,7 +1113,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     "first.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1128,7 +1126,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
                 (
                     "second.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1162,7 +1160,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_lazy_rtt_failure_discards_partial_results_and_uses_snapshot(self):
@@ -1267,7 +1265,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     "first.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1280,7 +1278,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
                 (
                     "second.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1314,7 +1312,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_invalid_rtt_output_fails_before_country_lookup_or_commit(self):
@@ -1385,7 +1383,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -1441,7 +1439,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(core.game_table.get_servers_data("g"), [old_server])
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -1559,7 +1557,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_derived_country_infrastructure_error_fails_query_by_identity(self):
@@ -1608,7 +1606,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(core.game_table.get_servers_data("g"), [old_server])
         self.assertEqual(
@@ -1664,7 +1662,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(core.game_table.get_servers_data("g"), [old_server])
         self.assertEqual(
@@ -1769,22 +1767,22 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     "192.0.2.41",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [old_server],
                 ),
                 (
                     "192.0.2.42",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [old_server],
                 ),
                 (
                     "192.0.2.43",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [old_server],
                 ),
                 (
                     "192.0.2.44",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [old_server],
                 ),
             ],
@@ -1820,7 +1818,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
 
@@ -1926,7 +1924,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     malformed_host,
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1938,7 +1936,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
                 (
                     "working.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -1970,7 +1968,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_blocked_icmp_batch_commits_countries_and_calls_back_before_release(self):
@@ -2080,7 +2078,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(
             state_before_release,
             (
-                core.game_table.QUERY_STATUS.READY,
+                QueryStatus.READY,
                 [
                     Server(
                         endpoint=Endpoint("192.0.2.90", 1),
@@ -2161,7 +2159,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
         self.assertEqual(callbacks, ["g"])
@@ -2226,7 +2224,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
         self.assertEqual(callbacks, ["g"])
@@ -2429,7 +2427,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 self.assertEqual(
                     working_state,
                     (
-                        core.game_table.QUERY_STATUS.WORKING,
+                        QueryStatus.WORKING,
                         old_servers,
                     ),
                 )
@@ -2437,7 +2435,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 self.assertEqual(
                     state_before_release,
                     (
-                        core.game_table.QUERY_STATUS.ERROR,
+                        QueryStatus.ERROR,
                         old_servers,
                         "Unable to refresh the server list.",
                         ["g"],
@@ -2472,7 +2470,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 self.assertEqual(callbacks, ["g"])
                 self.assertEqual(
                     core.game_table.get_query_status("g"),
-                    core.game_table.QUERY_STATUS.ERROR,
+                    QueryStatus.ERROR,
                 )
                 self.assertEqual(
                     core.game_table.get_servers_data("g"),
@@ -2594,7 +2592,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(
             state_before_release,
             (
-                core.game_table.QUERY_STATUS.READY,
+                QueryStatus.READY,
                 [
                     Server(
                         endpoint=Endpoint("blocked.example", 1),
@@ -2661,7 +2659,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
         self.assertEqual(callbacks, ["g"])
@@ -2832,7 +2830,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(
             state_before_release,
             (
-                core.game_table.QUERY_STATUS.READY,
+                QueryStatus.READY,
                 [
                     Server(
                         endpoint=Endpoint("blocked.example", 1),
@@ -2873,7 +2871,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             [
                 (
                     "blocked.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -2885,7 +2883,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
                 (
                     "working.example",
-                    core.game_table.QUERY_STATUS.WORKING,
+                    QueryStatus.WORKING,
                     [
                         Server(
                             endpoint=Endpoint("old.example", 27015),
@@ -2917,7 +2915,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
         self.assertEqual(callbacks, ["g"])
@@ -2943,7 +2941,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -2980,7 +2978,7 @@ class QueryWorkerTests(CoreQueryTestCase):
 
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(rtt_batches, [])
         self.assertEqual(looked_up_hosts, [])
@@ -3031,7 +3029,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(core.game_table.get_servers_data("g"), [old_server])
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3094,7 +3092,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         finish_query.assert_not_called()
         self.assertEqual(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3139,7 +3137,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             },
             {
                 "raised": None,
-                "status": core.game_table.QUERY_STATUS.ERROR,
+                "status": QueryStatus.ERROR,
                 "error": "Unable to refresh the server list.",
                 "servers": old_servers,
                 "callbacks": ["g"],
@@ -3194,7 +3192,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(len(launched), 1)
         self.assertFalse(launched[0].is_alive())
         self.assertIs(
-            status_while_working, core.game_table.QUERY_STATUS.WORKING
+            status_while_working, QueryStatus.WORKING
         )
         # The worker owned completion, so the caller only logged its own
         # failure safely instead of finalizing the query a second time.
@@ -3205,7 +3203,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
 
@@ -3289,7 +3287,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(
             terminal_state,
             (
-                core.game_table.QUERY_STATUS.ERROR,
+                QueryStatus.ERROR,
                 "Unable to refresh the server list.",
                 [("g", caller_thread)],
             ),
@@ -3301,7 +3299,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(core.game_table.get_servers_data("g"), old_servers)
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
 
     def test_worker_base_exception_terminalizes_once_then_reraises_identity(self):
@@ -3347,7 +3345,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         )
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3391,7 +3389,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3422,7 +3420,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3453,7 +3451,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3492,7 +3490,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3541,7 +3539,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         committed = core.game_table.get_servers_data("g")
         self.assertEqual(len(committed), 1)
@@ -3572,7 +3570,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         # The committed result stands; a failing callback cannot fail it.
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
 
@@ -3608,7 +3606,7 @@ class QueryWorkerTests(CoreQueryTestCase):
         self.assertEqual(core.game_table.get_servers_data("g"), old_servers)
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertEqual(
             core.game_table.get_query_error("g"),
@@ -3770,7 +3768,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(
             self.published_state(core, "h"),
             (
-                core.game_table.QUERY_STATUS.ERROR,
+                QueryStatus.ERROR,
                 "Unable to refresh the server list.",
                 old_servers["h"],
             ),
@@ -3779,7 +3777,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         # retry cannot publish it a second time.
         self.assertEqual(
             self.published_state(core, "g"),
-            (core.game_table.QUERY_STATUS.WORKING, None, old_servers["g"]),
+            (QueryStatus.WORKING, None, old_servers["g"]),
         )
         self.assertEqual(
             _diagnostic_texts(messages),
@@ -3840,7 +3838,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(
             self.published_state(core, retried),
             (
-                core.game_table.QUERY_STATUS.ERROR,
+                QueryStatus.ERROR,
                 "Unable to refresh the server list.",
                 old_servers[retried],
             ),
@@ -3850,7 +3848,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(
             self.published_state(core, interrupted),
             (
-                core.game_table.QUERY_STATUS.WORKING,
+                QueryStatus.WORKING,
                 None,
                 old_servers[interrupted],
             ),
@@ -3907,7 +3905,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
             closed_state,
             {
                 game: (
-                    core.game_table.QUERY_STATUS.ERROR,
+                    QueryStatus.ERROR,
                     "Unable to refresh the server list.",
                     old_servers[game],
                 )
@@ -3931,7 +3929,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
                 for game in TWO_GAME_CONFIG
             },
             {
-                game: (core.game_table.QUERY_STATUS.ERROR, old_servers[game])
+                game: (QueryStatus.ERROR, old_servers[game])
                 for game in TWO_GAME_CONFIG
             },
         )
@@ -3993,14 +3991,14 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual([worker for worker in workers if worker.is_alive()], [])
         self.assertEqual(
             closed_state,
-            (core.game_table.QUERY_STATUS.WORKING, None, old_servers, []),
+            (QueryStatus.WORKING, None, old_servers, []),
         )
         # The late worker neither published its servers nor reached the UI.
         self.assertEqual(callbacks, [])
         self.assertEqual(core.game_table.get_servers_data("g"), old_servers)
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.WORKING,
+            QueryStatus.WORKING,
         )
         self.assertIsNone(core.game_table.get_query_error("g"))
 
@@ -4134,7 +4132,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(callbacks, ["g"])
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.READY,
+            QueryStatus.READY,
         )
 
     def test_join_until_skips_a_registered_thread_that_has_not_launched(self):
@@ -4251,7 +4249,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(callbacks, [])
         self.assertEqual(
             self.published_state(core),
-            (core.game_table.QUERY_STATUS.WORKING, None, old_servers),
+            (QueryStatus.WORKING, None, old_servers),
         )
 
     def test_join_until_uses_one_absolute_deadline_for_all_tracked_threads(self):
@@ -4337,7 +4335,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
             (
                 1,
                 1,
-                core.game_table.QUERY_STATUS.ERROR,
+                QueryStatus.ERROR,
                 "Unable to refresh the server list.",
             ),
         )
@@ -4350,7 +4348,7 @@ class CoreLifecycleTests(CoreQueryTestCase):
         self.assertEqual(core.game_table.get_servers_data("g"), old_servers)
         self.assertIs(
             core.game_table.get_query_status("g"),
-            core.game_table.QUERY_STATUS.ERROR,
+            QueryStatus.ERROR,
         )
         self.assertIs(core.update_server_list("g", callbacks.append), False)
 

@@ -14,6 +14,7 @@ from types import MethodType, SimpleNamespace
 from unittest import mock
 
 from obozrenie import core
+from obozrenie import game_table
 from obozrenie import gtk as gtk_module
 from obozrenie import models
 from obozrenie.diagnostics import SafeDiagnostic
@@ -698,7 +699,7 @@ class AboutDialogTests(unittest.TestCase):
 class ActionSensitivityTests(unittest.TestCase):
     @staticmethod
     def make_game_table(servers=()):
-        table = core.GameTable({
+        table = game_table.GameTable({
             "browser": {
                 "name": "Browser Game",
                 "adapter": "qstat",
@@ -745,7 +746,7 @@ class ActionSensitivityTests(unittest.TestCase):
                     "browser_game_valid": True,
                     "connect_game_valid": False,
                     "endpoint_valid": False,
-                    "query_status": core.QueryStatus.EMPTY,
+                    "query_status": game_table.QueryStatus.EMPTY,
                     "selected_server_present": False,
                 },
                 {
@@ -782,7 +783,7 @@ class ActionSensitivityTests(unittest.TestCase):
                 browser_game_valid=True,
                 connect_game_valid=True,
                 endpoint_valid=True,
-                query_status=core.QueryStatus.WORKING,
+                query_status=game_table.QueryStatus.WORKING,
                 selected_server_present=True,
             ),
             {
@@ -799,7 +800,7 @@ class ActionSensitivityTests(unittest.TestCase):
                 browser_game_valid=True,
                 connect_game_valid=True,
                 endpoint_valid=True,
-                query_status=core.QueryStatus.READY,
+                query_status=game_table.QueryStatus.READY,
                 selected_server_present=False,
             ),
             {
@@ -1102,7 +1103,7 @@ class QueryStateUITests(unittest.TestCase):
 
         self.assertIs(
             actions.core.game_table.get_query_status("browser"),
-            core.QueryStatus.WORKING,
+            game_table.QueryStatus.WORKING,
         )
         self.assertEqual(
             actions.gtk_widgets["serverlist-notebook"].properties["page"],
@@ -1149,7 +1150,7 @@ class QueryStateUITests(unittest.TestCase):
         self.assertEqual(len(actions.core.refreshes), 1)
         self.assertIs(
             actions.core.game_table.get_query_status("browser"),
-            core.QueryStatus.WORKING,
+            game_table.QueryStatus.WORKING,
         )
         self.assertEqual(
             actions.gtk_widgets["serverlist-notebook"].properties["page"],
@@ -1204,7 +1205,7 @@ class QueryStateUITests(unittest.TestCase):
         idle_add.assert_called_once_with(actions.show_game_page, "browser")
         self.assertIs(
             actions.core.game_table.get_query_status("browser"),
-            core.QueryStatus.ERROR,
+            game_table.QueryStatus.ERROR,
         )
         self.assertEqual(
             actions.gtk_widgets["serverlist-notebook"].properties["page"],
@@ -1277,11 +1278,11 @@ class QueryStateUITests(unittest.TestCase):
 
     def test_controller_maps_the_shipped_error_content_label(self):
         builder = Builder()
-        game_table = core.GameTable({})
+        table = game_table.GameTable({})
         actions = gtk_module.GUIActions(
             SimpleNamespace(),
             builder,
-            SimpleNamespace(game_table=game_table),
+            SimpleNamespace(game_table=table),
         )
 
         self.assertIn("error-message-content-label", actions.gtk_widgets)
@@ -1312,7 +1313,7 @@ master_uri = ["master://example.test:27950"]
             with io.BytesIO(bundled[tuple(parts)]) as table_file:
                 return tomllib.load(table_file)
 
-        game_table = core.GameTable({
+        table = game_table.GameTable({
             "game": {
                 "name": "Game",
                 "adapter": "qstat",
@@ -1323,7 +1324,7 @@ master_uri = ["master://example.test:27950"]
         profile = root / "profile"
         profile.mkdir()
         settings = core.Settings(
-            SimpleNamespace(game_table=game_table),
+            SimpleNamespace(game_table=table),
             str(profile),
             resource_loader=load_resource,
         )

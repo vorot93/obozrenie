@@ -30,6 +30,7 @@ from gi.repository import GLib, Gio, Gtk
 
 import obozrenie.gtk_templates as templates
 import obozrenie.core as core
+from obozrenie.game_table import QueryStatus
 from obozrenie import geoip, resources
 from obozrenie.diagnostics import diagnostic_for_exception
 import obozrenie.gtk_helpers as gtk_helpers
@@ -59,7 +60,7 @@ def derive_action_sensitivity(
     browser_game_valid: bool,
     connect_game_valid: bool,
     endpoint_valid: bool,
-    query_status: core.QueryStatus | None,
+    query_status: QueryStatus | None,
     selected_server_present: bool,
 ) -> dict[str, bool]:
     """Derive action availability without reading or mutating GTK state."""
@@ -67,7 +68,7 @@ def derive_action_sensitivity(
         "preferences": browser_game_valid,
         "refresh": (
             browser_game_valid
-            and query_status is not core.QueryStatus.WORKING
+            and query_status is not QueryStatus.WORKING
         ),
         "connect": connect_game_valid and endpoint_valid,
         "info": (
@@ -424,10 +425,10 @@ class GUIActions:
         self.update_action_sensitivity()
         gtk_helpers.set_widget_value(
             self.gtk_widgets["game-combobox"], game_id)
-        if query_status == self.core.game_table.QUERY_STATUS.EMPTY:  # Refresh server list on first access
+        if query_status == QueryStatus.EMPTY:  # Refresh server list on first access
             self.cb_update_button_clicked()
         else:
-            if query_status == self.core.game_table.QUERY_STATUS.WORKING:
+            if query_status == QueryStatus.WORKING:
                 self.set_loading_state("working")
             GLib.idle_add(self.show_game_page, game_id)
 
@@ -445,7 +446,7 @@ class GUIActions:
             return
         if (
             self.core.game_table.get_query_status(game)
-            is self.core.game_table.QUERY_STATUS.WORKING
+            is QueryStatus.WORKING
         ):
             self.update_action_sensitivity()
             return
@@ -456,7 +457,7 @@ class GUIActions:
             self.update_action_sensitivity()
             return
         query_status = self.core.game_table.get_query_status(game)
-        if query_status is self.core.game_table.QUERY_STATUS.WORKING:
+        if query_status is QueryStatus.WORKING:
             self.set_loading_state("working")
             self.set_game_state(game, query_status)
         self.update_action_sensitivity()
@@ -491,7 +492,6 @@ class GUIActions:
     def show_game_page(self, game: str) -> None:
         """Set of actions to do after query is complete."""
         query_status = self.app.core.game_table.get_query_status(str(game))
-        query_status_enum = self.core.game_table.QUERY_STATUS
         server_table = self.app.core.game_table.get_servers_data(str(game))
         selected_game = self.app.settings.settings_table["common"]["selected-game-browser"]
 
@@ -500,15 +500,15 @@ class GUIActions:
 
         self.set_game_state(game, query_status)  # Display game status in GUI
         if selected_game == game:  # Is callback for the game that is currently viewed?
-            if query_status == query_status_enum.READY:
+            if query_status == QueryStatus.READY:
                 self.set_loading_state("filling list")
                 view.set_model(None)  # Speed hack
                 self.fill_server_list_model(server_table)
                 view.set_model(model)
                 self.set_loading_state("ready")
-            elif query_status == query_status_enum.WORKING:
+            elif query_status == QueryStatus.WORKING:
                 self.set_loading_state("working")
-            elif query_status == query_status_enum.ERROR:
+            elif query_status == QueryStatus.ERROR:
                 self.gtk_widgets["error-message-content-label"].set_property(
                     "label",
                     self.app.core.game_table.get_query_error(str(game)),
@@ -520,13 +520,12 @@ class GUIActions:
 
     def set_game_state(self, game: str, state: str) -> None:
         icon = ""
-        query_status_enum = self.core.game_table.QUERY_STATUS
 
-        if state == query_status_enum.WORKING:
+        if state == QueryStatus.WORKING:
             icon = "emblem-synchronizing-symbolic"
-        elif state == query_status_enum.READY:
+        elif state == QueryStatus.READY:
             icon = "emblem-ok-symbolic"
-        elif state == query_status_enum.ERROR:
+        elif state == QueryStatus.ERROR:
             icon = "error"
         else:
             return

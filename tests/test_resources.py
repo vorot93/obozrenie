@@ -420,7 +420,7 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
 
     def test_gui_actions_loads_about_logo_from_zip_resource_bytes(self):
         resources = resource_module()
-        from obozrenie import core
+        from obozrenie import game_table
         from obozrenie import gtk as gtk_module
 
         logo = b"""<svg xmlns="http://www.w3.org/2000/svg" width="7" height="5">
@@ -445,7 +445,7 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                     actions = gtk_module.GUIActions(
                         SimpleNamespace(),
                         Builder(),
-                        SimpleNamespace(game_table=core.GameTable({})),
+                        SimpleNamespace(game_table=game_table.GameTable({})),
                     )
 
         self.assertEqual(

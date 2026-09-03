@@ -13,7 +13,7 @@ from unittest import mock
 import filelock
 import tomli_w
 
-from obozrenie import core, diagnostics, helpers, i18n, option_lists, resources
+from obozrenie import core, diagnostics, game_table, helpers, i18n, option_lists, resources
 
 
 def toml_bytes(data):
@@ -78,7 +78,7 @@ class SettingsPersistenceTests(unittest.TestCase):
             ("settings", "defaults", "games.toml"): default_game_bytes,
         })
 
-        game_table = core.GameTable({
+        table = game_table.GameTable({
             "game": {
                 "name": "Game",
                 "adapter": "qstat",
@@ -87,7 +87,7 @@ class SettingsPersistenceTests(unittest.TestCase):
             },
         })
         settings = core.Settings(
-            SimpleNamespace(game_table=game_table),
+            SimpleNamespace(game_table=table),
             str(root / "profile"),
             resource_loader=load_resource,
         )
@@ -1020,7 +1020,7 @@ class SettingsNormalizationTests(unittest.TestCase):
         })
 
         settings = core.Settings(
-            SimpleNamespace(game_table=core.GameTable(game_config)),
+            SimpleNamespace(game_table=game_table.GameTable(game_config)),
             str(root / "profile"),
             resource_loader=load_resource,
         )
@@ -1184,7 +1184,7 @@ class SettingsNormalizationTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             settings = core.Settings(
-                SimpleNamespace(game_table=core.GameTable(game_config)),
+                SimpleNamespace(game_table=game_table.GameTable(game_config)),
                 directory,
             )
 

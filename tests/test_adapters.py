@@ -5320,7 +5320,7 @@ time.sleep(10)
 class GtkServerBoundaryTests(unittest.TestCase):
     @staticmethod
     def make_game_table(server):
-        from obozrenie.core import GameTable
+        from obozrenie.game_table import GameTable
 
         table = GameTable({
             "g": {
