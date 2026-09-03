@@ -8,7 +8,6 @@ import xml.etree.ElementTree as ET
 import zipfile
 from importlib.resources.abc import Traversable
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 
@@ -169,25 +168,6 @@ def relative_files(root, prefix=()):
     return files
 
 
-class BuilderWidget:
-    def __init__(self, value=None):
-        self.value = value
-
-    def set_property(self, name, value):
-        setattr(self, name, value)
-
-    def page_num(self, widget):
-        return 0
-
-
-class Builder:
-    def __init__(self):
-        self.objects = {}
-
-    def get_object(self, object_id):
-        return self.objects.setdefault(object_id, BuilderWidget(object_id))
-
-
 class ResourceTests(unittest.TestCase):
     def test_resource_helpers_read_real_packaged_data(self):
         resources = resource_module()
@@ -202,10 +182,10 @@ class ResourceTests(unittest.TestCase):
             )["garrysmod"]["steam_app_id"],
             "4000",
         )
-        ui_text = resources.read_text("ui", "obozrenie_gtk.ui")
+        ui_text = resources.read_text("ui", "main_window.ui")
         self.assertEqual(ET.fromstring(ui_text).tag, "interface")
         self.assertEqual(
-            resources.read_bytes("ui", "obozrenie_gtk.ui"),
+            resources.read_bytes("ui", "main_window.ui"),
             ui_text.encode("utf-8"),
         )
 
@@ -226,7 +206,7 @@ sys.prefix = "/path/that/cannot/contain/obozrenie"
 from obozrenie import resources
 games = resources.load_toml("settings", "internal", "game_lists.toml")
 assert games["garrysmod"]["steam_app_id"] == "4000"
-assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
+assert resources.resource("ui", "main_window.ui").is_file()
 """
         environment = os.environ.copy()
         environment["PYTHONPATH"] = os.pathsep.join(
@@ -249,7 +229,7 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
 
     def test_zip_backed_resources_support_text_bytes_toml_ui_and_icons(self):
         resources = resource_module()
-        from obozrenie import gtk_helpers
+        from obozrenie import gtk_icons
 
         entries = {
             "obozrenie/data/message.txt": "zip-backed text\n".encode(),
@@ -284,16 +264,11 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                     )
                     with self.assertRaises(UnicodeDecodeError):
                         resources.read_text("invalid.txt")
-                    icon = gtk_helpers.get_icon_for_entry(
-                        "zip",
-                        ("png",),
-                        resources.resource("icons", "games"),
-                        24,
-                        24,
+                    icon = gtk_icons.texture_for_entry(
+                        "zip", ("png",), resources.resource("icons", "games")
                     )
 
-        self.assertIsNotNone(icon)
-        self.assertEqual((icon.get_width(), icon.get_height()), (24, 24))
+        self.assertEqual((icon.get_width(), icon.get_height()), (1, 1))
 
     def test_packaged_game_config_and_icon_sets_are_exact(self):
         resources = resource_module()
@@ -331,10 +306,11 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
     def test_both_ui_documents_parse_from_resource_text(self):
         resources = resource_module()
 
-        for filename in ("obozrenie_gtk.ui", "obozrenie_gtk_appmenu.ui"):
+        for filename in ("main_window.ui", "server_info_dialog.ui"):
             with self.subTest(filename=filename):
                 root = ET.fromstring(resources.read_text("ui", filename))
                 self.assertEqual(root.tag, "interface")
+                self.assertIsNotNone(root.find("template"))
 
     def test_desktop_entry_and_application_icons_are_canonical_resources(self):
         resources = resource_module()
@@ -418,10 +394,9 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                         delta=0.15,
                     )
 
-    def test_main_window_loads_about_logo_from_zip_resource_bytes(self):
+    def test_logo_loads_from_zip_resource_bytes(self):
         resources = resource_module()
-        from obozrenie import game_table
-        from obozrenie import gtk_window
+        from obozrenie import gtk_icons
 
         logo = b"""<svg xmlns="http://www.w3.org/2000/svg" width="7" height="5">
 <rect width="7" height="5" fill="red"/>
@@ -435,24 +410,12 @@ assert resources.resource("ui", "obozrenie_gtk.ui").is_file()
                     "obozrenie-short.svg",
                     logo,
                 )
-                archive.writestr(
-                    "obozrenie/data/icons/games/image-missing.png",
-                    ONE_PIXEL_PNG,
-                )
             with zipfile.ZipFile(archive_path) as archive:
                 root = zipfile.Path(archive, at="obozrenie/data/")
                 with mock.patch.object(resources, "ROOT", root):
-                    actions = gtk_window.MainWindow(
-                        SimpleNamespace(),
-                        Builder(),
-                        SimpleNamespace(game_table=game_table.GameTable({})),
-                        SimpleNamespace(settings_table={"common": {}}),
-                    )
+                    logo = gtk_icons.load_logo()
 
-        self.assertEqual(
-            (actions.logo.get_width(), actions.logo.get_height()),
-            (7, 5),
-        )
+        self.assertEqual((logo.get_width(), logo.get_height()), (7, 5))
 
 if __name__ == "__main__":
     unittest.main()

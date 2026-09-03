@@ -246,7 +246,6 @@ RUNTIME_TEST_FILES = {
     "test_core_queries.py",
     "test_diagnostics.py",
     "test_geoip.py",
-    "test_gtk_behavior.py",
     "test_i18n.py",
     "test_launch.py",
     "test_list_rows.py",
@@ -1433,8 +1432,8 @@ class PyprojectTests(unittest.TestCase):
             "settings/defaults/settings.toml",
             "settings/internal/backends/qstat.toml",
             "settings/internal/game_lists.toml",
-            "ui/obozrenie_gtk.ui",
-            "ui/obozrenie_gtk_appmenu.ui",
+            "ui/main_window.ui",
+            "ui/server_info_dialog.ui",
         }
         expected.update(
             f"icons/games/{filename}" for filename in EXPECTED_GAME_ICON_FILES

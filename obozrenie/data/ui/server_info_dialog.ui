@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) Artem Vorotnikov 2015-2026
+
+This file is part of Obozrenie.
+
+Obozrenie is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Obozrenie is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<interface>
+  <requires lib="gtk" version="4.14"/>
+  <requires lib="libadwaita" version="1.5"/>
+  <template class="ObozrenieServerInfoDialog" parent="AdwDialog">
+    <property name="title" translatable="yes">Server information</property>
+    <property name="content-width">460</property>
+    <property name="content-height">480</property>
+    <property name="child">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar"/>
+        </child>
+        <property name="content">
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="spacing">12</property>
+            <property name="margin-start">12</property>
+            <property name="margin-end">12</property>
+            <property name="margin-top">12</property>
+            <property name="margin-bottom">12</property>
+            <child>
+              <object class="GtkGrid" id="details_grid">
+                <property name="row-spacing">6</property>
+                <property name="column-spacing">12</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Name:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">0</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="name_value">
+                    <property name="xalign">0</property>
+                    <property name="hexpand">True</property>
+                    <property name="selectable">True</property>
+                    <property name="ellipsize">end</property>
+                    <layout><property name="column">1</property><property name="row">0</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Host:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">1</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="host_value">
+                    <property name="xalign">0</property>
+                    <property name="selectable">True</property>
+                    <property name="ellipsize">end</property>
+                    <layout><property name="column">1</property><property name="row">1</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Game:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">2</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="game_value">
+                    <property name="xalign">0</property>
+                    <property name="ellipsize">end</property>
+                    <layout><property name="column">1</property><property name="row">2</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Terrain:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">3</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="terrain_value">
+                    <property name="xalign">0</property>
+                    <property name="ellipsize">end</property>
+                    <layout><property name="column">1</property><property name="row">3</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Players:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">4</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="players_value">
+                    <property name="xalign">0</property>
+                    <layout><property name="column">1</property><property name="row">4</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Ping:</property>
+                    <property name="xalign">1</property>
+                    <layout><property name="column">0</property><property name="row">5</property></layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="ping_value">
+                    <property name="xalign">0</property>
+                    <layout><property name="column">1</property><property name="row">5</property></layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">True</property>
+                <property name="has-frame">True</property>
+                <child>
+                  <object class="GtkColumnView" id="player_view">
+                    <child>
+                      <object class="GtkColumnViewColumn" id="player_name_column">
+                        <property name="title" translatable="yes">Name</property>
+                        <property name="expand">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkColumnViewColumn" id="player_score_column">
+                        <property name="title" translatable="yes">Score</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkColumnViewColumn" id="player_ping_column">
+                        <property name="title" translatable="yes">Ping</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
+        <child type="bottom">
+          <object class="GtkActionBar">
+            <child type="end">
+              <object class="GtkButton" id="connect_button">
+                <property name="label" translatable="yes">Connect</property>
+                <style>
+                  <class name="suggested-action"/>
+                </style>
+                <signal name="clicked" handler="_on_connect_clicked"/>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="close_button">
+                <property name="label" translatable="yes">Close</property>
+                <signal name="clicked" handler="_on_close_clicked"/>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </property>
+  </template>
+</interface>

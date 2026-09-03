@@ -460,7 +460,7 @@ class BlockBabel(importlib.abc.MetaPathFinder):
 
 sys.meta_path.insert(0, BlockBabel())
 importlib.import_module("tests.test_i18n")
-importlib.import_module("tests.test_gtk_behavior")
+importlib.import_module("tests.test_resources")
 """
         environment = os.environ.copy()
         environment["PYTHONPATH"] = os.pathsep.join(

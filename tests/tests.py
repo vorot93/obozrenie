@@ -308,36 +308,6 @@ class GameTableTests(unittest.TestCase):
         self.assertEqual(table.get_game_info("tf")["steam_app_id"], "440")
         self.assertNotIn("steam_app_id", table.get_game_info("gesource"))
 
-    def test_gtk_fill_game_store_renders_game_table_data(self):
-        from obozrenie.gtk_window import MainWindow
-
-        class ListModel(list):
-            pass
-
-        table = self._table({
-            "q3a": {
-                "name": "Quake III",
-                "adapter": "qstat",
-                "launch_pattern": "quake",
-                "settings": [],
-            },
-        })
-        window = MainWindow.__new__(MainWindow)
-        model = ListModel()
-        window.core = SimpleNamespace(game_table=table)
-        window.game_icons = {"q3a": "game-icon"}
-        window.gtk_widgets = {"game-list-model": model}
-        window.game_list_model_format = (
-            "game_id",
-            "name",
-            "status_icon",
-            "game_icon",
-        )
-
-        window.fill_game_store()
-
-        self.assertEqual(model, [["q3a", "Quake III", None, "game-icon"]])
-
 
 class DoLaunchTests(unittest.TestCase):
     def test_do_launch_uses_the_specified_working_directory(self):
@@ -401,10 +371,8 @@ class GeoIPModuleTests(unittest.TestCase):
 
 
 class IconLoadingTests(unittest.TestCase):
-    """Tests for icon pixbuf loading (get_icon_for_entry)."""
+    """Tests for texture loading (gtk_icons)."""
 
-    # An SVG whose <svg> root is preceded by a >1 KiB comment block, like
-    # the bundled assets that broke gdk-pixbuf format sniffing.
     _SVG_WITH_LEADING_COMMENT = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<!-- ' + 'x' * 1200 + ' -->\n'
@@ -416,150 +384,66 @@ class IconLoadingTests(unittest.TestCase):
         "+A8AAQUBAScY42YAAAAASUVORK5CYII="
     )
 
-    def _gtk_helpers(self):
-        try:
-            from obozrenie import gtk_helpers
-        except (ImportError, ValueError):
-            self.skipTest("GTK/GdkPixbuf not available")
-        return gtk_helpers
+    def _gtk_icons(self):
+        from obozrenie import gtk_icons
+        return gtk_icons
 
-    def test_svg_with_leading_comment_loads(self):
-        gtk_helpers = self._gtk_helpers()
+    @staticmethod
+    def _size(texture):
+        return (texture.get_width(), texture.get_height())
+
+    def test_svg_with_leading_comment_loads_at_its_intrinsic_size(self):
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "xx.svg").write_text(
-                self._SVG_WITH_LEADING_COMMENT,
-                encoding="utf-8",
-            )
-            icon = gtk_helpers.get_icon_for_entry(
-                "xx", ("svg",), root, 24, 18)
-            self.assertIsNotNone(icon)
-            self.assertLessEqual(icon.get_width(), 24)
-            self.assertLessEqual(icon.get_height(), 18)
-            self.assertTrue(icon.get_width() == 24 or icon.get_height() == 18)
+            (root / "xx.svg").write_text(self._SVG_WITH_LEADING_COMMENT, encoding="utf-8")
+            icon = gtk_icons.texture_for_entry("xx", ("svg",), root)
+        self.assertEqual(self._size(icon), (640, 480))
 
     def test_missing_icon_raises_file_not_found(self):
-        gtk_helpers = self._gtk_helpers()
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(FileNotFoundError):
-                gtk_helpers.get_icon_for_entry(
-                    "zz", ("svg",), Path(d), 24, 18
-                )
+                gtk_icons.texture_for_entry("zz", ("svg",), Path(d))
 
     def test_icon_dictionary_uses_explicit_image_missing_fallback(self):
-        gtk_helpers = self._gtk_helpers()
-
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "image-missing.png").write_bytes(self._ONE_PIXEL_PNG)
-            icons = gtk_helpers.get_icon_dict(
-                ("not-shipped",),
-                ("png", "svg"),
-                root,
-                24,
-                24,
-            )
-
-        self.assertIsNotNone(icons["not-shipped"])
-        self.assertEqual(
-            (
-                icons["not-shipped"].get_width(),
-                icons["not-shipped"].get_height(),
-            ),
-            (24, 24),
-        )
+            icons = gtk_icons.game_icon_textures(("not-shipped",), root)
+        self.assertEqual(self._size(icons["not-shipped"]), (1, 1))
 
     def test_invalid_requested_icon_uses_valid_image_missing_fallback(self):
-        gtk_helpers = self._gtk_helpers()
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "broken.png").write_bytes(b"not a PNG")
             (root / "image-missing.png").write_bytes(self._ONE_PIXEL_PNG)
+            icons = gtk_icons.game_icon_textures(("broken",), root)
+        self.assertEqual(self._size(icons["broken"]), (1, 1))
 
-            icons = gtk_helpers.get_icon_dict(
-                ("broken",),
-                ("png",),
-                root,
-                24,
-                24,
-            )
-
-        self.assertIsNotNone(icons["broken"])
-        self.assertEqual(
-            (icons["broken"].get_width(), icons["broken"].get_height()),
-            (24, 24),
-        )
+    def test_games_without_icons_share_one_fallback_texture(self):
+        gtk_icons = self._gtk_icons()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "image-missing.png").write_bytes(self._ONE_PIXEL_PNG)
+            icons = gtk_icons.game_icon_textures(("first", "second"), root)
+        self.assertIs(icons["first"], icons["second"])
 
     def test_missing_image_missing_fallback_raises_file_not_found(self):
-        gtk_helpers = self._gtk_helpers()
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(FileNotFoundError):
-                gtk_helpers.get_icon_dict(
-                    ("not-shipped",),
-                    ("png",),
-                    Path(directory),
-                    24,
-                    24,
-                )
+                gtk_icons.game_icon_textures(("not-shipped",), Path(directory))
 
     def test_invalid_image_missing_fallback_raises_file_not_found(self):
-        gtk_helpers = self._gtk_helpers()
+        gtk_icons = self._gtk_icons()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "image-missing.png").write_bytes(b"not a PNG")
             with self.assertRaises(FileNotFoundError):
-                gtk_helpers.get_icon_dict(
-                    ("not-shipped",),
-                    ("png",),
-                    root,
-                    24,
-                    24,
-                )
-
-
-class ListStoreHelperTests(unittest.TestCase):
-    """Tests for the list-store row helpers."""
-
-    def _gtk_helpers(self):
-        try:
-            from obozrenie import gtk_helpers
-        except (ImportError, ValueError):
-            self.skipTest("GTK/GdkPixbuf not available")
-        return gtk_helpers
-
-    def unit_dict_to_list(self):
-        """Does helper convert dict table into a list table based on specified format correctly?"""
-        spec_dict_table = [{'a': 'A1', 'b': 'B1', 'c': 'C1', 'd': 'D1', 'e': 'E1'}, {'d': 'D2', 'e': 'E2', 'a': 'A2'}]
-        spec_key_list = ('a',
-                         'e',
-                         'd')
-
-        func = self._gtk_helpers().dict_to_list
-        spec_args = {'dict_table': spec_dict_table, 'key_list': spec_key_list}
-        spec_result = [['A1', 'E1', 'D1'], ['A2', 'E2', 'D2']]
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_dict_to_list(self):
-        unit = self.unit_dict_to_list()
-        self.assertTrue(unit['expectation'] == unit['result'])
-
-    def unit_sort_dict_table(self):
-        """Checks how helper function sorts dictionary tables"""
-        spec_dict_table = [{'name': 'Olga', 'age': 32, 'gender': 'F'}, {'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}]
-        spec_sort_key = 'name'
-
-        func = self._gtk_helpers().sort_dict_table
-        spec_args = {'dict_table': spec_dict_table, 'sort_key': spec_sort_key}
-        spec_result = [{'name': 'Marina', 'age': 25, 'gender': 'F'}, {'name': 'Nikolai', 'age': 40, 'gender': 'M'}, {'name': 'Olga', 'age': 32, 'gender': 'F'}]
-
-        result = func(**spec_args)
-        return {'expectation': spec_result, 'result': result}
-
-    def test_sort_dict_table(self):
-        unit = self.unit_sort_dict_table()
-        self.assertTrue(unit['expectation'] == unit['result'])
+                gtk_icons.game_icon_textures(("not-shipped",), root)
 
 
 class _CleanupAbort(BaseException):

@@ -7,17 +7,11 @@ from babel.messages import pofile
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_ROOT = PROJECT_ROOT / "obozrenie"
 DOMAIN = "me.vorotnikov.Obozrenie"
-POT_PATH = PROJECT_ROOT / "obozrenie" / "data" / "locale" / f"{DOMAIN}.pot"
-UI_PATHS = (
-    PROJECT_ROOT / "obozrenie" / "data" / "ui" / "obozrenie_gtk.ui",
-    PROJECT_ROOT
-    / "obozrenie"
-    / "data"
-    / "ui"
-    / "obozrenie_gtk_appmenu.ui",
-)
-TRANSLATABLE_TAGS = {"attribute", "property"}
+POT_PATH = PACKAGE_ROOT / "data" / "locale" / f"{DOMAIN}.pot"
+UI_PATHS = tuple(sorted((PACKAGE_ROOT / "data" / "ui").glob("*.ui")))
+TRANSLATABLE_TAGS = {"attribute", "item", "property"}
 
 
 def ui_messages():

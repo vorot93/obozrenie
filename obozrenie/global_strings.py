@@ -29,5 +29,5 @@ UICAT_MSG = i18n._("UI/")
 BACKENDCAT_MSG = i18n._("Adapter/")
 
 CORE_MSG = CORECAT_MSG + i18n._("Core")
-GTK_MSG = UICAT_MSG + i18n._("GTK+")
+GTK_MSG = UICAT_MSG + i18n._("GTK")
 LAUNCHER_MSG = i18n._("Launcher")

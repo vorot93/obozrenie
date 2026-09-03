@@ -15,14 +15,11 @@ LOCALE_ROOT = PACKAGE_ROOT / "data" / "locale"
 POT_PATH = LOCALE_ROOT / f"{DOMAIN}.pot"
 PO_PATH = LOCALE_ROOT / "ru" / "LC_MESSAGES" / f"{DOMAIN}.po"
 MO_PATH = LOCALE_ROOT / "ru" / "LC_MESSAGES" / f"{DOMAIN}.mo"
-UI_PATHS = (
-    PACKAGE_ROOT / "data" / "ui" / "obozrenie_gtk.ui",
-    PACKAGE_ROOT / "data" / "ui" / "obozrenie_gtk_appmenu.ui",
-)
-TRANSLATABLE_TAGS = {"attribute", "property"}
+UI_PATHS = tuple(sorted((PACKAGE_ROOT / "data" / "ui").glob("*.ui")))
+TRANSLATABLE_TAGS = {"attribute", "item", "property"}
 REPRESENTATIVE_TRANSLATIONS = {
     "Connect": "Подключиться",
-    "Servers": "Серверы",
+    "Terrain": "Карта",
     "About": "О программе",
     "Quit": "Выйти",
 }

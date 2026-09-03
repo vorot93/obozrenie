@@ -456,9 +456,8 @@ class RepositoryHygieneTests(unittest.TestCase):
     # their last caller (`load_table`) with `load_user_table`. `deepcopy` lost
     # its last caller when the game table moved to its own module and its call
     # sites switched to `copy.deepcopy` directly (see obozrenie/game_table.py).
-    # `sort_dict_table` and `dict_to_list` are not dead: they build GTK
-    # list-store rows and nothing else, so they live in `gtk_helpers` now and
-    # must not reappear here (see obozrenie/gtk_helpers.py).
+    # `sort_dict_table` and `dict_to_list` built GTK 3 list-store rows; the
+    # GTK 4 layer builds `list_rows` objects instead, so they stay dead here.
     DEAD_HELPERS = (
         "Bunch",
         "enum",
