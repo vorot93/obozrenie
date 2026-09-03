@@ -22,7 +22,7 @@ import copy
 import threading
 from enum import Enum, auto
 
-from obozrenie import i18n
+from obozrenie import i18n, resources
 from obozrenie.models import Server
 
 
@@ -101,6 +101,11 @@ class GameTable:
         self._lock = threading.RLock()
         with self._lock:
             self._game_table = self.create_game_table(gameconfig_object)
+
+    @classmethod
+    def from_shipped_list(cls) -> "GameTable":
+        """Load the game list shipped inside the package."""
+        return cls(resources.load_toml("settings", "internal", "game_lists.toml"))
 
     def __repr__(self):
         with self._lock:

@@ -2030,22 +2030,22 @@ class _IdleQueue:
             callback(*args)
 
 
-class _FakeGeoIPCore:
-    """Stand in for Core: geolocation state and the database load only."""
+class _FakeGeolocation:
+    """Stand in for geoip.Geolocation: the enabled flag and the load only."""
 
     def __init__(self, events):
-        self.geolocation = None
+        self.enabled = False
         self.events = events
 
-    def load_geoip(self, path):
+    def load(self, path):
         self.events.append(("load", path))
-        self.geolocation = object()
+        self.enabled = True
 
 
 class GeoIPDownloadCoordinatorTests(unittest.TestCase):
     def setUp(self):
         self.events = []
-        self.core = _FakeGeoIPCore(self.events)
+        self.geolocation = _FakeGeolocation(self.events)
         self.dialogs = []
         self.idle = _IdleQueue()
         self.parent = object()
@@ -2057,7 +2057,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
             gtk_module.Gtk, "ProgressBar", side_effect=_FakeWidget))
         self.enterContext(mock.patch.object(
             gtk_module.GLib, "idle_add", side_effect=self.idle))
-        self.coordinator = gtk_geoip.GeoIPDownloadCoordinator(self.core)
+        self.coordinator = gtk_geoip.GeoIPDownloadCoordinator(self.geolocation)
 
     def make_dialog(self, **kwargs):
         dialog = _FakeDialog(self.events, **kwargs)
@@ -2127,7 +2127,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         self.assertEqual(len(self.dialogs), 2)
 
         self.dialogs[1].respond(gtk_module.Gtk.ResponseType.CANCEL)
-        self.core.geolocation = object()
+        self.geolocation.enabled = True
         self.assertIs(self.offer(self.refused), False)
         self.assertEqual(len(self.dialogs), 2)
 
@@ -2251,7 +2251,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
 
         self.assertEqual(self.events, [])
         self.assertEqual(self.dialogs[0].destroyed, 0)
-        self.assertIsNone(self.core.geolocation)
+        self.assertFalse(self.geolocation.enabled)
         self.assertNotIn(("set_fraction", 0.75), progress.calls)
         self.assertNotIn(("pulse",), progress.calls)
 

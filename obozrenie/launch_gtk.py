@@ -24,6 +24,9 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
+from obozrenie.core import Core
+from obozrenie.game_table import GameTable
+from obozrenie.geoip import Geolocation
 from obozrenie.global_settings import *
 from obozrenie.network_calls import (
     NetworkCallPools,
@@ -37,7 +40,6 @@ from obozrenie.qstat_processes import (
 from obozrenie.settings import Settings
 
 if TYPE_CHECKING:
-    from obozrenie.core import Core
     from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
 
 
@@ -238,11 +240,13 @@ def main():
     try:
         try:
             _ensure_macos_library_path()
-            from obozrenie.gtk import App, core
+            from obozrenie.gtk import App
             from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
-            core_instance = core.Core()
+            game_table = GameTable.from_shipped_list()
+            geolocation = Geolocation.discover()
+            core_instance = Core(game_table, geolocation)
             started_owners.append(core_instance)
-            coordinator_instance = GeoIPDownloadCoordinator(core_instance)
+            coordinator_instance = GeoIPDownloadCoordinator(geolocation)
             started_owners.append(coordinator_instance)
             services_instance = ApplicationServices(
                 core_instance,

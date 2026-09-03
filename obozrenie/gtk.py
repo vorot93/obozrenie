@@ -23,7 +23,6 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk
 
-import obozrenie.core as core
 from obozrenie import gtk_helpers, helpers, i18n, resources
 from obozrenie.diagnostics import diagnostic_for_exception
 from obozrenie.global_strings import *

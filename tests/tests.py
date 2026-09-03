@@ -732,11 +732,28 @@ class EntryPointTests(unittest.TestCase):
     _ATTEMPTED_PATHS = {
         "macOS setup": ["macOS setup"],
         "GTK import": ["macOS setup", "GTK import"],
-        "Core": ["macOS setup", "Core"],
-        "coordinator": ["macOS setup", "Core", "coordinator"],
-        "services": ["macOS setup", "Core", "coordinator", "services"],
+        "game table": ["macOS setup", "game table"],
+        "geolocation": ["macOS setup", "game table", "geolocation"],
+        "Core": ["macOS setup", "game table", "geolocation", "Core"],
+        "coordinator": [
+            "macOS setup",
+            "game table",
+            "geolocation",
+            "Core",
+            "coordinator",
+        ],
+        "services": [
+            "macOS setup",
+            "game table",
+            "geolocation",
+            "Core",
+            "coordinator",
+            "services",
+        ],
         "Settings": [
             "macOS setup",
+            "game table",
+            "geolocation",
             "Core",
             "coordinator",
             "services",
@@ -744,6 +761,8 @@ class EntryPointTests(unittest.TestCase):
         ],
         "App": [
             "macOS setup",
+            "game table",
+            "geolocation",
             "Core",
             "coordinator",
             "services",
@@ -752,6 +771,8 @@ class EntryPointTests(unittest.TestCase):
         ],
         "app.run": [
             "macOS setup",
+            "game table",
+            "geolocation",
             "Core",
             "coordinator",
             "services",
@@ -802,11 +823,31 @@ class EntryPointTests(unittest.TestCase):
                 events.append(f"{instance.name}.join_until")
                 closed_deadlines.append(deadline)
 
+        class FakeGameTable:
+            @classmethod
+            def from_shipped_list(cls):
+                events.append("game table")
+                if failure == "game table":
+                    raise error
+                instances["game table"] = cls()
+                return instances["game table"]
+
+        class FakeGeolocation:
+            @classmethod
+            def discover(cls):
+                events.append("geolocation")
+                if failure == "geolocation":
+                    raise error
+                instances["geolocation"] = cls()
+                return instances["geolocation"]
+
         class FakeCore:
-            def __init__(instance):
+            def __init__(instance, game_table, geolocation):
                 events.append("Core")
                 if failure == "Core":
                     raise error
+                self.assertIs(game_table, instances["game table"])
+                self.assertIs(geolocation, instances["geolocation"])
                 instances["core"] = instance
 
             def begin_close(instance):
@@ -817,11 +858,11 @@ class EntryPointTests(unittest.TestCase):
                 closed_deadlines.append(deadline)
 
         class FakeCoordinator:
-            def __init__(instance, core_instance):
+            def __init__(instance, geolocation):
                 events.append("coordinator")
                 if failure == "coordinator":
                     raise error
-                self.assertIs(core_instance, instances["core"])
+                self.assertIs(geolocation, instances["geolocation"])
                 instances["coordinator"] = instance
 
             def begin_close(instance):
@@ -895,17 +936,19 @@ class EntryPointTests(unittest.TestCase):
         gtk_module = ModuleType("obozrenie.gtk")
         gtk_geoip_module = ModuleType("obozrenie.gtk_geoip")
         if failure == "GTK import":
-            def fail_gtk_import(name):
-                if name in {"App", "GeoIPDownloadCoordinator", "core"}:
-                    events.append("GTK import")
-                    raise error
-                raise AttributeError(name)
+            def make_fail_gtk_import(raising_names):
+                def fail_gtk_import(name):
+                    if name in raising_names:
+                        events.append("GTK import")
+                        raise error
+                    raise AttributeError(name)
+                return fail_gtk_import
 
-            gtk_module.__getattr__ = fail_gtk_import
-            gtk_geoip_module.__getattr__ = fail_gtk_import
+            gtk_module.__getattr__ = make_fail_gtk_import({"App"})
+            gtk_geoip_module.__getattr__ = make_fail_gtk_import(
+                {"GeoIPDownloadCoordinator"})
         else:
             gtk_module.App = FakeApp
-            gtk_module.core = SimpleNamespace(Core=FakeCore)
             gtk_geoip_module.GeoIPDownloadCoordinator = FakeCoordinator
 
         def ensure_macos_library_path():
@@ -967,6 +1010,12 @@ class EntryPointTests(unittest.TestCase):
             ))
             patches.enter_context(mock.patch.object(
                 launch_gtk, "ApplicationServices", FakeServices))
+            patches.enter_context(mock.patch.object(
+                launch_gtk, "Core", FakeCore))
+            patches.enter_context(mock.patch.object(
+                launch_gtk, "GameTable", FakeGameTable))
+            patches.enter_context(mock.patch.object(
+                launch_gtk, "Geolocation", FakeGeolocation))
             patches.enter_context(mock.patch.object(
                 launch_gtk, "Settings", FakeSettings))
             patches.enter_context(

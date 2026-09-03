@@ -14,13 +14,11 @@ import requests
 from requests.structures import CaseInsensitiveDict
 
 from obozrenie import (
-    core as core_module,
     geoip,
     helpers,
     http_client,
     network_calls,
 )
-from obozrenie.core import Core
 from obozrenie.diagnostics import SafeDiagnostic
 from obozrenie.network_calls import (
     CallDeadlineExceeded,
@@ -254,42 +252,19 @@ class DnsFacadeTests(unittest.TestCase):
         pool.map_until.assert_called_once()
 
 
-class CoreGeoIPTests(unittest.TestCase):
-    def make_core(self, database):
-        """Build a real Core whose geolocation is one test database.
-
-        Core initialises its lifecycle state in `__init__`, so a fixture that
-        bypassed the constructor would break the moment lookup consults it.
-        """
-        with (
-            mock.patch.object(
-                core_module.resources, "load_toml", return_value={}
-            ),
-            mock.patch.object(
-                core_module.geoip, "find_database", return_value=None
-            ),
-            # Construction reports the absent database; these tests assert
-            # their own diagnostics, so a passing run prints nothing.
-            mock.patch.object(helpers, "debug_msg"),
-        ):
-            core = Core()
-        core.geolocation = database
-        return core
-
-    def test_geoip_fixture_core_carries_its_lifecycle_state(self):
-        # Country lookup shares Core with the query lifecycle, whose state
-        # exists only when `Core.__init__` ran, so this fixture constructs one.
-        self.assertIs(self.make_core(None).is_closing, False)
+class GeolocationTests(unittest.TestCase):
+    def make_geolocation(self, database):
+        """Build a Geolocation over one test database (None = disabled)."""
+        return geoip.Geolocation(reader=database)
 
     def test_disabled_geolocation_returns_unknown_without_dns(self):
-        core = self.make_core(None)
+        geolocation = self.make_geolocation(None)
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             side_effect=AssertionError("disabled geolocation used DNS"),
-            create=True,
         ):
-            countries = core._lookup_countries(
+            countries = geolocation.countries_for(
                 ("server.example", "192.0.2.1", "server.example")
             )
 
@@ -297,7 +272,10 @@ class CoreGeoIPTests(unittest.TestCase):
             countries,
             {"server.example": "unknown", "192.0.2.1": "unknown"},
         )
-        self.assertEqual(core._lookup_country("server.example"), "unknown")
+        self.assertEqual(
+            geolocation.countries_for(("server.example",))["server.example"],
+            "unknown",
+        )
 
     def test_lookup_separates_literals_and_one_first_seen_hostname_batch(self):
         database = _RecordingDatabase(
@@ -307,7 +285,7 @@ class CoreGeoIPTests(unittest.TestCase):
                 "198.51.100.1": {"country_code": "CA"},
             }
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         hosts = (
             "192.0.2.10",
             "one.example",
@@ -325,17 +303,16 @@ class CoreGeoIPTests(unittest.TestCase):
             ]
 
         before_deadline = (
-            time.monotonic() + core_module._GEOIP_DNS_BATCH_TIMEOUT_SECONDS
+            time.monotonic() + geoip._DNS_BATCH_TIMEOUT_SECONDS
         )
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             side_effect=resolve_many,
-            create=True,
         ):
-            countries = core._lookup_countries(hosts)
+            countries = geolocation.countries_for(hosts)
         after_deadline = (
-            time.monotonic() + core_module._GEOIP_DNS_BATCH_TIMEOUT_SECONDS
+            time.monotonic() + geoip._DNS_BATCH_TIMEOUT_SECONDS
         )
 
         self.assertEqual(
@@ -358,7 +335,7 @@ class CoreGeoIPTests(unittest.TestCase):
         )
 
     def test_supplied_deadline_is_forwarded_unchanged(self):
-        core = self.make_core(_RecordingDatabase({}))
+        geolocation = self.make_geolocation(_RecordingDatabase({}))
         deadline = time.monotonic() + 123.0
         calls = []
 
@@ -367,12 +344,13 @@ class CoreGeoIPTests(unittest.TestCase):
             return [CallOutcome.failure(socket.gaierror("missing"))]
 
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             side_effect=resolve_many,
-            create=True,
         ):
-            countries = core._lookup_countries(("server.example",), deadline)
+            countries = geolocation.countries_for(
+                ("server.example",), deadline
+            )
 
         self.assertEqual(countries, {"server.example": ""})
         self.assertEqual(calls, [(('server.example',), deadline)])
@@ -386,14 +364,13 @@ class CoreGeoIPTests(unittest.TestCase):
                 },
             }
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             side_effect=AssertionError("IP literals used DNS"),
-            create=True,
         ):
-            countries = core._lookup_countries(tuple(database.outcomes))
+            countries = geolocation.countries_for(tuple(database.outcomes))
 
         self.assertEqual(
             countries,
@@ -415,14 +392,15 @@ class CoreGeoIPTests(unittest.TestCase):
         database = _RecordingDatabase(
             {"198.51.100.8": {"country_code": "NZ"}}
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             return_value=[CallOutcome.success(candidates)],
-            create=True,
         ):
-            country = core._lookup_country("server.example")
+            country = geolocation.countries_for(
+                ("server.example",)
+            )["server.example"]
 
         self.assertEqual(country, "NZ")
         self.assertEqual(database.lookups, ["198.51.100.8"])
@@ -431,7 +409,7 @@ class CoreGeoIPTests(unittest.TestCase):
         database = _RecordingDatabase(
             {"198.51.100.20": {"country_code": "CA"}}
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         expected_errors = (
             socket.gaierror("missing"),
             UnicodeEncodeError("idna", "x", 0, 1, "bad name"),
@@ -448,12 +426,11 @@ class CoreGeoIPTests(unittest.TestCase):
         ]
 
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             return_value=outcomes,
-            create=True,
         ):
-            countries = core._lookup_countries(names)
+            countries = geolocation.countries_for(names)
 
         self.assertEqual(countries["working.example"], "CA")
         self.assertEqual(
@@ -483,15 +460,14 @@ class CoreGeoIPTests(unittest.TestCase):
         )
         for outcome_error in errors:
             with self.subTest(error=type(outcome_error).__name__):
-                core = self.make_core(_RecordingDatabase({}))
+                geolocation = self.make_geolocation(_RecordingDatabase({}))
                 with mock.patch.object(
-                    core_module,
+                    geoip,
                     "getaddrinfo_many_until",
                     return_value=[CallOutcome.failure(outcome_error)],
-                    create=True,
                 ):
                     raised = _capture_error(
-                        lambda: core._lookup_countries(("server.example",))
+                        lambda: geolocation.countries_for(("server.example",))
                     )
 
                 self.assertIs(raised, outcome_error)
@@ -500,10 +476,10 @@ class CoreGeoIPTests(unittest.TestCase):
         database = _RecordingDatabase(
             {"192.0.2.30": {"country_code": "US"}}
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         with installed_network_pools() as pools:
             pools.dns.begin_close()
-            countries = core._lookup_countries(
+            countries = geolocation.countries_for(
                 ("closed.example", "192.0.2.30"),
                 time.monotonic() + 0.02,
             )
@@ -518,18 +494,18 @@ class CoreGeoIPTests(unittest.TestCase):
         database = _RecordingDatabase(
             {"192.0.2.31": {"country_code": "US"}}
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         initial_error = _StartupAbort("thread startup interrupted")
         with installed_network_pools() as pools, mock.patch.object(
             network_calls.threading,
             "Thread",
             side_effect=initial_error,
         ) as thread_factory:
-            first = core._lookup_countries(
+            first = geolocation.countries_for(
                 ("first.example", "192.0.2.31"),
                 time.monotonic() + 0.02,
             )
-            second = core._lookup_countries(
+            second = geolocation.countries_for(
                 ("later.example",),
                 time.monotonic() + 0.02,
             )
@@ -548,7 +524,7 @@ class CoreGeoIPTests(unittest.TestCase):
         database = _RecordingDatabase(
             {"192.0.2.32": {"country_code": "US"}}
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         release = threading.Event()
         all_started = threading.Event()
         state_lock = threading.Lock()
@@ -572,7 +548,7 @@ class CoreGeoIPTests(unittest.TestCase):
                     "getaddrinfo",
                     side_effect=AssertionError("saturated call reached resolver"),
                 ):
-                    countries = core._lookup_countries(
+                    countries = geolocation.countries_for(
                         ("saturated.example", "192.0.2.32"),
                         time.monotonic() + 0.02,
                     )
@@ -594,7 +570,7 @@ class CoreGeoIPTests(unittest.TestCase):
                 "192.0.2.40": {"country_code": "US"},
             }
         )
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
         blocked_started = threading.Event()
         release = threading.Event()
         caller_finished = threading.Event()
@@ -614,7 +590,7 @@ class CoreGeoIPTests(unittest.TestCase):
         def lookup():
             try:
                 results.append(
-                    core._lookup_countries(
+                    geolocation.countries_for(
                         (
                             "blocked.example",
                             "working.example",
@@ -628,10 +604,9 @@ class CoreGeoIPTests(unittest.TestCase):
                 caller_finished.set()
 
         with installed_network_pools(), mock.patch.object(
-            core_module,
-            "_GEOIP_DNS_BATCH_TIMEOUT_SECONDS",
+            geoip,
+            "_DNS_BATCH_TIMEOUT_SECONDS",
             0.02,
-            create=True,
         ), mock.patch.object(
             network_calls.socket,
             "getaddrinfo",
@@ -665,16 +640,15 @@ class CoreGeoIPTests(unittest.TestCase):
         )
 
     def test_unexpected_resolver_error_propagates(self):
-        core = self.make_core(_RecordingDatabase({}))
+        geolocation = self.make_geolocation(_RecordingDatabase({}))
         error = RuntimeError("resolver programming error")
         with mock.patch.object(
-            core_module,
+            geoip,
             "getaddrinfo_many_until",
             return_value=[CallOutcome.failure(error)],
-            create=True,
         ):
             with self.assertRaises(RuntimeError) as raised:
-                core._lookup_countries(("server.example",))
+                geolocation.countries_for(("server.example",))
         self.assertIs(raised.exception, error)
 
     def test_exact_mmdb_schemas_and_malformed_records_are_isolated(self):
@@ -695,9 +669,9 @@ class CoreGeoIPTests(unittest.TestCase):
             "192.0.2.7": {"country": {"iso_code": ["GB"]}},
         }
         database = _RecordingDatabase(records)
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
 
-        countries = core._lookup_countries(tuple(records))
+        countries = geolocation.countries_for(tuple(records))
 
         self.assertEqual(
             countries,
@@ -720,9 +694,9 @@ class CoreGeoIPTests(unittest.TestCase):
             "192.0.2.52": {"country_code": "US"},
         }
         database = _RecordingDatabase(records)
-        core = self.make_core(database)
+        geolocation = self.make_geolocation(database)
 
-        countries = core._lookup_countries(tuple(records))
+        countries = geolocation.countries_for(tuple(records))
 
         self.assertEqual(
             countries,
@@ -731,12 +705,52 @@ class CoreGeoIPTests(unittest.TestCase):
 
     def test_unexpected_database_error_propagates(self):
         error = RuntimeError("database programming error")
-        core = self.make_core(_RecordingDatabase({"192.0.2.60": error}))
+        geolocation = self.make_geolocation(
+            _RecordingDatabase({"192.0.2.60": error})
+        )
 
         with self.assertRaises(RuntimeError) as raised:
-            core._lookup_countries(("192.0.2.60",))
+            geolocation.countries_for(("192.0.2.60",))
 
         self.assertIs(raised.exception, error)
+
+    def test_load_enables_and_a_failed_load_disables(self):
+        opened = object()
+        with (
+            mock.patch.object(geoip.maxminddb, "open_database", return_value=opened),
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
+        ):
+            geolocation = geoip.Geolocation()
+            self.assertFalse(geolocation.enabled)
+            geolocation.load("/db/country.mmdb")
+        self.assertTrue(geolocation.enabled)
+        self.assertEqual(debug_msg.call_count, 1)
+
+        with (
+            mock.patch.object(
+                geoip.maxminddb, "open_database",
+                side_effect=geoip.maxminddb.InvalidDatabaseError("bad"),
+            ),
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
+        ):
+            geolocation.load("/db/country.mmdb")
+        self.assertFalse(geolocation.enabled)
+        self.assertEqual(debug_msg.call_count, 1)
+
+    def test_discover_loads_the_found_database_or_stays_disabled(self):
+        with (
+            mock.patch.object(geoip, "find_database", return_value=None),
+            mock.patch.object(helpers, "debug_msg") as debug_msg,
+        ):
+            self.assertFalse(geoip.Geolocation.discover().enabled)
+        self.assertEqual(debug_msg.call_count, 1)
+
+        with (
+            mock.patch.object(geoip, "find_database", return_value="/db/x.mmdb"),
+            mock.patch.object(geoip.maxminddb, "open_database", return_value=object()),
+            mock.patch.object(helpers, "debug_msg"),
+        ):
+            self.assertTrue(geoip.Geolocation.discover().enabled)
 
 
 def _forbidden_stream(reason):

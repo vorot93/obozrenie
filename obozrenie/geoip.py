@@ -21,24 +21,32 @@
 from __future__ import annotations
 
 import contextlib
+import ipaddress
 import os
+import socket
 import tempfile
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 import maxminddb
 import requests
 from xdg import BaseDirectory
 
-from obozrenie import helpers, http_client
+from obozrenie import helpers, http_client, i18n
 from obozrenie.diagnostics import (
     SafeDiagnostic,
     SafeDiagnosticError,
     diagnostic_for_exception,
 )
 from obozrenie.global_strings import CORECAT_MSG
-from obozrenie.network_calls import validate_deadline
+from obozrenie.network_calls import (
+    CallDeadlineExceeded,
+    PoolSaturatedError,
+    PoolUnavailableError,
+    getaddrinfo_many_until,
+    validate_deadline,
+)
 
 DOWNLOAD_URL = "https://cdn.jsdelivr.net/npm/@ip-location-db/dbip-geo-whois-asn-country-mmdb/dbip-geo-whois-asn-country.mmdb"
 
@@ -71,6 +79,9 @@ _GEOIP_MSG = CORECAT_MSG + "GeoIP"
 _OPENER_THREAD_NAME = "obozrenie-geoip-open"
 _CLOSER_THREAD_NAME = "obozrenie-geoip-close"
 _WATCHDOG_THREAD_NAME = "obozrenie-geoip-deadline"
+# One country lookup's DNS batch may occupy its worker for this long, when
+# the caller supplies no deadline of its own.
+_DNS_BATCH_TIMEOUT_SECONDS = 5.0
 
 
 class _TransferHelperError(SafeDiagnosticError, RuntimeError):
@@ -116,6 +127,145 @@ def find_database():
         if os.path.isfile(path) and os.access(path, os.R_OK):
             return path
     return None
+
+
+class Geolocation:
+    """Country lookup over one optional MaxMind DB country database.
+
+    The reader is replaced as a whole, so a database loaded from the GTK
+    thread while a query worker resolves a batch is used for that whole batch
+    or not at all.
+    """
+
+    def __init__(self, reader=None) -> None:
+        self._reader = reader
+
+    @classmethod
+    def discover(cls) -> "Geolocation":
+        """Open the first database `find_database` reports, or stay disabled."""
+        geolocation = cls()
+        path = find_database()
+        if path is None:
+            helpers.debug_msg([
+                _GEOIP_MSG,
+                i18n._("GeoIP database not found. Disabling geolocation."),
+            ])
+        else:
+            geolocation.load(path)
+        return geolocation
+
+    @property
+    def enabled(self) -> bool:
+        return self._reader is not None
+
+    def load(self, path: str) -> None:
+        """Open a MaxMind DB country database; a failure disables lookup."""
+        try:
+            self._reader = maxminddb.open_database(path)
+            helpers.debug_msg([
+                _GEOIP_MSG,
+                i18n._("GeoIP database %(path)s opened successfully.")
+                % {"path": path},
+            ])
+        except (OSError, maxminddb.InvalidDatabaseError):
+            helpers.debug_msg([
+                _GEOIP_MSG,
+                i18n._("Failed to open GeoIP database. Disabling geolocation."),
+            ])
+            self._reader = None
+
+    def countries_for(
+        self,
+        hosts,
+        deadline: float | None = None,
+    ) -> dict[str, str]:
+        """Resolve one host batch to ISO country codes."""
+        reader = self._reader
+        unique_hosts = tuple(dict.fromkeys(hosts))
+        if reader is None:
+            return {host: "unknown" for host in unique_hosts}
+
+        addresses = {}
+        hostnames = []
+        for host in unique_hosts:
+            try:
+                ipaddress.ip_address(host)
+            except ValueError:
+                hostnames.append(host)
+            else:
+                addresses[host] = host
+
+        if hostnames:
+            if deadline is None:
+                deadline = (
+                    time.monotonic() + _DNS_BATCH_TIMEOUT_SECONDS
+                )
+            outcomes = getaddrinfo_many_until(hostnames, deadline)
+            for host, outcome in zip(hostnames, outcomes, strict=True):
+                try:
+                    candidates = outcome.result()
+                except (
+                    CallDeadlineExceeded,
+                    PoolSaturatedError,
+                    PoolUnavailableError,
+                ) as error:
+                    if type(error) not in (
+                        CallDeadlineExceeded,
+                        PoolSaturatedError,
+                        PoolUnavailableError,
+                    ):
+                        raise
+                    continue
+                except (socket.gaierror, UnicodeError):
+                    continue
+
+                for candidate in candidates:
+                    try:
+                        family = candidate[0]
+                        address = candidate[4][0]
+                    except (IndexError, TypeError):
+                        continue
+                    if family not in (socket.AF_INET, socket.AF_INET6):
+                        continue
+                    if type(address) is not str:
+                        continue
+                    try:
+                        parsed = ipaddress.ip_address(address)
+                    except ValueError:
+                        continue
+                    expected_version = 4 if family == socket.AF_INET else 6
+                    if parsed.version == expected_version:
+                        addresses[host] = address
+                        break
+
+        countries = {}
+        for host in unique_hosts:
+            address = addresses.get(host)
+            if address is None:
+                countries[host] = ""
+                continue
+            try:
+                record = reader.get(address)
+            except (ValueError, maxminddb.InvalidDatabaseError):
+                countries[host] = ""
+                continue
+            if not isinstance(record, Mapping):
+                countries[host] = ""
+                continue
+
+            # Flat ip-location-db format vs. nested MaxMind/DB-IP format.
+            missing = object()
+            code = record.get("country_code", missing)
+            if code is not missing:
+                countries[host] = code if type(code) is str else ""
+                continue
+            country = record.get("country")
+            if not isinstance(country, Mapping):
+                countries[host] = ""
+                continue
+            code = country.get("iso_code")
+            countries[host] = code if type(code) is str else ""
+        return countries
 
 
 def _remove_quiet(path):

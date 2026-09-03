@@ -977,7 +977,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import obozrenie
-from obozrenie import core, gtk, i18n, models, resources
+from obozrenie import core, game_table, geoip, gtk, i18n, models, resources
 from obozrenie.models import Endpoint, Player, Server
 
 expected_root = Path(os.environ["OBOZRENIE_EXPECTED_ROOT"]).resolve()
@@ -997,7 +997,9 @@ distribution_origin = assert_under_expected(
 )
 assert importlib.util.find_spec("babel") is None
 
-core_instance = core.Core()
+core_instance = core.Core(
+    game_table.GameTable.from_shipped_list(), geoip.Geolocation()
+)
 games = core_instance.game_table.get_game_set()
 assert "garrysmod" in games
 assert core_instance.game_table.get_game_info("garrysmod")["steam_app_id"] == "4000"

@@ -18,37 +18,23 @@
 
 """Core functions for Obozrenie Game Server Browser."""
 
-import ipaddress
 import os
-import socket
 import threading
 import time
-from collections.abc import Mapping
 from dataclasses import replace
 from enum import Enum, auto
-
-import maxminddb
 
 from obozrenie.global_settings import *
 from obozrenie.global_strings import *
 
-from obozrenie import adapters, geoip, helpers, i18n, launch, ping, resources
+from obozrenie import adapters, geoip, helpers, i18n, launch, ping
 from obozrenie.diagnostics import (
     SafeDiagnostic,
     SafeDiagnosticError,
 )
 from obozrenie.game_table import GameTable, validated_server_batch
 from obozrenie.models import Endpoint, Server
-from obozrenie.network_calls import (
-    CallDeadlineExceeded,
-    PoolSaturatedError,
-    PoolUnavailableError,
-    getaddrinfo_many_until,
-    validate_deadline,
-)
-
-
-_GEOIP_DNS_BATCH_TIMEOUT_SECONDS = 5.0
+from obozrenie.network_calls import validate_deadline
 
 
 def _query_failure_message() -> str:
@@ -238,129 +224,13 @@ class Core:
     is in flight, and join what it launched.
     """
 
-    def __init__(self):
+    def __init__(self, game_table: GameTable, geolocation: geoip.Geolocation) -> None:
         self._lifecycle_lock = threading.Lock()
         self._closing = False
         self._active_attempts = set()
         self._tracked_threads = set()
-
-        self.game_table = GameTable(resources.load_toml(
-            "settings", "internal", "game_lists.toml"
-        ))
-
-        self.geolocation = None
-        path = geoip.find_database()
-        if path is not None:
-            self.load_geoip(path)
-        else:
-            helpers.debug_msg(
-                [CORE_MSG, i18n._("GeoIP database not found. Disabling geolocation.")])
-
-    def load_geoip(self, path: str) -> None:
-        """Open a MaxMind DB country database and enable geolocation."""
-        try:
-            self.geolocation = maxminddb.open_database(path)
-            helpers.debug_msg([CORE_MSG, i18n._("GeoIP database %(path)s opened successfully.") % {
-                              'path': path}])
-        except (OSError, maxminddb.InvalidDatabaseError):
-            helpers.debug_msg(
-                [CORE_MSG, i18n._("Failed to open GeoIP database. Disabling geolocation.")])
-            self.geolocation = None
-
-    def _lookup_countries(
-        self,
-        hosts,
-        deadline: float | None = None,
-    ) -> dict[str, str]:
-        """Resolve one host batch to ISO country codes."""
-        unique_hosts = tuple(dict.fromkeys(hosts))
-        if self.geolocation is None:
-            return {host: "unknown" for host in unique_hosts}
-
-        addresses = {}
-        hostnames = []
-        for host in unique_hosts:
-            try:
-                ipaddress.ip_address(host)
-            except ValueError:
-                hostnames.append(host)
-            else:
-                addresses[host] = host
-
-        if hostnames:
-            if deadline is None:
-                deadline = (
-                    time.monotonic() + _GEOIP_DNS_BATCH_TIMEOUT_SECONDS
-                )
-            outcomes = getaddrinfo_many_until(hostnames, deadline)
-            for host, outcome in zip(hostnames, outcomes, strict=True):
-                try:
-                    candidates = outcome.result()
-                except (
-                    CallDeadlineExceeded,
-                    PoolSaturatedError,
-                    PoolUnavailableError,
-                ) as error:
-                    if type(error) not in (
-                        CallDeadlineExceeded,
-                        PoolSaturatedError,
-                        PoolUnavailableError,
-                    ):
-                        raise
-                    continue
-                except (socket.gaierror, UnicodeError):
-                    continue
-
-                for candidate in candidates:
-                    try:
-                        family = candidate[0]
-                        address = candidate[4][0]
-                    except (IndexError, TypeError):
-                        continue
-                    if family not in (socket.AF_INET, socket.AF_INET6):
-                        continue
-                    if type(address) is not str:
-                        continue
-                    try:
-                        parsed = ipaddress.ip_address(address)
-                    except ValueError:
-                        continue
-                    expected_version = 4 if family == socket.AF_INET else 6
-                    if parsed.version == expected_version:
-                        addresses[host] = address
-                        break
-
-        countries = {}
-        for host in unique_hosts:
-            address = addresses.get(host)
-            if address is None:
-                countries[host] = ""
-                continue
-            try:
-                record = self.geolocation.get(address)
-            except (ValueError, maxminddb.InvalidDatabaseError):
-                countries[host] = ""
-                continue
-            if not isinstance(record, Mapping):
-                countries[host] = ""
-                continue
-
-            # Flat ip-location-db format vs. nested MaxMind/DB-IP format.
-            missing = object()
-            code = record.get("country_code", missing)
-            if code is not missing:
-                countries[host] = code if type(code) is str else ""
-                continue
-            country = record.get("country")
-            if not isinstance(country, Mapping):
-                countries[host] = ""
-                continue
-            code = country.get("iso_code")
-            countries[host] = code if type(code) is str else ""
-        return countries
-
-    def _lookup_country(self, host: str) -> str:
-        return self._lookup_countries((host,))[host]
+        self.game_table = game_table
+        self.geolocation = geolocation
 
     def _enrich_servers(self, servers: list[Server]) -> list[Server]:
         snapshot = list(servers)
@@ -373,7 +243,7 @@ class Core:
 
         if any(type(server) is not Server for server in rtt_servers):
             raise TypeError("RTT enrichment must return exact Server records.")
-        countries = self._lookup_countries(
+        countries = self.geolocation.countries_for(
             server.endpoint.host for server in rtt_servers
         )
         return [

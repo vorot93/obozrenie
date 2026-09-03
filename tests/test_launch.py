@@ -3,8 +3,9 @@ import unittest
 from dataclasses import FrozenInstanceError
 from unittest import mock
 
-from obozrenie import core as core_module, helpers, launch
+from obozrenie import core as core_module, geoip, launch
 from obozrenie.core import Core
+from obozrenie.game_table import GameTable
 from obozrenie.models import Endpoint
 
 
@@ -726,20 +727,7 @@ class CoreLaunchTests(unittest.TestCase):
         Core initialises its lifecycle state in `__init__`, so a fixture that
         bypassed the constructor would break the moment launching consults it.
         """
-        with (
-            mock.patch.object(
-                core_module.resources,
-                "load_toml",
-                return_value=CORE_LAUNCH_CONFIG,
-            ),
-            mock.patch.object(
-                core_module.geoip, "find_database", return_value=None
-            ),
-            # Construction reports the absent database; these tests assert
-            # their own diagnostics, so a passing run prints nothing.
-            mock.patch.object(helpers, "debug_msg"),
-        ):
-            return Core()
+        return Core(GameTable(CORE_LAUNCH_CONFIG), geoip.Geolocation())
 
     def make_thread(self, *args, **kwargs):
         thread = ImmediateThread(*args, **kwargs)

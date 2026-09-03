@@ -5,6 +5,7 @@ import threading
 import time
 import unittest
 from enum import Enum
+from types import SimpleNamespace
 from unittest import mock
 
 import maxminddb
@@ -14,6 +15,7 @@ from icmplib import Host
 from obozrenie import (
     adapters,
     core as core_module,
+    geoip,
     helpers,
     network_calls,
 )
@@ -557,12 +559,7 @@ class CoreQueryTestCase(unittest.TestCase):
 
     def new_core(self, config=CONFIG):
         """Build a Core over one test game configuration."""
-        with mock.patch.object(
-            core_module.resources, "load_toml", return_value=config
-        ), mock.patch.object(
-            core_module.geoip, "find_database", return_value=None
-        ):
-            core = Core()
+        core = Core(GameTable(config), geoip.Geolocation())
         for game in config:
             core.game_table.set_game_setting(game, "master_uri", [])
         return core
@@ -844,7 +841,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 }[host]
             return countries
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -1082,7 +1079,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 }[host]
             return countries
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=mutate_then_fail
@@ -1232,7 +1229,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 }[host]
             return countries
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch("obozrenie.ping.add_rtt_info", side_effect=lazy_rtt):
             self.run_query_worker(core)
@@ -1349,7 +1346,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             looked_up_hosts.extend(hosts)
             return {host: "CA" for host in hosts}
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=invalid_rtt
@@ -1426,7 +1423,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             looked_up_hosts.extend(hosts)
             return {host: "CA" for host in hosts}
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -1503,10 +1500,10 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
             ]
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
 
         with mock.patch(
-            "obozrenie.core.socket.getaddrinfo", side_effect=resolve
+            "obozrenie.geoip.socket.getaddrinfo", side_effect=resolve
         ), mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
         ):
@@ -1587,7 +1584,8 @@ class QueryWorkerTests(CoreQueryTestCase):
             country="GB",
         )
         self.seed_servers(core, [old_server])
-        core.geolocation = mock.Mock()
+        reader = mock.Mock()
+        core.geolocation = geoip.Geolocation(reader=reader)
         callbacks = []
 
         with (
@@ -1596,7 +1594,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 side_effect=lambda servers: list(servers),
             ),
             mock.patch.object(
-                core_module,
+                geoip,
                 "getaddrinfo_many_until",
                 return_value=[network_calls.CallOutcome.failure(country_error)],
             ),
@@ -1622,7 +1620,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 " exception details omitted."
             ],
         )
-        core.geolocation.get.assert_not_called()
+        reader.get.assert_not_called()
 
     def test_http_multiple_inheritance_map_error_reaches_core_by_identity(self):
         class InfrastructureRequestsTimeout(
@@ -1748,7 +1746,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
             ]
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -1903,10 +1901,10 @@ class QueryWorkerTests(CoreQueryTestCase):
                 ),
             ]
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
 
         with mock.patch(
-            "obozrenie.core.socket.getaddrinfo", side_effect=resolve
+            "obozrenie.geoip.socket.getaddrinfo", side_effect=resolve
         ), mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
         ):
@@ -2023,7 +2021,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             callbacks.append(game)
             callback_finished.set()
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
         attempt = self.admit_attempt(core, callback)
         query = threading.Thread(
             target=attempt.run_worker,
@@ -2142,7 +2140,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             return Host(host, 1, [1.0])
 
         callbacks = []
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
         with (
             installed_network_pools(),
             mock.patch(
@@ -2550,23 +2548,22 @@ class QueryWorkerTests(CoreQueryTestCase):
             callbacks.append(game)
             callback_finished.set()
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
         attempt = self.admit_attempt(core, callback)
         query = threading.Thread(
             target=attempt.run_worker,
             name="test-batched-geoip-query",
         )
         with installed_network_pools(), mock.patch.object(
-            core_module,
-            "_GEOIP_DNS_BATCH_TIMEOUT_SECONDS",
+            geoip,
+            "_DNS_BATCH_TIMEOUT_SECONDS",
             0.02,
-            create=True,
         ), mock.patch.object(
             network_calls.socket,
             "getaddrinfo",
             side_effect=resolve,
         ), mock.patch.object(
-            core_module.socket,
+            geoip.socket,
             "getaddrinfo",
             side_effect=resolve,
         ), mock.patch(
@@ -2639,7 +2636,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             def get(self, address):
                 return {"192.0.2.81": {"country_code": "US"}}[address]
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
         with installed_network_pools() as pools:
             real_map_until = pools.dns.map_until
 
@@ -2774,7 +2771,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             callback_elapsed.append(time.monotonic() - started_at)
             callback_finished.set()
 
-        core.geolocation = Database()
+        core.geolocation = geoip.Geolocation(reader=Database())
         attempt = self.admit_attempt(core, callback)
 
         started_at = time.monotonic()
@@ -2794,7 +2791,7 @@ class QueryWorkerTests(CoreQueryTestCase):
                     "obozrenie.network_calls.socket.getaddrinfo",
                     side_effect=resolve,
                 ), mock.patch(
-                    "obozrenie.core._GEOIP_DNS_BATCH_TIMEOUT_SECONDS",
+                    "obozrenie.geoip._DNS_BATCH_TIMEOUT_SECONDS",
                     0.02,
                 ), mock.patch(
                     "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -2969,7 +2966,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             rtt_batches.append(list(servers))
             return []
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -3016,7 +3013,7 @@ class QueryWorkerTests(CoreQueryTestCase):
             looked_up_hosts.extend(hosts)
             return {host: "CA" for host in hosts}
 
-        core._lookup_countries = lookup_countries
+        core.geolocation = SimpleNamespace(countries_for=lookup_countries)
 
         with mock.patch(
             "obozrenie.ping.add_rtt_info", side_effect=add_rtt_info
@@ -3518,9 +3515,11 @@ class QueryWorkerTests(CoreQueryTestCase):
             {"stat_master": staticmethod(lambda *args: [adapter_server])},
         )
         core = self.make_core(adapter)
-        core._lookup_countries = lambda hosts, deadline=None: {
-            host: "XY" for host in hosts
-        }
+        core.geolocation = SimpleNamespace(
+            countries_for=lambda hosts, deadline=None: {
+                host: "XY" for host in hosts
+            }
+        )
         callbacks = []
         messages = []
 

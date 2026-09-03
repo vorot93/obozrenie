@@ -26,7 +26,6 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gtk
 
-import obozrenie.core as core
 from obozrenie import geoip, i18n
 from obozrenie.network_calls import validate_deadline
 
@@ -54,8 +53,8 @@ class GeoIPDownloadCoordinator:
     outlives close can neither load a database nor touch a widget.
     """
 
-    def __init__(self, core_instance: core.Core) -> None:
-        self._core = core_instance
+    def __init__(self, geolocation: geoip.Geolocation) -> None:
+        self._geolocation = geolocation
         self._state_lock = threading.Lock()
         self._dialog = None
         self._transfer = None
@@ -80,7 +79,7 @@ class GeoIPDownloadCoordinator:
         with self._state_lock:
             if self._closing or self._offer_in_flight():
                 return False
-            if self._core.geolocation is not None:
+            if self._geolocation.enabled:
                 return False
             self._active = True
             self._completed = False
@@ -306,7 +305,7 @@ class GeoIPDownloadCoordinator:
             if dialog is not None:
                 dialog.destroy()
             if path is not None:
-                self._core.load_geoip(path)
+                self._geolocation.load(path)
         finally:
             if callback is not None:
                 callback()
