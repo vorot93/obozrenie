@@ -124,7 +124,7 @@ is run by discovery from its own directory, where `tests/tests.py` shadows
 the `tests` package name, so shared fixtures live in the module that uses
 them.
 
-macOS, when the suite imports GTK (`IconLoadingTests`, `CountryEmojiTests`):
+macOS, when the suite imports GTK (`IconLoadingTests`, `CountryEmojiTests`, `ListStoreHelperTests`, and all of `tests.test_gtk_behavior`):
 
     DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib" uv run python -m unittest discover -s tests -p 'test*.py' -v
 
@@ -148,11 +148,11 @@ Fixture rules for tests that touch shared runtime state:
 
 - Tests that exercise network workers replace `network_calls._NETWORK_CALL_POOLS` with a fresh `NetworkCallPools`; consumers must resolve that registry dynamically, and tests must not reload `network_calls`. Release in-process blockers in `finally`, join caller threads with a one-second timeout, and call `close_network_call_pools(timeout=0.2)`. Registry fixtures must restore the previous registry in an outer `finally` even if close raises.
 - Tests that drive `qstat._run_qstat` or `stat_master` install a fresh `QStatProcessSupervisor` under the same rule, through `installed_qstat_supervisor()` in `tests/test_adapters.py`: it closes its own supervisor against a one-second bound and reinstalls the previous one in an outer `finally`. The module-default supervisor is never closed by a test.
-- `Core` initialises its lifecycle state in `__init__`, so Core fixtures construct a real `Core()` with `resources.load_toml` and `geoip.find_database` patched — the `CoreQueryTestCase.new_core` pattern in `tests/test_core_queries.py` — instead of `Core.__new__(Core)`.
+- `Core` initialises its lifecycle state in `__init__`, so Core fixtures construct a real `Core(GameTable(config), geoip.Geolocation())` — the `CoreQueryTestCase.new_core` pattern in `tests/test_core_queries.py` — instead of `Core.__new__(Core)`. A fake country lookup is any object with `countries_for(hosts, deadline=None)`; a fake database is `geoip.Geolocation(reader=…)`.
 
 ## Layout
 
-- `obozrenie/` — core, GTK UI, launch, GeoIP, adapters (`qstat`, `minetest`, `rigsofrods`)
+- `obozrenie/` — GTK-free domain (`game_table`, `core`, `geoip`, `settings`, `launch`, `ping`, `models`, `network_calls`, `http_client`, `qstat_processes`, `diagnostics`, `i18n`, `resources`, `helpers`, `global_settings`, `global_strings`, `adapters/`) and the GTK layer (`gtk` = `App`, `gtk_window` = `MainWindow`, `gtk_geoip`, `gtk_preferences`, `gtk_helpers`, `launch_gtk` = entry point). See the module table at the top of `DESIGN.md`.
 - `obozrenie/data/` — packaged UI, settings, game list, icons, desktop entry, and catalogs
 - `tests/` — unittest discovery suite
 
@@ -160,7 +160,7 @@ No `docs/superpowers/` (or other process-artifact trees) in this repo.
 
 ## Gotchas
 
-- `launch_gtk.main()` is the console-script entry; importing the module must not start GTK.
+- `launch_gtk.main()` is the console-script entry; importing the module must not start GTK. It imports the GTK-free collaborators (`Core`, `GameTable`, `Geolocation`, `Settings`) at module level and `obozrenie.gtk` / `obozrenie.gtk_geoip` inside `main()` after the macOS re-exec; the launcher test fakes those two modules in `sys.modules` and patches the four names on `launch_gtk`.
 - GtkBuilder resources are translated in Python with the package-stream gettext object before `add_from_string`; do not add native gettext domain/path binding.
 - Every widget inside `Main_Window` in `obozrenie/data/ui/obozrenie_gtk.ui` must declare a `visible` property, because activation only calls `present()` and Glade omits that property by default; `BuilderVisibilityTests.test_every_main_window_widget_declares_visible` fails on a widget that lacks it.
 - Rigs of Rods master URIs are normalized to exactly one `json=true` query parameter; live API is `https://api.rigsofrods.org/server-list`.
