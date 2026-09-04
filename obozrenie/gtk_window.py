@@ -113,11 +113,8 @@ class MainWindow(Adw.ApplicationWindow):
         self._build_game_models()
         self._build_server_models()
         self.filter_secure.connect("notify::selected", self._on_filters_changed)
-        # GtkEditable.set_text() emits "changed" twice when it replaces
-        # non-empty text (a delete then an insert), so host_entry's
-        # connect-data notification is wired to "notify::text" here instead
-        # of the "changed" signal main_window.ui declares for it; unlike
-        # "changed", "notify::text" fires exactly once per set_text() call.
+        # Wired in Python, not the .ui file: GTK 4.22's set_text() emits
+        # "changed" twice, but "notify::text" once, per call.
         self.host_entry.connect("notify::text", self._on_connect_data_changed)
 
     def _build_game_models(self) -> None:
@@ -224,7 +221,10 @@ class MainWindow(Adw.ApplicationWindow):
         self._sync_browser_selection()
 
     def set_servers(self, rows: Sequence[ServerRow]) -> None:
-        self.server_store.splice(0, self.server_store.get_n_items(), list(rows))
+        # A presenter-requested refill can drop the current selection (its
+        # server may not be in the new rows); that loss is not reported
+        # back, unlike a user's own action clearing the selection.
+        self._write(lambda rows: self.server_store.splice(0, self.server_store.get_n_items(), rows), list(rows))
 
     def select_browser_game(self, game_id: str | None) -> None:
         self._browser_game = game_id
@@ -249,7 +249,8 @@ class MainWindow(Adw.ApplicationWindow):
         self._action_buttons[action].set_sensitive(enabled)
 
     def refilter(self) -> None:
-        self._server_filter.changed(Gtk.FilterChange.DIFFERENT)
+        # Can drop the selection too, same as set_servers above.
+        self._write(self._server_filter.changed, Gtk.FilterChange.DIFFERENT)
 
     # MainView: dialogs
 

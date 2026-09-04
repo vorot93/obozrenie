@@ -541,6 +541,18 @@ class MainWindowGameTests(_MainWindowTestCase):
         window.select_connect_game(None)
         self.assertEqual(window.connect_game(), "q3a")
 
+    def test_set_games_with_a_presenter_attached_does_not_notify_or_reassign_the_browser_game(self):
+        window = self.window
+        recorder = RecordingPresenter()
+        window.attach_presenter(recorder)
+        window.select_browser_game("q3a")
+
+        window.set_games(self.game_rows())
+        pump()
+
+        self.assertEqual(recorder.events, [])
+        self.assertEqual(window.browser_game(), "q3a")
+
     def test_search_filters_the_sidebar_without_losing_the_browser_game(self):
         window = self.window
         window.set_games(self.game_rows())
@@ -652,7 +664,9 @@ class MainWindowServerTests(_MainWindowTestCase):
         window.set_servers(self.server_rows()[:1])
         pump()
         self.assertIsNone(window.selected_server())
-        self.assertEqual(recorder.events, ["server_selected", "server_selected"])
+        # A presenter-requested refill drops the selection silently: still
+        # just the one server_selected from the user's earlier selection.
+        self.assertEqual(recorder.events, ["server_selected"])
 
         window.server_view.emit("activate", 0)
         self.assertEqual(recorder.events[-1], "server_activated")

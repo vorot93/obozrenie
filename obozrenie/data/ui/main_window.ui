@@ -430,7 +430,6 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="placeholder-text" translatable="yes">Host address</property>
                 <property name="tooltip-text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
                 <property name="input-purpose">url</property>
-                <signal name="changed" handler="_on_connect_data_changed"/>
               </object>
             </child>
             <child type="end">
