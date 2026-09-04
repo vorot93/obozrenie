@@ -18,12 +18,20 @@ From the repo root:
 The suites in `tests/test_gtk_widgets.py` build real widgets and need a
 display: a desktop session serves, and CI wraps every Linux `unittest` command
 in `xvfb-run -a`, with `GSK_RENDERER=cairo` and `GDK_BACKEND=x11` on the jobs
-that build widgets. `tests.test_gtk_widgets` raises at import without a display
-rather than skipping, so a run that cannot build widgets fails visibly. Nothing
-else needs one — importing the GTK tier and loading icon textures do not —
-which is why the macOS job runs the packaging install smoke with no display
-and no wrapper. Never run with a `DISPLAY` that points at no server: GTK 4
-hangs on an unreachable X display instead of failing.
+that build widgets. On a headless machine, prefix the run with `xvfb-run -a`
+yourself. `tests.test_gtk_widgets` raises at import without a display rather
+than skipping, so a run that cannot build widgets fails visibly instead of
+quietly shrinking.
+
+`tests.test_packaging` needs a display too, less obviously:
+`test_wheel_installs_and_smokes_in_a_fresh_selected_python_venv` discovers the
+whole shipped runtime suite inside the fresh venv — `test_gtk_widgets.py` is
+one of the `RUNTIME_TEST_FILES` the sdist ships — and asserts no errors and no
+skips, so headless that one import error is enough to fail it. Its own install
+smoke script instantiates no widget; the discovery behind it is what needs the
+display. Linux CI wraps that job in `xvfb-run -a`, and the macOS job runs it
+unwrapped on the runner's own session. Never run with a `DISPLAY` that points
+at no server: GTK 4 hangs on an unreachable X display instead of failing.
 
 Source catalog completeness and deterministic compiled-catalog check:
 
@@ -37,6 +45,10 @@ explicit paths:
     artifacts="$(cd .. && pwd)/obozrenie-dist"
     uv build --clear --out-dir "$artifacts"
     OBOZRENIE_WHEEL="$artifacts/obozrenie-1-py3-none-any.whl" OBOZRENIE_SDIST="$artifacts/obozrenie-1.tar.gz" uv run python -m unittest tests.test_packaging -v
+
+That last command runs the shipped runtime suite, so it needs a display like
+any other `unittest` run: a desktop session serves, `xvfb-run -a uv run …`
+otherwise.
 
 Both variables must name canonical absolute paths to existing files outside
 the checkout: the archive contract asserts they are absolute, and the wheel
@@ -183,7 +195,7 @@ No `docs/superpowers/` (or other process-artifact trees) in this repo.
 ## Gotchas
 
 - `launch_gtk.main()` is the console-script entry; importing the module must not start GTK. It imports the GTK-free collaborators (`Core`, `GameTable`, `Geolocation`, `Settings`) at module level and `obozrenie.gtk` / `obozrenie.gtk_geoip` inside `main()`, after the macOS re-exec and after `_require_toolkit()`; the launcher tests fake those two modules in `sys.modules`, patch the four names on `launch_gtk`, and patch `_require_toolkit` so they never touch a real toolkit.
-- Templates are translated in Python (`gtk_dialogs.load_template`) with the package-stream gettext object before `Gtk.Template` parses them; every visible string lives in the two documents (also `GtkStringList` `<item>` elements), and Python keeps only strings it formats. Do not add native gettext domain/path binding.
+- Templates are translated in Python (`gtk_dialogs.load_template`) with the package-stream gettext object before `Gtk.Template` parses them; every string a template shows lives in the two documents (`GtkStringList` `<item>` elements included), and Python keeps only the strings it formats or builds in code — the dialogs constructed in Python carry their own (`gtk_dialogs`, `gtk_geoip`, `gtk_preferences`). Do not add native gettext domain/path binding.
 - Importing a `gtk_*` module defines its template classes and needs no display; instantiating any widget needs one, and libadwaita widgets need `Adw.init()` first outside an `Adw.Application` (the widget suite calls it). `gtk4-builder-tool validate` cannot resolve libadwaita template parents, so the documents are validated by instantiation in `tests/test_gtk_widgets.py` instead.
 - Rigs of Rods master URIs are normalized to exactly one `json=true` query parameter; live API is `https://api.rigsofrods.org/server-list`.
 - Game `steam_app_id` is per-game; do not reuse a loop temporary across entries.

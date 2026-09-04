@@ -4,11 +4,14 @@ from ipaddress import ip_address
 from types import MappingProxyType
 
 
-# Every record integer below reaches the UI through a `GObject.Property(
-# type=int)` row property in `list_rows`, which stores a signed 32-bit `gint`
-# and raises OverflowError on anything wider. The records own that domain so a
-# hostile master response is rejected at the boundary instead of failing
-# inside the list store.
+# Four of the record integers below — `Player.ping`, `Server.player_count`,
+# `Server.player_limit` and `Server.ping` — reach the UI through a
+# `GObject.Property(type=int)` row property in `list_rows`, which holds a
+# signed 32-bit `gint` and raises TypeError on anything wider. `Player.score`
+# travels as an object property instead, so that it can stay None, and an
+# object property enforces nothing. The records own the domain for all five,
+# so a hostile master response is rejected at this boundary rather than
+# reaching a row that would raise mid-render or silently take the value.
 _GINT_MIN = -(1 << 31)
 _GINT_MAX = (1 << 31) - 1
 
@@ -18,8 +21,10 @@ def _validate_gint(
     field_name: str,
     value: int | None,
 ) -> None:
-    """Reject an integer a `gint` row property cannot represent.
+    """Reject an integer wider than a `gint` row property can hold.
 
+    `Player.score` is checked against the same bound even though its own row
+    property would accept more, so every rendered integer has one domain.
     `None` passes through: the exact-type checks admit it for `Player.score`
     alone, and an absent score has nothing to overflow.
     """
