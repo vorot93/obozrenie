@@ -155,10 +155,32 @@ class ListFactoryTests(unittest.TestCase):
         self.assertIsNone(status.get_icon_name())
         row.status_icon = "emblem-ok-symbolic"
         self.assertEqual(status.get_icon_name(), "emblem-ok-symbolic")
+        row.status_icon = None
+        self.assertIsNone(status.get_icon_name())
+        row.status_icon = "emblem-ok-symbolic"
+        self.assertEqual(status.get_icon_name(), "emblem-ok-symbolic")
 
         gtk_lists.unbind_game_cell(item)
         row.status_icon = "dialog-error-symbolic"
         self.assertEqual(status.get_icon_name(), "emblem-ok-symbolic")
+
+        # A recycled cell rebinds to a different row; the new row's own
+        # status (None included) replaces whatever the old row last showed,
+        # and the old row's later changes no longer reach the image.
+        idle_row = GameRow("q4", "Quake 4", None)
+        item.item = idle_row
+        gtk_lists.bind_game_cell(item, show_status=True)
+        self.assertIsNone(status.get_icon_name())
+
+        gtk_lists.unbind_game_cell(item)
+        working_row = GameRow("qw", "QuakeWorld", None)
+        working_row.status_icon = "emblem-synchronizing-symbolic"
+        item.item = working_row
+        gtk_lists.bind_game_cell(item, show_status=True)
+        self.assertEqual(status.get_icon_name(), "emblem-synchronizing-symbolic")
+
+        idle_row.status_icon = "dialog-error-symbolic"
+        self.assertEqual(status.get_icon_name(), "emblem-synchronizing-symbolic")
 
     def test_game_cell_without_status_has_two_children(self):
         item = _FakeListItem(GameRow("q3a", "Quake III", None))

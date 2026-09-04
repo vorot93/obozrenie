@@ -26,7 +26,7 @@ from collections.abc import Callable
 
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import GObject, Gtk, Pango
+from gi.repository import Gtk, Pango
 
 from obozrenie import i18n
 
@@ -105,23 +105,31 @@ def bind_game_cell(item, show_status: bool) -> None:
     children[0].set_from_paintable(row.icon)
     children[1].set_text(row.name)
     if show_status:
-        # The status changes while the row is shown, so it is bound, not
-        # copied; `unbind_game_cell` releases the binding with the row.
-        # `status-icon` is `type=object` (so a `None` default sticks, unlike
-        # `type=str`; see `list_rows.GameRow`), and GBinding has no built-in
-        # transform from a boxed PyObject to a `gchararray`, so the value is
-        # passed through explicitly instead of relying on the automatic one.
-        item.status_binding = row.bind_property(
-            "status-icon", children[2], "icon-name",
-            GObject.BindingFlags.SYNC_CREATE,
-            transform_to=lambda _binding, value: value)
+        # The status changes while the row is shown, so it is tracked, not
+        # copied; `unbind_game_cell` disconnects the handler with the row.
+        # A `bind_property` transform cannot stand in for this: PyGObject
+        # treats a `None` return from a transform function as "no
+        # conversion performed" and leaves the target property untouched,
+        # so a status that clears back to `None` would never reach the
+        # image, and a cell recycled onto a row with no status would keep
+        # showing the previous game's. A `notify::status-icon` handler sets
+        # every value, `None` included, so the status icon is applied once
+        # up front and again on every change.
+        status = children[2]
+        status.set_from_icon_name(row.status_icon)
+        item.status_row = row
+        item.status_handler = row.connect(
+            "notify::status-icon",
+            lambda emitter, _pspec: status.set_from_icon_name(emitter.status_icon))
 
 
 def unbind_game_cell(item) -> None:
-    binding = getattr(item, "status_binding", None)
-    if binding is not None:
-        binding.unbind()
-        item.status_binding = None
+    row = getattr(item, "status_row", None)
+    handler = getattr(item, "status_handler", None)
+    if row is not None and handler is not None:
+        row.disconnect(handler)
+    item.status_row = None
+    item.status_handler = None
 
 
 def game_row_factory(show_status: bool) -> Gtk.SignalListItemFactory:
