@@ -33,7 +33,7 @@ from obozrenie.presenter import MainPresenter
 
 class App(Adw.Application):
 
-    """App class."""
+    """Owns the window, the presenter, the startup dialogs, and the recorded failure."""
 
     def __init__(self, core_instance, settings_instance, services):
         super().__init__(
@@ -140,7 +140,7 @@ class App(Adw.Application):
         pending_warnings = self._pending_settings_warnings
         self._pending_settings_warnings = []
         self._startup_dialogs_pending = True
-        GLib.idle_add(self._show_startup_dialogs, list(pending_warnings))
+        GLib.idle_add(self._show_startup_dialogs, pending_warnings)
 
     def _show_startup_dialogs(self, warnings):
         self._continue_startup_dialogs(warnings)

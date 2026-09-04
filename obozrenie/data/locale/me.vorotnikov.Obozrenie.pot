@@ -123,11 +123,11 @@ msgstr ""
 msgid "Obozrenie is starting"
 msgstr ""
 
-#: obozrenie/gtk.py:185
+#: obozrenie/gtk.py:192
 msgid "Shutting down"
 msgstr ""
 
-#: obozrenie/gtk.py:189
+#: obozrenie/gtk.py:196
 msgid "Initialization failed. Aborting."
 msgstr ""
 
@@ -165,11 +165,6 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
-#: obozrenie/gtk_lists.py:62 obozrenie/presenter.py:394
-#, python-format
-msgid "%(player_count)s / %(player_limit)s"
-msgstr ""
-
 #: obozrenie/gtk_preferences.py:52
 msgid "Save"
 msgstr ""
@@ -195,60 +190,65 @@ msgstr ""
 msgid "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."
 msgstr ""
 
-#: obozrenie/presenter.py:60
+#: obozrenie/presenter.py:62
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/presenter.py:61
+#: obozrenie/presenter.py:63
 msgid "Path to the game."
 msgstr ""
 
-#: obozrenie/presenter.py:65
+#: obozrenie/presenter.py:67
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/presenter.py:66
+#: obozrenie/presenter.py:68
 msgid "Working directory of the game."
 msgstr ""
 
-#: obozrenie/presenter.py:70
+#: obozrenie/presenter.py:72
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/presenter.py:71
+#: obozrenie/presenter.py:73
 msgid "List of master servers to query."
 msgstr ""
 
-#: obozrenie/presenter.py:75
+#: obozrenie/presenter.py:77
 msgid "Launch via Steam"
 msgstr ""
 
-#: obozrenie/presenter.py:76
+#: obozrenie/presenter.py:78
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
 
-#: obozrenie/presenter.py:80
+#: obozrenie/presenter.py:82
 msgid "Steam path"
 msgstr ""
 
-#: obozrenie/presenter.py:81
+#: obozrenie/presenter.py:83
 msgid "Steam client path."
 msgstr ""
 
-#: obozrenie/presenter.py:85
+#: obozrenie/presenter.py:87
 msgid "Nickname"
 msgstr ""
 
-#: obozrenie/presenter.py:86
+#: obozrenie/presenter.py:88
 msgid "Your nickname."
 msgstr ""
 
-#: obozrenie/presenter.py:368
+#: obozrenie/presenter.py:228
+#, python-format
+msgid "%(player_count)s / %(player_limit)s"
+msgstr ""
+
+#: obozrenie/presenter.py:379
 #, python-format
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/presenter.py:499
+#: obozrenie/presenter.py:507
 #, python-format
 msgid "Unable to launch the game: %(error)s"
 msgstr ""
@@ -339,6 +339,14 @@ msgstr ""
 msgid "Search games"
 msgstr ""
 
+#: obozrenie/data/ui/main_window.ui
+msgid "Welcome to Obozrenie!"
+msgstr ""
+
+#: obozrenie/data/ui/main_window.ui
+msgid "Select a game or press refresh button below."
+msgstr ""
+
 #: obozrenie/data/ui/main_window.ui obozrenie/data/ui/server_info_dialog.ui
 msgid "Name"
 msgstr ""
@@ -365,14 +373,6 @@ msgstr ""
 
 #: obozrenie/data/ui/main_window.ui
 msgid "Terrain"
-msgstr ""
-
-#: obozrenie/data/ui/main_window.ui
-msgid "Welcome to Obozrenie!"
-msgstr ""
-
-#: obozrenie/data/ui/main_window.ui
-msgid "Select a game or press refresh button below."
 msgstr ""
 
 #: obozrenie/data/ui/main_window.ui

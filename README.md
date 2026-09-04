@@ -81,7 +81,7 @@ or a built wheel, then use the installed console entry point:
     # Or: python -m pip install /path/to/obozrenie-1-py3-none-any.whl
     obozrenie-gtk
 
-The wheel contains the UI definitions, default settings, game icons, and
+The wheel contains the UI templates, default settings, game icons, and
 Russian gettext catalog. Runtime resources are read from the installed package
 and do not depend on the checkout, current directory, or installation prefix.
 

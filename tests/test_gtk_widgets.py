@@ -486,6 +486,14 @@ class MainWindowTemplateTests(_MainWindowTestCase):
             self.assertEqual(window.pages.get_visible_child_name(), name)
         window.set_error_text("exact error")
         self.assertEqual(window.error_page.get_description(), "exact error")
+        # The description is parsed as Pango markup, so a query error
+        # carrying `<` or `&` reaches it escaped instead of rendering as
+        # nothing at all behind a Gtk-WARNING.
+        window.set_error_text("Master <host:1> failed & quit")
+        self.assertEqual(
+            window.error_page.get_description(),
+            "Master &lt;host:1&gt; failed &amp; quit",
+        )
         buttons = {
             "preferences": window.preferences_button,
             "refresh": window.refresh_button,

@@ -30,7 +30,7 @@ from collections.abc import Callable, Mapping, Sequence
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 
 from obozrenie import gtk_dialogs, gtk_icons, gtk_lists, gtk_preferences
 from obozrenie.list_rows import GameRow, ServerRow
@@ -224,7 +224,10 @@ class MainWindow(Adw.ApplicationWindow):
         # A presenter-requested refill can drop the current selection (its
         # server may not be in the new rows); that loss is not reported
         # back, unlike a user's own action clearing the selection.
-        self._write(lambda rows: self.server_store.splice(0, self.server_store.get_n_items(), rows), list(rows))
+        self._write(
+            lambda new_rows: self.server_store.splice(
+                0, self.server_store.get_n_items(), new_rows),
+            list(rows))
 
     def select_browser_game(self, game_id: str | None) -> None:
         self._browser_game = game_id
@@ -243,7 +246,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.pages.set_visible_child_name(name)
 
     def set_error_text(self, text: str) -> None:
-        self.error_page.set_description(text)
+        # `Adw.StatusPage` parses its description as Pango markup, so an
+        # error carrying `<` or `&` would log a Gtk-WARNING and render
+        # nothing at all unless it is escaped first.
+        self.error_page.set_description(GLib.markup_escape_text(text))
 
     def set_action_enabled(self, action: str, enabled: bool) -> None:
         self._action_buttons[action].set_sensitive(enabled)
