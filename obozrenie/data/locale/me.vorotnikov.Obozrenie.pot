@@ -119,6 +119,32 @@ msgstr ""
 msgid "Launcher"
 msgstr ""
 
+#: obozrenie/gtk_geoip.py:62
+msgid "Downloading GeoIP database…"
+msgstr ""
+
+#: obozrenie/gtk_geoip.py:70
+msgid "Cancel"
+msgstr ""
+
+#: obozrenie/gtk_geoip.py:113
+msgid "Download GeoIP database?"
+msgstr ""
+
+#: obozrenie/gtk_geoip.py:114
+msgid ""
+"Server geolocation needs a country database. Download it now (a few "
+"megabytes)?"
+msgstr ""
+
+#: obozrenie/gtk_geoip.py:117
+msgid "Not now"
+msgstr ""
+
+#: obozrenie/gtk_geoip.py:118
+msgid "Download"
+msgstr ""
+
 #: obozrenie/helpers.py:273
 msgid "Invalid user settings were backed up and defaults were restored."
 msgstr ""
