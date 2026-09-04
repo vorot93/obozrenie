@@ -173,7 +173,7 @@ msgstr "Загрузить"
 msgid "Save"
 msgstr "Сохранить"
 
-#: obozrenie/gtk_preferences.py:91
+#: obozrenie/gtk_preferences.py:93
 msgid "Single entry per line"
 msgstr "По одной записи в строке"
 
@@ -246,17 +246,17 @@ msgstr "Имя"
 msgid "Your nickname."
 msgstr "Ваше имя."
 
-#: obozrenie/presenter.py:247
+#: obozrenie/presenter.py:245
 #, python-format
 msgid "%(player_count)s / %(player_limit)s"
 msgstr "%(player_count)s из %(player_limit)s"
 
-#: obozrenie/presenter.py:398
+#: obozrenie/presenter.py:395
 #, python-format
 msgid "%(game)s preferences"
 msgstr "Настройки %(game)s"
 
-#: obozrenie/presenter.py:526
+#: obozrenie/presenter.py:523
 #, python-format
 msgid "Unable to launch the game: %(error)s"
 msgstr "Не удалось запустить игру: %(error)s"

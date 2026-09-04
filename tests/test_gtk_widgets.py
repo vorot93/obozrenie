@@ -70,6 +70,7 @@ from obozrenie import (
     gtk_lists,
     gtk_preferences,
     gtk_window,
+    i18n,
     presenter,
     resources,
 )
@@ -323,9 +324,18 @@ class ServerInfoDialogTests(_WindowTestCase):
 class PreferencesDialogTests(_WindowTestCase):
     def fields(self):
         return (
-            presenter.PreferenceField("path", presenter.OptionKind.TEXT, "Game path", "Path to the game.", "client"),
-            presenter.PreferenceField("master_uri", presenter.OptionKind.LINES, "Master URI list", "Masters.", "a://1\nb://2"),
-            presenter.PreferenceField("steam_launch", presenter.OptionKind.FLAG, "Launch via Steam", "Steam.", True),
+            presenter.PreferenceField(
+                "path",
+                presenter.OptionSchema(presenter.OptionKind.TEXT, "Game path", "Path to the game."),
+                "client"),
+            presenter.PreferenceField(
+                "master_uri",
+                presenter.OptionSchema(presenter.OptionKind.LINES, "Master URI list", "Masters."),
+                "a://1\nb://2"),
+            presenter.PreferenceField(
+                "steam_launch",
+                presenter.OptionSchema(presenter.OptionKind.FLAG, "Launch via Steam", "Steam."),
+                True),
         )
 
     def test_rows_show_the_fields_and_save_reports_every_edited_value(self):
@@ -338,6 +348,15 @@ class PreferencesDialogTests(_WindowTestCase):
         self.assertIsInstance(dialog.rows["path"], Adw.EntryRow)
         self.assertIsInstance(dialog.rows["steam_launch"], Adw.SwitchRow)
         self.assertIsInstance(dialog.rows["master_uri"], Gtk.TextView)
+        # Each editor is titled and described by its field's schema.
+        self.assertEqual(dialog.rows["path"].get_title(), "Game path")
+        self.assertEqual(dialog.rows["path"].get_tooltip_text(), "Path to the game.")
+        self.assertEqual(dialog.rows["steam_launch"].get_title(), "Launch via Steam")
+        self.assertEqual(dialog.rows["steam_launch"].get_subtitle(), "Steam.")
+        self.assertEqual(dialog.rows["master_uri"].get_tooltip_text(), "Masters.")
+        lines_group = dialog.rows["master_uri"].get_ancestor(Adw.PreferencesGroup)
+        self.assertEqual(lines_group.get_title(), "Master URI list")
+        self.assertEqual(lines_group.get_description(), i18n._("Single entry per line"))
         self.assertEqual(dialog.rows["path"].get_text(), "client")
         self.assertIs(dialog.rows["steam_launch"].get_active(), True)
         buffer = dialog.rows["master_uri"].get_buffer()

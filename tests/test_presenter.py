@@ -741,6 +741,11 @@ class PreferencesTests(unittest.TestCase):
             presenter.OptionSchema(
                 presenter.OptionKind.TEXT, i18n._("Nickname"), i18n._("Your nickname.")),
         )
+        self.assertEqual(
+            declared["path"],
+            presenter.OptionSchema(
+                presenter.OptionKind.TEXT, i18n._("Game path"), i18n._("Path to the game.")),
+        )
         self.assertIs(declared["master_uri"].kind, presenter.OptionKind.LINES)
         self.assertIs(declared["steam_launch"].kind, presenter.OptionKind.FLAG)
         self.assertEqual(
@@ -764,13 +769,15 @@ class PreferencesTests(unittest.TestCase):
         instance.preferences_requested()
 
         title, fields, on_save = view.preferences[0]
+        declared = presenter.game_options()
         self.assertEqual(title, "Browser Game preferences")
+        # Every field carries the declared schema of its option, not a copy of parts of it.
         self.assertEqual(
-            [(field.option, field.kind, field.label, field.value) for field in fields],
+            [(field.option, field.schema, field.value) for field in fields],
             [
-                ("path", presenter.OptionKind.TEXT, i18n._("Game path"), "client"),
-                ("master_uri", presenter.OptionKind.LINES, i18n._("Master URI list"), "a://1\nb://2"),
-                ("steam_launch", presenter.OptionKind.FLAG, i18n._("Launch via Steam"), True),
+                ("path", declared["path"], "client"),
+                ("master_uri", declared["master_uri"], "a://1\nb://2"),
+                ("steam_launch", declared["steam_launch"], True),
             ],
         )
 

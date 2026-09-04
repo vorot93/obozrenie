@@ -112,12 +112,10 @@ def game_options() -> dict[str, OptionSchema]:
 
 @dataclass(frozen=True, slots=True)
 class PreferenceField:
-    """One editable per-game option and its current value."""
+    """One editable per-game option: its name, how it is presented, and its current value."""
 
     option: str
-    kind: OptionKind
-    label: str
-    description: str
+    schema: OptionSchema
     value: object
 
 
@@ -393,8 +391,7 @@ class MainPresenter:
                 value = _as_flag(value)
             else:
                 value = _as_text(value)
-            fields.append(
-                PreferenceField(option, schema.kind, schema.label, schema.description, value))
+            fields.append(PreferenceField(option, schema, value))
         title = i18n._("%(game)s preferences") % {
             "game": self.core.game_table.get_game_info(game)["name"],
         }
