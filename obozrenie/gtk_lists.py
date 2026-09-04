@@ -63,6 +63,11 @@ def players_text(row) -> str:
     return presenter.players_text(row.player_count, row.player_limit)
 
 
+def score_text(row) -> str:
+    """One player row's score; a missing score is an empty cell, not a zero."""
+    return "" if row.score is None else str(row.score)
+
+
 def setup_server_name_cell(item) -> None:
     box = Gtk.Box(spacing=6)
     box.append(Gtk.Image(pixel_size=16))

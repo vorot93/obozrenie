@@ -43,12 +43,20 @@ class QuestionDialog:
         self._response_handler = response_handler
 
     def dismiss(self) -> None:
-        # `close()` would emit the close response, and unlike a plain
-        # `Adw.Dialog`, force-closing an `Adw.AlertDialog` still emits
-        # "response" with it — so the handler is disconnected first;
-        # dismissing answers nothing, which is the point when the
-        # application is shutting down.
-        self.dialog.disconnect(self._response_handler)
+        """Close the question without answering it; repeated dismissals are no-ops.
+
+        `close()` would emit the close response, and unlike a plain
+        `Adw.Dialog`, force-closing an `Adw.AlertDialog` still emits
+        "response" with it — so the handler is disconnected first;
+        dismissing answers nothing, which is the point when the
+        application is shutting down. The handler id is taken exactly once:
+        a second dismissal would otherwise disconnect a stale id (a GLib
+        critical) and force-close again, which emits `closed` again.
+        """
+        handler, self._response_handler = self._response_handler, None
+        if handler is None:
+            return
+        self.dialog.disconnect(handler)
         self.dialog.force_close()
 
 
@@ -56,10 +64,10 @@ class TransferDialog(Adw.Dialog):
 
     """The running transfer: a progress bar and one way to cancel.
 
-    `can-close` is off, so Escape, the header close button, and a close
-    request all arrive as `close-attempt` and cancel the transfer; only this
-    handle's `close()` — the coordinator's own — closes the dialog, and it
-    does so without reporting a cancellation.
+    `can-close` is off, so Escape, the header close button, and every close
+    request — the inherited `close()` included — arrive as `close-attempt`
+    and cancel the transfer; only `dismiss()`, the coordinator's own, closes
+    the dialog, and it does so without reporting a cancellation.
     """
 
     def __init__(self, on_cancel: Callable[[], None]) -> None:
@@ -69,15 +77,20 @@ class TransferDialog(Adw.Dialog):
             content_width=360,
         )
         self._on_cancel = on_cancel
-        self._closed = False
+        self._dismissed = False
 
         self.progress = Gtk.ProgressBar(show_text=True)
         self.cancel_button = Gtk.Button(label=i18n._("Cancel"), halign=Gtk.Align.END)
         self.cancel_button.connect("clicked", self._cancel)
 
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        for edge in ("start", "end", "top", "bottom"):
-            content.set_property(f"margin-{edge}", 24)
+        content = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=12,
+            margin_start=24,
+            margin_end=24,
+            margin_top=24,
+            margin_bottom=24,
+        )
         content.append(self.progress)
         content.append(self.cancel_button)
 
@@ -96,11 +109,11 @@ class TransferDialog(Adw.Dialog):
     def pulse(self) -> None:
         self.progress.pulse()
 
-    def close(self) -> None:
-        """Close for good; repeated closes are no-ops."""
-        if self._closed:
+    def dismiss(self) -> None:
+        """Close for good without cancelling; repeated dismissals are no-ops."""
+        if self._dismissed:
             return
-        self._closed = True
+        self._dismissed = True
         self.force_close()
 
 
@@ -191,9 +204,11 @@ class GeoIPDownloadCoordinator:
         """Present one GeoIP question; report whether this call started it.
 
         A true result promises exactly one later `finished_callback`, after the
-        offer is declined or after an accepted transfer has completed. A false
-        result promises nothing and never calls back: the database is already
-        loaded, this coordinator is closing, or an offer is already in flight.
+        offer is declined or after an accepted transfer has completed — unless
+        `begin_close` runs first, which takes the offer over and calls nothing
+        back. A false result promises nothing and never calls back: the
+        database is already loaded, this coordinator is closing, or an offer
+        is already in flight.
         """
         with self._state_lock:
             if self._closing or self._offer_in_flight():
@@ -284,7 +299,7 @@ class GeoIPDownloadCoordinator:
             if not closing:
                 self._transfer_dialog = dialog
         if closing:
-            dialog.close()
+            dialog.dismiss()
             return
 
         transfer = geoip.GeoIPDatabaseDownload(
@@ -306,7 +321,7 @@ class GeoIPDownloadCoordinator:
             # Close won the race with this response: the transfer is stopped
             # before it runs, and close owns the offer from here.
             transfer.cancel()
-            dialog.close()
+            dialog.dismiss()
             return
 
         try:
@@ -326,11 +341,11 @@ class GeoIPDownloadCoordinator:
             self._complete(None)
             return
         # A running transfer keeps exactly one completion owner: its worker.
-        # Cancelling returns that worker at once, and closing the dialog gives
-        # the same immediate feedback completion would.
+        # Cancelling returns that worker at once, and dismissing the dialog
+        # gives the same immediate feedback completion would.
         transfer.cancel()
         if dialog is not None:
-            dialog.close()
+            dialog.dismiss()
 
     def _run_transfer(self, transfer) -> None:
         """Run one transfer to completion on this coordinator's worker."""
@@ -376,8 +391,8 @@ class GeoIPDownloadCoordinator:
     def _complete(self, path) -> None:
         """Finish one offer exactly once, on the GTK main thread.
 
-        The dialogs are closed and any transferred database is loaded before
-        the caller's callback releases startup admission.
+        The transfer dialog is dismissed and any transferred database is
+        loaded before the caller's callback releases startup admission.
         """
         with self._state_lock:
             if self._completed:
@@ -393,7 +408,7 @@ class GeoIPDownloadCoordinator:
 
         try:
             if dialog is not None:
-                dialog.close()
+                dialog.dismiss()
             if path is not None:
                 self._geolocation.load(path)
         finally:

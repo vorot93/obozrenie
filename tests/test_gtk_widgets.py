@@ -135,15 +135,19 @@ class _WindowTestCase(unittest.TestCase):
 
 class ListFactoryTests(unittest.TestCase):
     def test_label_factory_binds_text_and_alignment(self):
-        item = _FakeListItem(PlayerRow(Player("Ada", None, 30)))
-        factory = gtk_lists.label_factory(lambda row: "" if row.score is None else str(row.score), xalign=1)
+        item = _FakeListItem(PlayerRow(Player("Ada", 7, 30)))
+        factory = gtk_lists.label_factory(gtk_lists.score_text, xalign=1)
 
         factory.emit("setup", item)
         factory.emit("bind", item)
 
         self.assertIsInstance(item.child, Gtk.Label)
-        self.assertEqual(item.child.get_text(), "")
+        self.assertEqual(item.child.get_text(), "7")
         self.assertEqual(item.child.get_xalign(), 1)
+
+    def test_score_text_blanks_a_missing_score(self):
+        self.assertEqual(gtk_lists.score_text(PlayerRow(Player("Ada", None, 30))), "")
+        self.assertEqual(gtk_lists.score_text(PlayerRow(Player("Ada", -3, 30))), "-3")
 
     def test_server_name_cell_shows_icon_lock_shield_and_name(self):
         icon = texture()
@@ -225,8 +229,13 @@ class ErrorDialogTests(_WindowTestCase):
 
         dialog.emit("response", "close")
         self.assertEqual(closes, [True])
+        # The callback is one-shot: a second response — force-closing an
+        # `Adw.AlertDialog` emits its close response again — reaches nothing,
+        # so the startup warning chain can never advance twice.
+        dialog.emit("response", "close")
         dialog.force_close()
         pump()
+        self.assertEqual(closes, [True])
 
     def test_error_dialog_without_a_callback_still_presents(self):
         dialog = gtk_dialogs.present_error(self.window, "plain")
@@ -277,10 +286,15 @@ class ServerInfoDialogTests(_WindowTestCase):
         self.assertEqual(dialog.players_value.get_text(), "1 / 16")
         self.assertEqual(dialog.ping_value.get_text(), "21")
         self.assertEqual(dialog.players.get_n_items(), 2)
-        self.assertEqual(
-            [dialog.players.get_item(index).score for index in range(2)],
-            [7, None],
-        )
+        rendered = []
+        for index in range(2):
+            item = _FakeListItem(dialog.players.get_item(index))
+            factory = dialog.player_score_column.get_factory()
+            factory.emit("setup", item)
+            factory.emit("bind", item)
+            rendered.append(item.child.get_text())
+        # A missing score is an empty cell, never a fabricated zero.
+        self.assertEqual(rendered, ["7", ""])
         dialog.force_close()
         pump()
 
@@ -375,7 +389,15 @@ class GeoIPDialogTests(_WindowTestCase):
         self.assertEqual(closed, [True])
         self.assertEqual(events, ["accept", "decline"])
 
-    def test_transfer_dialog_reports_user_closes_but_not_its_own(self):
+        # A second dismissal is a no-op: neither a stale disconnect (a GLib
+        # critical, which PyGObject raises as a warning) nor another close.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            question.dismiss()
+            pump()
+        self.assertEqual(closed, [True])
+
+    def test_transfer_dialog_reports_every_user_close_but_not_its_own_dismissal(self):
         cancels = []
         dialogs = gtk_geoip.GeoIPOfferDialogs()
 
@@ -388,16 +410,21 @@ class GeoIPDialogTests(_WindowTestCase):
         self.assertEqual(dialog.progress.get_fraction(), 0.5)
         dialog.pulse()
 
+        closed = self.closed_flag(dialog)
         dialog.cancel_button.emit("clicked")
         dialog.emit("close-attempt")
-        self.assertEqual(cancels, [True, True])
-
-        closed = self.closed_flag(dialog)
-        dialog.close()
+        # The toolkit's own close is a user close too: with `can-close`
+        # off it only asks, and asking is a cancellation.
         dialog.close()
         pump()
+        self.assertEqual(cancels, [True, True, True])
+        self.assertEqual(closed, [])
+
+        dialog.dismiss()
+        dialog.dismiss()
+        pump()
         self.assertEqual(closed, [True])
-        self.assertEqual(cancels, [True, True])
+        self.assertEqual(cancels, [True, True, True])
 
 
 class RecordingPresenter:

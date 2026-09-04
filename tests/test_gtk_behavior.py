@@ -52,13 +52,13 @@ class _FakeQuestion:
 
 
 class _FakeTransferDialog:
-    """The transfer handle: records progress and closes, replays Cancel."""
+    """The transfer handle: records progress and dismissals, replays Cancel."""
 
     def __init__(self, events, on_cancel):
         self.events = events
         self.on_cancel = on_cancel
         self.calls = []
-        self.closed = 0
+        self.dismissed = 0
 
     def set_fraction(self, fraction):
         self.calls.append(("set_fraction", fraction))
@@ -66,9 +66,9 @@ class _FakeTransferDialog:
     def pulse(self):
         self.calls.append(("pulse",))
 
-    def close(self):
-        self.closed += 1
-        self.events.append(("close-transfer",))
+    def dismiss(self):
+        self.dismissed += 1
+        self.events.append(("dismiss-transfer",))
 
 
 class _FakeDialogs:
@@ -118,6 +118,7 @@ class _FakeTransfer:
         self.progress_after = progress_after
         self.cancelled = threading.Event()
         self.started = threading.Event()
+        self.progressed = threading.Event()
         self.released = threading.Event()
         self.thread = None
 
@@ -132,6 +133,7 @@ class _FakeTransfer:
         self.started.set()
         for update in self.progress_before:
             progress_cb(*update)
+        self.progressed.set()
         if self.blocking:
             self.released.wait(1)
         for update in self.progress_after:
@@ -147,8 +149,11 @@ class _TransferFactory:
     def __init__(self, **behaviour):
         self.behaviour = behaviour
         self.transfers = []
+        self.before_build = None
 
     def __call__(self, destination, deadline, **keywords):
+        if self.before_build is not None:
+            self.before_build()
         transfer = _FakeTransfer(destination, deadline, keywords, **self.behaviour)
         self.transfers.append(transfer)
         return transfer
@@ -238,6 +243,9 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         self.assertEqual(len(factory.transfers), 1)
         transfer = factory.transfers[0]
         self.assertTrue(transfer.started.wait(1))
+        # One daemon worker, named for whoever reads a thread dump.
+        self.assertTrue(transfer.thread.daemon)
+        self.assertEqual(transfer.thread.name, "obozrenie-geoip-download")
         return transfer
 
     def test_offer_is_single_flight_until_decline(self):
@@ -333,9 +341,9 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         self.idle.drain()
         self.assertEqual(
             self.events[2:],
-            [("close-transfer",), ("load", "/cache/db.mmdb"), ("finished",)],
+            [("dismiss-transfer",), ("load", "/cache/db.mmdb"), ("finished",)],
         )
-        self.assertEqual(self.dialogs.transfers[0].closed, 1)
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 1)
         self.assertEqual(len(factory.transfers), 1)
 
     def test_a_repeated_accept_starts_no_second_transfer(self):
@@ -357,6 +365,9 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
 
         self.assertIs(self.offer(), True)
         transfer = self.accept(factory)
+        # The worker queues its progress after it reports starting, so wait
+        # for the queueing itself before running what was queued.
+        self.assertTrue(transfer.progressed.wait(1))
         self.idle.drain()
 
         self.assertEqual(
@@ -366,6 +377,65 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         transfer.released.set()
         transfer.thread.join(1)
 
+    def test_close_while_the_transfer_dialog_is_presented_dismisses_it_and_starts_nothing(self):
+        factory = self.install_transfers(blocking=True)
+        original = self.dialogs.present_transfer
+
+        def close_while_presenting(parent, on_cancel):
+            dialog = original(parent, on_cancel)
+            self.coordinator.begin_close()
+            return dialog
+
+        self.dialogs.present_transfer = close_while_presenting
+        # Close owns the offer from here, so it promises no completion.
+        self.assertIs(self.offer(self.refused), True)
+
+        self.dialogs.questions[0].on_accept()
+
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 1)
+        self.assertEqual(factory.transfers, [])
+        self.assertEqual(self.idle.pending, ())
+        self.assertIs(self.offer(self.refused), False)
+
+    def test_close_while_the_transfer_is_built_cancels_it_before_any_worker_runs(self):
+        factory = self.install_transfers(blocking=True)
+        factory.before_build = self.coordinator.begin_close
+        self.assertIs(self.offer(self.refused), True)
+
+        self.dialogs.questions[0].on_accept()
+
+        transfer = factory.transfers[0]
+        self.assertTrue(transfer.cancelled.is_set())
+        self.assertFalse(transfer.started.is_set())
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 1)
+        self.assertEqual(self.idle.pending, ())
+        self.assertIs(self.offer(self.refused), False)
+
+    def test_a_worker_that_cannot_start_completes_the_offer_without_a_database(self):
+        factory = self.install_transfers(result="/cache/db.mmdb")
+
+        class UnstartableThread(threading.Thread):
+            def start(self):
+                raise RuntimeError("can't start new thread")
+
+        self.enterContext(mock.patch.object(
+            gtk_geoip.threading, "Thread", UnstartableThread))
+        self.assertIs(self.offer(), True)
+
+        self.dialogs.questions[0].on_accept()
+
+        transfer = factory.transfers[0]
+        self.assertTrue(transfer.cancelled.is_set())
+        self.assertFalse(transfer.started.is_set())
+        self.assertEqual(self.events[-2:], [("dismiss-transfer",), ("finished",)])
+        self.assertNotIn(("load", "/cache/db.mmdb"), self.events)
+        self.assertFalse(self.geolocation.enabled)
+        # A worker that never launched neither holds the offer nor needs a
+        # join, so the next activation may offer again at once.
+        self.coordinator.join_until(time.monotonic() + 0.1)
+        self.assertIs(self.offer(), True)
+        self.assertEqual(len(self.dialogs.questions), 2)
+
     def test_cancel_from_the_transfer_dialog_stops_the_transfer_and_completes_without_a_database(self):
         factory = self.install_transfers(result="/cache/db.mmdb", blocking=True)
 
@@ -374,7 +444,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
 
         self.dialogs.transfers[0].on_cancel()
         self.assertTrue(transfer.cancelled.is_set())
-        self.assertEqual(self.dialogs.transfers[0].closed, 1)
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 1)
 
         transfer.thread.join(1)
         self.assertFalse(transfer.thread.is_alive())
@@ -384,7 +454,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         self.assertNotIn(("load", "/cache/db.mmdb"), self.events)
         self.assertFalse(self.geolocation.enabled)
         # Completion closes the dialog again; the handle makes that a no-op.
-        self.assertEqual(self.dialogs.transfers[0].closed, 2)
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 2)
 
     def test_begin_close_cancels_transfer_and_suppresses_late_dispatch(self):
         factory = self.install_transfers(
@@ -402,7 +472,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
         transfer.thread.join(1)
         self.assertFalse(transfer.thread.is_alive())
         self.assertEqual(self.idle.pending, ())
-        self.assertEqual(self.dialogs.transfers[0].closed, 0)
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 0)
         self.assertNotIn(("finished",), self.events)
         self.assertIs(self.offer(self.refused), False)
         self.assertEqual(len(self.dialogs.questions), 1)
@@ -427,7 +497,7 @@ class GeoIPDownloadCoordinatorTests(unittest.TestCase):
 
         self.assertNotIn(("finished",), self.events)
         self.assertNotIn(("load", "/cache/db.mmdb"), self.events)
-        self.assertEqual(self.dialogs.transfers[0].closed, 0)
+        self.assertEqual(self.dialogs.transfers[0].dismissed, 0)
         self.assertEqual(self.dialogs.transfers[0].calls, [])
         self.assertFalse(self.geolocation.enabled)
 

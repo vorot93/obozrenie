@@ -47,13 +47,23 @@ def present_error(
     message: str,
     on_closed: Callable[[], None] | None = None,
 ) -> Adw.AlertDialog:
-    """Show one modal error on `parent`; `on_closed` runs on its response."""
+    """Show one modal error on `parent`; `on_closed` runs once, on its response.
+
+    The handler disconnects itself before it calls back, so a second
+    `response` — force-closing an `Adw.AlertDialog` emits its close response
+    again — reaches nothing: the startup warning chain relies on each close
+    advancing it exactly once.
+    """
     dialog = Adw.AlertDialog(heading=i18n._("Error"), body=message)
     dialog.add_response("close", i18n._("Close"))
     dialog.set_default_response("close")
     dialog.set_close_response("close")
     if on_closed is not None:
-        dialog.connect("response", lambda _dialog, _response: on_closed())
+        def respond_once(responded, _response):
+            responded.disconnect(handler)
+            on_closed()
+
+        handler = dialog.connect("response", respond_once)
     dialog.present(parent)
     return dialog
 
@@ -114,8 +124,7 @@ class ServerInfoDialog(Adw.Dialog):
         self.players.splice(0, 0, list(details.players))
         self.player_view.set_model(Gtk.NoSelection(model=self.players))
         self.player_name_column.set_factory(gtk_lists.label_factory(lambda row: row.name))
-        self.player_score_column.set_factory(gtk_lists.label_factory(
-            lambda row: "" if row.score is None else str(row.score), xalign=1))
+        self.player_score_column.set_factory(gtk_lists.label_factory(gtk_lists.score_text, xalign=1))
         self.player_ping_column.set_factory(gtk_lists.label_factory(
             lambda row: str(row.ping), xalign=1))
 
