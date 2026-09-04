@@ -129,11 +129,11 @@ class ServerInfoDialog(Adw.Dialog):
             lambda row: str(row.ping), xalign=1))
 
     @Gtk.Template.Callback()
-    def _on_connect_clicked(self, _button) -> None:
+    def _on_connect_clicked(self, _button: Gtk.Button) -> None:
         # Close first: the callback re-validates and may launch a game.
         self.close()
         self._on_connect()
 
     @Gtk.Template.Callback()
-    def _on_close_clicked(self, _button) -> None:
+    def _on_close_clicked(self, _button: Gtk.Button) -> None:
         self.close()
