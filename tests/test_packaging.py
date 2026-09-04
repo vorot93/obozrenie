@@ -247,6 +247,7 @@ RUNTIME_TEST_FILES = {
     "test_diagnostics.py",
     "test_geoip.py",
     "test_gtk_behavior.py",
+    "test_gtk_widgets.py",
     "test_i18n.py",
     "test_launch.py",
     "test_list_rows.py",

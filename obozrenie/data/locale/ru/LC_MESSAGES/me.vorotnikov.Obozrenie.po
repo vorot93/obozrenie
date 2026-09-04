@@ -121,19 +121,27 @@ msgstr "GTK"
 msgid "Launcher"
 msgstr "Запускалка"
 
-#: obozrenie/gtk_geoip.py:62
+#: obozrenie/gtk_dialogs.py:51
+msgid "Error"
+msgstr "Ошибка"
+
+#: obozrenie/data/ui/server_info_dialog.ui obozrenie/gtk_dialogs.py:52
+msgid "Close"
+msgstr "Закрыть"
+
+#: obozrenie/gtk_geoip.py:67
 msgid "Downloading GeoIP database…"
 msgstr "Загрузка базы данных GeoIP…"
 
-#: obozrenie/gtk_geoip.py:70
+#: obozrenie/gtk_geoip.py:75
 msgid "Cancel"
 msgstr "Отмена"
 
-#: obozrenie/gtk_geoip.py:113
+#: obozrenie/gtk_geoip.py:118
 msgid "Download GeoIP database?"
 msgstr "Загрузить базу данных GeoIP?"
 
-#: obozrenie/gtk_geoip.py:114
+#: obozrenie/gtk_geoip.py:119
 msgid ""
 "Server geolocation needs a country database. Download it now (a few "
 "megabytes)?"
@@ -141,13 +149,26 @@ msgstr ""
 "Для геолокации серверов требуется база данных стран. Загрузить её сейчас "
 "(несколько мегабайт)?"
 
-#: obozrenie/gtk_geoip.py:117
+#: obozrenie/gtk_geoip.py:122
 msgid "Not now"
 msgstr "Не сейчас"
 
-#: obozrenie/gtk_geoip.py:118
+#: obozrenie/gtk_geoip.py:123
 msgid "Download"
 msgstr "Загрузить"
+
+#: obozrenie/gtk_lists.py:62 obozrenie/presenter.py:394
+#, python-format
+msgid "%(player_count)s / %(player_limit)s"
+msgstr "%(player_count)s из %(player_limit)s"
+
+#: obozrenie/gtk_preferences.py:52
+msgid "Save"
+msgstr "Сохранить"
+
+#: obozrenie/gtk_preferences.py:91
+msgid "Single entry per line"
+msgstr "По одной записи в строке"
 
 #: obozrenie/helpers.py:273
 msgid "Invalid user settings were backed up and defaults were restored."
@@ -218,11 +239,6 @@ msgstr "Ваше имя."
 #, python-format
 msgid "%(game)s preferences"
 msgstr "Настройки %(game)s"
-
-#: obozrenie/presenter.py:394
-#, python-format
-msgid "%(player_count)s / %(player_limit)s"
-msgstr "%(player_count)s из %(player_limit)s"
 
 #: obozrenie/presenter.py:499
 #, python-format
@@ -458,7 +474,3 @@ msgstr "Счёт"
 #: obozrenie/data/ui/server_info_dialog.ui
 msgid "Connect"
 msgstr "Подключиться"
-
-#: obozrenie/data/ui/server_info_dialog.ui
-msgid "Close"
-msgstr "Закрыть"

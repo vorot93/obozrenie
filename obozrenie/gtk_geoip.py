@@ -38,12 +38,17 @@ class QuestionDialog:
 
     """Handle to the presented question: dismiss it without a response."""
 
-    def __init__(self, dialog: Adw.AlertDialog) -> None:
+    def __init__(self, dialog: Adw.AlertDialog, response_handler: int) -> None:
         self.dialog = dialog
+        self._response_handler = response_handler
 
     def dismiss(self) -> None:
-        # `close()` would emit the close response; force-closing answers
-        # nothing, which is the point when the application is shutting down.
+        # `close()` would emit the close response, and unlike a plain
+        # `Adw.Dialog`, force-closing an `Adw.AlertDialog` still emits
+        # "response" with it — so the handler is disconnected first;
+        # dismissing answers nothing, which is the point when the
+        # application is shutting down.
+        self.dialog.disconnect(self._response_handler)
         self.dialog.force_close()
 
 
@@ -126,9 +131,9 @@ class GeoIPOfferDialogs:
             else:
                 on_decline()
 
-        dialog.connect("response", respond)
+        response_handler = dialog.connect("response", respond)
         dialog.present(parent)
-        return QuestionDialog(dialog)
+        return QuestionDialog(dialog, response_handler)
 
     def present_transfer(
         self,
