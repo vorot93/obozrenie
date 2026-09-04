@@ -206,10 +206,18 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_job_environments_exclude_artifacts_and_step_only_runner_context(self):
         expected_environments = {
-            "build": {},
-            "test": {"OBOZRENIE_TEST_PYTHON": "${{ matrix.python-version }}"},
+            "build": {"GSK_RENDERER": "cairo", "GDK_BACKEND": "x11"},
+            "test": {
+                "OBOZRENIE_TEST_PYTHON": "${{ matrix.python-version }}",
+                "GSK_RENDERER": "cairo",
+                "GDK_BACKEND": "x11",
+            },
             "macos": {"OBOZRENIE_TEST_PYTHON": "3.13"},
-            "custom-prefix": {"OBOZRENIE_TEST_PYTHON": "3.11"},
+            "custom-prefix": {
+                "OBOZRENIE_TEST_PYTHON": "3.11",
+                "GSK_RENDERER": "cairo",
+                "GDK_BACKEND": "x11",
+            },
             "live-contracts": {},
         }
         for name, expected in expected_environments.items():
@@ -288,8 +296,7 @@ class WorkflowStructureTests(unittest.TestCase):
             "python -m unittest tools.test_translation_tools -v",
             "python tools/check_translations.py",
             "python -m compileall -q obozrenie tests tools",
-            "gtk-builder-tool validate obozrenie/data/ui/obozrenie_gtk.ui",
-            "gtk-builder-tool validate obozrenie/data/ui/obozrenie_gtk_appmenu.ui",
+            "xvfb-run -a uv run python -m unittest discover -s tests -p 'test*.py' -v",
             'python -c "import obozrenie.gtk"',
             "uv pip check",
             "tests.test_packaging.WheelContractMutationTests",
@@ -315,7 +322,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(len(source_steps), 1)
         self.assertEqual(
             source_steps[0]["run"],
-            "uv run python -m unittest discover -s tests -p 'test*.py' -v",
+            "xvfb-run -a uv run python -m unittest discover -s tests -p 'test*.py' -v",
         )
 
     def test_installed_jobs_use_the_selected_helper_without_checkout_imports(self):
@@ -360,6 +367,21 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("uv sync", live_commands)
         self.assertIn("python -m unittest tests.test_delivery", live_commands)
         self.assertIn("python -m tests.live_contracts", live_commands)
+
+    def test_linux_test_commands_run_under_a_virtual_display(self):
+        for name in ("build", "test", "custom-prefix", "live-contracts"):
+            commands = [
+                command
+                for command in job_commands(self.job(name)).splitlines()
+                if "unittest" in command
+            ]
+            with self.subTest(job=name):
+                self.assertTrue(commands)
+                for command in commands:
+                    self.assertIn("xvfb-run -a", command)
+        self.assertNotIn("xvfb-run", job_commands(self.job("macos")))
+        for name in self.jobs:
+            self.assertNotIn("gtk-builder-tool", job_commands(self.job(name)))
 
 
 class LegacyDeliveryRemovalTests(unittest.TestCase):

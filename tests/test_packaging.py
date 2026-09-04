@@ -980,7 +980,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import obozrenie
-from obozrenie import core, game_table, geoip, gtk, i18n, models, resources
+from obozrenie import core, game_table, geoip, gtk, gtk_icons, i18n, list_rows, resources
 from obozrenie.models import Endpoint, Player, Server
 
 expected_root = Path(os.environ["OBOZRENIE_EXPECTED_ROOT"]).resolve()
@@ -1010,85 +1010,43 @@ assert core_instance.game_table.get_game_info("garrysmod")["steam_app_id"] == "4
 translations = i18n.translation(["ru_RU"])
 assert translations.gettext("Connect") == "Подключиться"
 
-class ParsingBuilder:
-    def __init__(self):
-        self.documents = []
+# The templates are translated in Python before GTK parses them, from the
+# packaged documents: the marker is gone and the Russian copy is in place.
+for filename in ("main_window.ui", "server_info_dialog.ui"):
+    document = ET.fromstring(i18n.translate_builder_xml(
+        resources.read_text("ui", filename), translations
+    ))
+    assert document.tag == "interface"
+    assert document.find("template") is not None
+    assert all("translatable" not in element.attrib for element in document.iter())
+    texts = {element.text for element in document.iter()}
+    if filename == "main_window.ui":
+        assert "О программе" in texts and "Имя" in texts, sorted(texts)
+    else:
+        assert "Подключиться" in texts, sorted(texts)
 
-    def add_from_string(self, document):
-        self.documents.append(ET.fromstring(document))
+# Importing the GTK tier defines the template classes without a display;
+# the class registered the template name the document declares.
+assert gtk.MainWindow.__gtype_name__ == "ObozrenieMainWindow"
 
-builder = ParsingBuilder()
-gtk.load_builder_resources(builder, translations)
-assert len(builder.documents) == 2
-assert all(document.tag == "interface" for document in builder.documents)
-assert all(
-    "translatable" not in element.attrib
-    for document in builder.documents
-    for element in document.iter()
-)
-assert any(
-    element.text == "Серверы"
-    for document in builder.documents
-    for element in document.iter()
-)
-assert any(
-    element.text == "О программе"
-    for document in builder.documents
-    for element in document.iter()
-)
-
-class StoreOnlyBuilder(gtk.Gtk.Builder):
-    """Build only the delivered list stores, never a toplevel window."""
-
-    STORE_IDS = ("player-list-store", "server-list-store")
-
-    def add_from_string(self, document):
-        return self.add_objects_from_string(document, list(self.STORE_IDS))
-
-store_builder = StoreOnlyBuilder()
-gtk.load_builder_resources(store_builder)
-player_store = store_builder.get_object("player-list-store")
-server_store = store_builder.get_object("server-list-store")
-assert store_builder.get_object("Main_Window") is None
-assert {type(built) for built in store_builder.get_objects()} == {
-    gtk.Gtk.ListStore
-}
-
-floor, ceiling = models._GINT_MIN, models._GINT_MAX
-assert (floor, ceiling) == (-2147483648, 2147483647), (floor, ceiling)
+# Every packaged game icon loads as a texture, and the rows hold every
+# integer the records admit.
+icons = gtk_icons.game_icon_textures(games)
+assert set(icons) == games
+assert all(icon.get_width() > 0 for icon in icons.values())
+floor, ceiling = -(1 << 31), (1 << 31) - 1
 for value in (floor, ceiling):
-    player = Player("boundary", score=value, ping=value)
-    player_store.append([player.name, player.score, player.ping])
-    # Counts stay nonnegative, so only ping reaches the signed floor.
-    server = Server(
+    player = list_rows.PlayerRow(Player("boundary", score=value, ping=value))
+    assert (player.score, player.ping) == (value, value)
+    server = list_rows.ServerRow(Server(
         endpoint=Endpoint("boundary.example", 1),
         game_id="garrysmod",
         player_count=max(value, 0),
         player_limit=max(value, 0),
         ping=value,
-    )
-    # Only the record's own columns matter here; the icon and filter
-    # columns the UI derives keep their in-domain defaults.
-    defaults = {"gchararray": "", "gboolean": False, "gint": 0}
-    row = [
-        defaults.get(server_store.get_column_type(index).name)
-        for index in range(server_store.get_n_columns())
-    ]
-    row[0] = str(server.endpoint)
-    row[1] = server.password
-    row[2] = server.player_count
-    row[3] = server.player_limit
-    row[4] = server.ping
-    server_store.append(row)
-
-assert [tuple(row)[:3] for row in player_store] == [
-    ("boundary", floor, floor),
-    ("boundary", ceiling, ceiling),
-]
-assert [tuple(row)[2:5] for row in server_store] == [
-    (0, 0, floor),
-    (ceiling, ceiling, ceiling),
-]
+    ), icons["garrysmod"])
+    assert (server.player_count, server.player_limit, server.ping) == (max(value, 0), max(value, 0), value)
+assert list_rows.PlayerRow(Player("unscored")).score is None
 
 print("OBOZRENIE_SMOKE=" + json.dumps({
     "distribution_origin": distribution_origin,
