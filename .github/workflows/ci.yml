@@ -36,7 +36,7 @@ jobs:
         run: |
           xvfb-run -a uv run python -m unittest tools.test_translation_tools -v
           uv run python tools/check_translations.py
-      - name: Validate Python and GtkBuilder sources
+      - name: Validate Python sources and the GTK import
         run: |
           uv run python -m compileall -q obozrenie tests tools
           uv run python -c "import obozrenie.gtk"

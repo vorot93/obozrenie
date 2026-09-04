@@ -1,11 +1,12 @@
 # Working conventions
 
-Python 3.11+ GTK 3 game server browser. `pyproject.toml` is the only dependency list.
+Python 3.11+ GTK 4 / libadwaita game server browser. `pyproject.toml` is the only dependency list.
 
 ## Run
 
-- Linux: GTK 3 + GObject introspection (`gir1.2-gtk-3.0`, `pkg-config`, cairo/girepository headers). Then `uv sync` and `uv run obozrenie-gtk`, or `pip install .` and run the installed `obozrenie-gtk` console entry point. uv builds PyGObject into the venv; distro `python3-gi` is only for a system interpreter.
-- macOS: `brew install gtk+3 gobject-introspection adwaita-icon-theme pkg-config cairo`, then `uv sync` and `uv run obozrenie-gtk`. The launcher re-execs once to set `DYLD_FALLBACK_LIBRARY_PATH` to Homebrew's lib dir. Bare `import obozrenie.gtk` does **not** go through that path — set the env var yourself (CI does this job-wide).
+- Linux: `sudo apt install adwaita-icon-theme gir1.2-adw-1 gir1.2-gdkpixbuf-2.0 gir1.2-gtk-4.0 gcc libadwaita-1-0 libcairo2-dev libgirepository-2.0-dev libgtk-4-1 pkg-config` — GTK 4, libadwaita, and the cairo/girepository headers uv compiles PyGObject against. Then `uv sync` and `uv run obozrenie-gtk`, or `pip install .` and run the installed `obozrenie-gtk` console entry point. uv builds PyGObject into the venv; distro `python3-gi` is only for a system interpreter.
+- macOS: `brew install gtk4 libadwaita gobject-introspection adwaita-icon-theme pkg-config cairo`, then `uv sync` and `uv run obozrenie-gtk`. The launcher re-execs once to set `DYLD_FALLBACK_LIBRARY_PATH` to Homebrew's lib dir. Bare `import obozrenie.gtk` does **not** go through that path — set the env var yourself (CI does this job-wide).
+- The launcher refuses GTK below 4.14 and libadwaita below 1.5 (`launch_gtk._require_toolkit`). A missing typelib fails there too, through the `ValueError` `gi.require_version` raises; both end the run on `main()`'s one printed-error path.
 - Runtime data lives in `obozrenie/data` and is read through `importlib.resources` streams, independent of cwd and installation prefix. User settings, GeoIP databases, game workdirs, and native library paths remain filesystem paths.
 
 ## Test
@@ -13,6 +14,16 @@ Python 3.11+ GTK 3 game server browser. `pyproject.toml` is the only dependency 
 From the repo root:
 
     uv run python -m unittest discover -s tests -p 'test*.py' -v
+
+The suites in `tests/test_gtk_widgets.py` build real widgets and need a
+display: a desktop session serves, and CI wraps every Linux `unittest` command
+in `xvfb-run -a`, with `GSK_RENDERER=cairo` and `GDK_BACKEND=x11` on the jobs
+that build widgets. `tests.test_gtk_widgets` raises at import without a display
+rather than skipping, so a run that cannot build widgets fails visibly. Nothing
+else needs one — importing the GTK tier and loading icon textures do not —
+which is why the macOS job runs the packaging install smoke with no display
+and no wrapper. Never run with a `DISPLAY` that points at no server: GTK 4
+hangs on an unreachable X display instead of failing.
 
 Source catalog completeness and deterministic compiled-catalog check:
 
@@ -83,7 +94,7 @@ Lifecycle focused suites:
 
     .venv/bin/python -m unittest tests.test_core_queries.CoreLifecycleTests tests.tests.ApplicationServicesTests -v
     .venv/bin/python -m unittest tests.test_adapters.QStatProcessSupervisorTests -v
-    .venv/bin/python -m unittest tests.test_geoip.DatabaseDownloadTests tests.test_gtk_behavior.GeoIPDownloadCoordinatorTests tests.test_gtk_behavior.ApplicationShutdownTests -v
+    .venv/bin/python -m unittest tests.test_geoip.DatabaseDownloadTests tests.test_gtk_behavior.GeoIPDownloadCoordinatorTests tests.test_gtk_behavior.StartupTests tests.test_gtk_behavior.ApplicationShutdownTests -v
 
 The offline run prints nothing but the unittest summary: a test that reaches
 code which logs or prints captures that output
@@ -124,17 +135,17 @@ is run by discovery from its own directory, where `tests/tests.py` shadows
 the `tests` package name, so shared fixtures live in the module that uses
 them.
 
-macOS: any test that imports a `gtk*` module or `gi` needs the library path
-the launcher's re-exec would otherwise set, since a bare import does not go
-through it — in `tests/tests.py`, `IconLoadingTests`, `CountryEmojiTests`,
-`ListStoreHelperTests` (guarded by `skipTest`), and the unguarded
-`GameTableTests.test_gtk_fill_game_store_renders_game_table_data`; all of
-`tests.test_gtk_behavior`; `tests.test_adapters.GtkServerBoundaryTests`;
-and, in `tests.test_resources.ResourceTests`, the three
-methods that construct `MainWindow` or load pixbufs —
-`test_zip_backed_resources_support_text_bytes_toml_ui_and_icons`,
-`test_application_icons_render_at_small_and_large_sizes`, and
-`test_main_window_loads_about_logo_from_zip_resource_bytes`:
+macOS: any test that reaches `gi` needs the library path the launcher's
+re-exec would otherwise set, since a bare import does not go through it. The
+modules that do, today: `tests.test_gtk_widgets` (the whole suite);
+`tests.test_gtk_behavior` (it imports `obozrenie.gtk`);
+`tests.tests.IconLoadingTests`, which imports `gtk_icons` inside its methods;
+in `tests.test_resources.ResourceTests`, the two `gtk_icons` uses
+(`test_zip_backed_resources_support_text_bytes_toml_ui_and_icons`,
+`test_logo_loads_from_zip_resource_bytes`) plus the GdkPixbuf asset check
+`test_application_icons_render_at_small_and_large_sizes`; and
+`tests.test_presenter` and `tests.test_list_rows`, which reach only `GObject`
+and `GLib` through `presenter`/`list_rows` and need no display of any kind:
 
     DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib" uv run python -m unittest discover -s tests -p 'test*.py' -v
 
@@ -159,20 +170,21 @@ Fixture rules for tests that touch shared runtime state:
 - Tests that exercise network workers replace `network_calls._NETWORK_CALL_POOLS` with a fresh `NetworkCallPools`; consumers must resolve that registry dynamically, and tests must not reload `network_calls`. Release in-process blockers in `finally`, join caller threads with a one-second timeout, and call `close_network_call_pools(timeout=0.2)`. Registry fixtures must restore the previous registry in an outer `finally` even if close raises.
 - Tests that drive `qstat._run_qstat` or `stat_master` install a fresh `QStatProcessSupervisor` under the same rule, through `installed_qstat_supervisor()` in `tests/test_adapters.py`: it closes its own supervisor against a one-second bound and reinstalls the previous one in an outer `finally`. The module-default supervisor is never closed by a test.
 - `Core` initialises its lifecycle state in `__init__`, so Core fixtures construct a real `Core(GameTable(config), geoip.Geolocation())` — the `CoreQueryTestCase.new_core` pattern in `tests/test_core_queries.py` — instead of `Core.__new__(Core)`. A fake country lookup is any object with `countries_for(hosts, deadline=None)`; a fake database is `geoip.Geolocation(reader=…)`.
+- Coordinator tests inject a fake `GeoIPOfferDialogs` (`GeoIPDownloadCoordinator(geolocation, dialogs=...)`) and patch `gtk_geoip.GLib.idle_add`, so they run the whole offer/transfer state machine with no display; presenter tests drive `presenter.MainPresenter` over a `FakeView` that answers all of `presenter.MainView`. Only `tests/test_gtk_widgets.py` builds the real widgets behind either seam.
 
 ## Layout
 
-- `obozrenie/` — GTK-free domain (`game_table`, `core`, `geoip`, `settings`, `launch`, `ping`, `models`, `network_calls`, `http_client`, `qstat_processes`, `diagnostics`, `i18n`, `resources`, `helpers`, `global_settings`, `global_strings`, `adapters/`) and the GTK layer (`gtk` = `App`, `gtk_window` = `MainWindow`, `gtk_geoip`, `gtk_preferences`, `gtk_helpers`, `launch_gtk` = entry point). See the module table at the top of `DESIGN.md`.
-- `obozrenie/data/` — packaged UI, settings, game list, icons, desktop entry, and catalogs
+- `obozrenie/` — the GTK-free domain (`game_table`, `core`, `geoip`, `settings`, `launch`, `ping`, `models`, `network_calls`, `http_client`, `qstat_processes`, `diagnostics`, `i18n`, `resources`, `helpers`, `global_settings`, `global_strings`, `adapters/`), the presentation tier (`list_rows`, `presenter`: `GObject`/`GLib` only, no display), and the GTK tier (`gtk` = `App`, `gtk_window` = `MainWindow`, `gtk_dialogs`, `gtk_preferences`, `gtk_geoip`, `gtk_lists`, `gtk_icons`, `launch_gtk` = entry point). See the module table at the top of `DESIGN.md`.
+- `obozrenie/data/` — packaged UI templates (`main_window.ui`, `server_info_dialog.ui`), settings, game list, icons, desktop entry, and catalogs
 - `tests/` — unittest discovery suite
 
 No `docs/superpowers/` (or other process-artifact trees) in this repo.
 
 ## Gotchas
 
-- `launch_gtk.main()` is the console-script entry; importing the module must not start GTK. It imports the GTK-free collaborators (`Core`, `GameTable`, `Geolocation`, `Settings`) at module level and `obozrenie.gtk` / `obozrenie.gtk_geoip` inside `main()` after the macOS re-exec; the launcher test fakes those two modules in `sys.modules` and patches the four names on `launch_gtk`.
-- GtkBuilder resources are translated in Python with the package-stream gettext object before `add_from_string`; do not add native gettext domain/path binding.
-- Every widget inside `Main_Window` in `obozrenie/data/ui/obozrenie_gtk.ui` must declare a `visible` property, because activation only calls `present()` and Glade omits that property by default; `BuilderVisibilityTests.test_every_main_window_widget_declares_visible` fails on a widget that lacks it.
+- `launch_gtk.main()` is the console-script entry; importing the module must not start GTK. It imports the GTK-free collaborators (`Core`, `GameTable`, `Geolocation`, `Settings`) at module level and `obozrenie.gtk` / `obozrenie.gtk_geoip` inside `main()`, after the macOS re-exec and after `_require_toolkit()`; the launcher tests fake those two modules in `sys.modules`, patch the four names on `launch_gtk`, and patch `_require_toolkit` so they never touch a real toolkit.
+- Templates are translated in Python (`gtk_dialogs.load_template`) with the package-stream gettext object before `Gtk.Template` parses them; every visible string lives in the two documents (also `GtkStringList` `<item>` elements), and Python keeps only strings it formats. Do not add native gettext domain/path binding.
+- Importing a `gtk_*` module defines its template classes and needs no display; instantiating any widget needs one, and libadwaita widgets need `Adw.init()` first outside an `Adw.Application` (the widget suite calls it). `gtk4-builder-tool validate` cannot resolve libadwaita template parents, so the documents are validated by instantiation in `tests/test_gtk_widgets.py` instead.
 - Rigs of Rods master URIs are normalized to exactly one `json=true` query parameter; live API is `https://api.rigsofrods.org/server-list`.
 - Game `steam_app_id` is per-game; do not reuse a loop temporary across entries.
 - `Settings` creates `<profile path>.lock` beside the profile directory (`~/.config/obozrenie.lock` in a real run) on its first load or save. `filelock` holds it with `flock` and deliberately leaves the file in place after release, so the kernel drops the lock when the process exits: an existing lock file is never stale and must never be deleted to "clear" it — unlinking a locked path splits waiters across inodes and breaks mutual exclusion. On a filesystem without `flock`, `filelock`'s default `fallback_to_soft=True` switches to an existence-marker lock instead, which the library itself unlinks on release and reclaims when its recorded PID is gone — so the rule is the same everywhere, only the mechanism differs: never stale, never delete by hand. Tests that assert on the contents of a profile's parent directory must expect that file.

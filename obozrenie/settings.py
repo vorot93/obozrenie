@@ -31,8 +31,9 @@ from obozrenie.global_settings import COMMON_SETTINGS_FILE, GAME_SETTINGS_FILE
 
 _PROFILE_LOCK_TIMEOUT_SECONDS = 5.0
 
-# The persisted common options, per settings group. The GTK window decides
-# which widget shows each one (`presenter.COMMON_OPTION_ACCESSORS`).
+# The persisted common options, per settings group. The presenter's accessor
+# table (`presenter.COMMON_OPTION_ACCESSORS`) maps each one to the view's
+# reader and writer.
 COMMON_OPTIONS = MappingProxyType({
     "common": (
         "selected-game-connect",

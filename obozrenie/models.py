@@ -4,10 +4,11 @@ from ipaddress import ip_address
 from types import MappingProxyType
 
 
-# Every record integer below reaches the UI through a delivered GtkBuilder
-# `gint` column, which stores a signed 32-bit value and raises OverflowError
-# on anything wider. The records own that domain so a hostile master response
-# is rejected at the boundary instead of failing inside the list store.
+# Every record integer below reaches the UI through a `GObject.Property(
+# type=int)` row property in `list_rows`, which stores a signed 32-bit `gint`
+# and raises OverflowError on anything wider. The records own that domain so a
+# hostile master response is rejected at the boundary instead of failing
+# inside the list store.
 _GINT_MIN = -(1 << 31)
 _GINT_MAX = (1 << 31) - 1
 
@@ -17,7 +18,7 @@ def _validate_gint(
     field_name: str,
     value: int | None,
 ) -> None:
-    """Reject an integer the delivered `gint` columns cannot represent.
+    """Reject an integer a `gint` row property cannot represent.
 
     `None` passes through: the exact-type checks admit it for `Player.score`
     alone, and an absent score has nothing to overflow.

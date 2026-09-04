@@ -9,8 +9,8 @@ Obozrenie lists multiplayer game servers and can launch the game client to conne
 - Threaded master-server queries
 - Bounded wall-clock waits for server-list HTTP and RTT/GeoIP enrichment
 - Transient connection passwords that are never saved in user settings
-- Keyboard-focusable selectors, filter mnemonics, and name-based type-ahead search
-- GTK 3 UI
+- Keyboard-focusable selectors, filter mnemonics, and a searchable game list
+- GTK 4 and libadwaita UI
 - QStat, Minetest, and Rigs of Rods adapters
 
 ## Screenshot
@@ -19,7 +19,7 @@ Obozrenie lists multiplayer game servers and can launch the game client to conne
 ## Dependencies
 ### Required
 - [Python 3.11+](https://python.org)
-- [PyGObject with GTK+ 3](https://pygobject.gnome.org) (built against the native GTK stack)
+- [PyGObject](https://pygobject.gnome.org) with GTK 4.14+ and [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/) 1.5+ (built against the native GTK stack)
 - [PyXDG](https://www.freedesktop.org/wiki/Software/pyxdg/)
 - [tomli-w](https://github.com/hukkin/tomli-w) (TOML writing; reading uses stdlib `tomllib`)
 - [xmltodict](https://github.com/martinblech/xmltodict)
@@ -44,17 +44,25 @@ Python packages are declared in `pyproject.toml`.
 
 ## Get it
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) to run
-from a checkout. Every installation also needs a native GTK 3 stack.
+from a checkout. Every installation also needs a native GTK 4 and libadwaita
+stack.
 
 ### Native prerequisites
 
 Linux (Debian/Ubuntu):
 
-    sudo apt install gir1.2-gdkpixbuf-2.0 gir1.2-gtk-3.0 gcc libcairo2-dev libgirepository-2.0-dev libgtk-3-dev pkg-config
+    sudo apt install adwaita-icon-theme gir1.2-adw-1 gir1.2-gdkpixbuf-2.0 gir1.2-gtk-4.0 gcc libadwaita-1-0 libcairo2-dev libgirepository-2.0-dev libgtk-4-1 pkg-config
+
+Linux (Arch):
+
+    sudo pacman -S --needed gtk4 libadwaita gobject-introspection cairo pkgconf
 
 macOS:
 
-    brew install gtk+3 gobject-introspection adwaita-icon-theme pkg-config cairo
+    brew install gtk4 libadwaita gobject-introspection adwaita-icon-theme pkg-config cairo
+
+Obozrenie checks the toolkit at startup and refuses to run on GTK older than
+4.14 or libadwaita older than 1.5.
 
 ### Run from a checkout
 
@@ -125,14 +133,16 @@ to your settings, and the launch details Obozrenie displays show it as `***`.
 
 ## Server locations
 When no country database is found, the GTK frontend offers to download a free
-DB-IP country database into the user cache. Only one offer and one download
-exist at a time: while an offer or its transfer is live, activating Obozrenie
-only presents the main window again instead of stacking a second offer or
-starting a second download. A download gives up 120 seconds in, however
-slowly the server sends, refuses a body larger than 128 MiB, and streams into
-a private temporary file beside its destination; it puts the database in place
-only once the downloaded file opens as a valid MaxMind database, so nothing
-unvalidated is ever installed.
+DB-IP country database into the user cache. The offer is a dialog with **Not
+now** and **Download**; an accepted download shows its progress in a dialog
+whose **Cancel** button, close button, or Escape stops it. Only one offer and
+one download exist at a time: while an offer or its transfer is live,
+activating Obozrenie only presents the main window again instead of stacking a
+second offer or starting a second download. A download gives up 120 seconds
+in, however slowly the server sends, refuses a body larger than 128 MiB, and
+streams into a private temporary file beside its destination; it puts the
+database in place only once the downloaded file opens as a valid MaxMind
+database, so nothing unvalidated is ever installed.
 
 Cancelling stops the download and removes the partial file. It never waits for
 the transfer: pressing "Not now" and quitting both return immediately, whatever
@@ -197,7 +207,7 @@ intentional Babel upgrade must change that pin, run both scripts to regenerate
 the catalogs, and rerun the checker before accepting the resulting artifacts.
 
 ## Technical details
-Python + PyGObject. Adapters query masters; core holds the game/server tables and settings; the GTK UI displays them. Server-list HTTP calls and the RTT and GeoIP enrichment performed during a refresh use bounded batch waits. QStat-backed games discover the optional executable as `qstat` first and `quakestat` second. Runtime data, including the compiled Russian catalog, is loaded from package-resource streams independently of the process working directory and installation prefix. Python and GtkBuilder strings use the same gettext catalog object; marked builder text is translated in Python before GTK parses the XML.
+Python + PyGObject (GTK 4, libadwaita). Adapters query masters; core holds the game/server tables and settings; a GTK 4 window shows them through a display-free presenter. Server-list HTTP calls and the RTT and GeoIP enrichment performed during a refresh use bounded batch waits. QStat-backed games discover the optional executable as `qstat` first and `quakestat` second. Runtime data, including the compiled Russian catalog, is loaded from package-resource streams independently of the process working directory and installation prefix. Python and template-document strings use the same gettext catalog object; marked template text is translated in Python before GTK parses the XML.
 
 ## Licenses
 ### Obozrenie
