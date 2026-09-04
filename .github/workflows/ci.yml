@@ -168,6 +168,9 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GSK_RENDERER: cairo
+      GDK_BACKEND: x11
     steps:
       - uses: actions/checkout@v4
       - name: Install system dependencies

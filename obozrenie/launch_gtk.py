@@ -47,6 +47,9 @@ if TYPE_CHECKING:
 # (GTK major, minor), (libadwaita major, minor): the oldest toolkit that runs.
 TOOLKIT_FLOOR = ((4, 14), (1, 5))
 
+# Every owned service gets this long, in total, to finish closing.
+_APPLICATION_SHUTDOWN_TIMEOUT_SECONDS = 1.0
+
 
 class ToolkitVersionError(RuntimeError):
     """The installed GTK or libadwaita is older than the application needs."""
@@ -69,10 +72,6 @@ def _require_toolkit():
     if gtk_version < gtk_floor or adw_version < adw_floor:
         raise ToolkitVersionError(
             i18n._("Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."))
-
-
-# Every owned service gets this long, in total, to finish closing.
-_APPLICATION_SHUTDOWN_TIMEOUT_SECONDS = 1.0
 
 
 def _macos_library_dir():

@@ -703,7 +703,19 @@ master_uri = ["master://example.test:27950"]
         gtk_module.MainWindow.assert_called_once_with(application=app)
         gtk_module.MainPresenter.assert_called_once()
         self.assertIs(gtk_module.MainPresenter.call_args.args[0], window)
-        self.assertEqual(app.add_action.call_count, 2)
+        new_action = gtk_module.Gio.SimpleAction.new
+        self.assertEqual(
+            new_action.call_args_list,
+            [mock.call("about", None), mock.call("quit", None)],
+        )
+        self.assertEqual(
+            new_action.return_value.connect.call_args_list,
+            [mock.call("activate", app.on_about), mock.call("activate", app.on_quit)],
+        )
+        self.assertEqual(
+            app.add_action.call_args_list,
+            [mock.call(new_action.return_value)] * 2,
+        )
         app.set_accels_for_action.assert_called_once_with("app.quit", ["<Control>q"])
 
     @staticmethod

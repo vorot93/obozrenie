@@ -70,12 +70,12 @@ msgstr ""
 msgid "GeoIP database not found. Disabling geolocation."
 msgstr ""
 
-#: obozrenie/geoip.py:167
+#: obozrenie/geoip.py:173
 #, python-format
 msgid "GeoIP database %(path)s opened successfully."
 msgstr ""
 
-#: obozrenie/geoip.py:173
+#: obozrenie/geoip.py:179
 msgid "Failed to open GeoIP database. Disabling geolocation."
 msgstr ""
 
@@ -131,37 +131,37 @@ msgstr ""
 msgid "Initialization failed. Aborting."
 msgstr ""
 
-#: obozrenie/gtk_dialogs.py:51
+#: obozrenie/gtk_dialogs.py:57
 msgid "Error"
 msgstr ""
 
-#: obozrenie/data/ui/server_info_dialog.ui obozrenie/gtk_dialogs.py:52
+#: obozrenie/data/ui/server_info_dialog.ui obozrenie/gtk_dialogs.py:58
 msgid "Close"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:67
+#: obozrenie/gtk_geoip.py:75
 msgid "Downloading GeoIP database…"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:75
+#: obozrenie/gtk_geoip.py:83
 msgid "Cancel"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:118
+#: obozrenie/gtk_geoip.py:131
 msgid "Download GeoIP database?"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:119
+#: obozrenie/gtk_geoip.py:132
 msgid ""
 "Server geolocation needs a country database. Download it now (a few "
 "megabytes)?"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:122
+#: obozrenie/gtk_geoip.py:135
 msgid "Not now"
 msgstr ""
 
-#: obozrenie/gtk_geoip.py:123
+#: obozrenie/gtk_geoip.py:136
 msgid "Download"
 msgstr ""
 
@@ -186,69 +186,69 @@ msgstr ""
 msgid "Launching '%(launch_cmd)s'"
 msgstr ""
 
-#: obozrenie/launch_gtk.py:71
+#: obozrenie/launch_gtk.py:74
 msgid "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."
 msgstr ""
 
-#: obozrenie/presenter.py:62
+#: obozrenie/presenter.py:82
 msgid "Game path"
 msgstr ""
 
-#: obozrenie/presenter.py:63
+#: obozrenie/presenter.py:83
 msgid "Path to the game."
 msgstr ""
 
-#: obozrenie/presenter.py:67
+#: obozrenie/presenter.py:87
 msgid "Working directory"
 msgstr ""
 
-#: obozrenie/presenter.py:68
+#: obozrenie/presenter.py:88
 msgid "Working directory of the game."
 msgstr ""
 
-#: obozrenie/presenter.py:72
+#: obozrenie/presenter.py:92
 msgid "Master URI list"
 msgstr ""
 
-#: obozrenie/presenter.py:73
+#: obozrenie/presenter.py:93
 msgid "List of master servers to query."
 msgstr ""
 
-#: obozrenie/presenter.py:77
+#: obozrenie/presenter.py:97
 msgid "Launch via Steam"
 msgstr ""
 
-#: obozrenie/presenter.py:78
+#: obozrenie/presenter.py:98
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
 
-#: obozrenie/presenter.py:82
+#: obozrenie/presenter.py:102
 msgid "Steam path"
 msgstr ""
 
-#: obozrenie/presenter.py:83
+#: obozrenie/presenter.py:103
 msgid "Steam client path."
 msgstr ""
 
-#: obozrenie/presenter.py:87
+#: obozrenie/presenter.py:107
 msgid "Nickname"
 msgstr ""
 
-#: obozrenie/presenter.py:88
+#: obozrenie/presenter.py:108
 msgid "Your nickname."
 msgstr ""
 
-#: obozrenie/presenter.py:228
+#: obozrenie/presenter.py:247
 #, python-format
 msgid "%(player_count)s / %(player_limit)s"
 msgstr ""
 
-#: obozrenie/presenter.py:379
+#: obozrenie/presenter.py:398
 #, python-format
 msgid "%(game)s preferences"
 msgstr ""
 
-#: obozrenie/presenter.py:507
+#: obozrenie/presenter.py:526
 #, python-format
 msgid "Unable to launch the game: %(error)s"
 msgstr ""

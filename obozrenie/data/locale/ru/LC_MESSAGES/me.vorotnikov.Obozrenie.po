@@ -72,12 +72,12 @@ msgstr "Сервер не найден: %(host)s"
 msgid "GeoIP database not found. Disabling geolocation."
 msgstr "База данных GeoIP не найдена. Геолокация отключена."
 
-#: obozrenie/geoip.py:167
+#: obozrenie/geoip.py:173
 #, python-format
 msgid "GeoIP database %(path)s opened successfully."
 msgstr "База данных GeoIP %(path)s успешно открыта."
 
-#: obozrenie/geoip.py:173
+#: obozrenie/geoip.py:179
 msgid "Failed to open GeoIP database. Disabling geolocation."
 msgstr "Не удалось открыть базу данных GeoIP. Геолокация отключена."
 
@@ -133,27 +133,27 @@ msgstr "Выход"
 msgid "Initialization failed. Aborting."
 msgstr "Ошибка инициализации."
 
-#: obozrenie/gtk_dialogs.py:51
+#: obozrenie/gtk_dialogs.py:57
 msgid "Error"
 msgstr "Ошибка"
 
-#: obozrenie/data/ui/server_info_dialog.ui obozrenie/gtk_dialogs.py:52
+#: obozrenie/data/ui/server_info_dialog.ui obozrenie/gtk_dialogs.py:58
 msgid "Close"
 msgstr "Закрыть"
 
-#: obozrenie/gtk_geoip.py:67
+#: obozrenie/gtk_geoip.py:75
 msgid "Downloading GeoIP database…"
 msgstr "Загрузка базы данных GeoIP…"
 
-#: obozrenie/gtk_geoip.py:75
+#: obozrenie/gtk_geoip.py:83
 msgid "Cancel"
 msgstr "Отмена"
 
-#: obozrenie/gtk_geoip.py:118
+#: obozrenie/gtk_geoip.py:131
 msgid "Download GeoIP database?"
 msgstr "Загрузить базу данных GeoIP?"
 
-#: obozrenie/gtk_geoip.py:119
+#: obozrenie/gtk_geoip.py:132
 msgid ""
 "Server geolocation needs a country database. Download it now (a few "
 "megabytes)?"
@@ -161,11 +161,11 @@ msgstr ""
 "Для геолокации серверов требуется база данных стран. Загрузить её сейчас "
 "(несколько мегабайт)?"
 
-#: obozrenie/gtk_geoip.py:122
+#: obozrenie/gtk_geoip.py:135
 msgid "Not now"
 msgstr "Не сейчас"
 
-#: obozrenie/gtk_geoip.py:123
+#: obozrenie/gtk_geoip.py:136
 msgid "Download"
 msgstr "Загрузить"
 
@@ -192,71 +192,71 @@ msgstr "Неверные настройки запуска"
 msgid "Launching '%(launch_cmd)s'"
 msgstr "Запуск «%(launch_cmd)s»"
 
-#: obozrenie/launch_gtk.py:71
+#: obozrenie/launch_gtk.py:74
 msgid "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."
 msgstr "Обозрению нужны GTK 4.14 и libadwaita 1.5 или новее."
 
-#: obozrenie/presenter.py:62
+#: obozrenie/presenter.py:82
 msgid "Game path"
 msgstr "Путь"
 
-#: obozrenie/presenter.py:63
+#: obozrenie/presenter.py:83
 msgid "Path to the game."
 msgstr "Путь к игре."
 
-#: obozrenie/presenter.py:67
+#: obozrenie/presenter.py:87
 msgid "Working directory"
 msgstr "Рабочий каталог"
 
-#: obozrenie/presenter.py:68
+#: obozrenie/presenter.py:88
 msgid "Working directory of the game."
 msgstr "Рабочий каталог игры."
 
-#: obozrenie/presenter.py:72
+#: obozrenie/presenter.py:92
 msgid "Master URI list"
 msgstr "Список мастер-серверов"
 
-#: obozrenie/presenter.py:73
+#: obozrenie/presenter.py:93
 msgid "List of master servers to query."
 msgstr "Опрашиваемые мастер-сервера."
 
-#: obozrenie/presenter.py:77
+#: obozrenie/presenter.py:97
 msgid "Launch via Steam"
 msgstr "Запуск через Steam"
 
-#: obozrenie/presenter.py:78
+#: obozrenie/presenter.py:98
 msgid "Enables launching via Steam client. Required for VAC-enabled servers."
 msgstr ""
 "Включает запуск через клиент Steam. Необходимо для игры на VAC-защищённых"
 " серверах."
 
-#: obozrenie/presenter.py:82
+#: obozrenie/presenter.py:102
 msgid "Steam path"
 msgstr "Путь к Steam"
 
-#: obozrenie/presenter.py:83
+#: obozrenie/presenter.py:103
 msgid "Steam client path."
 msgstr "Путь к клиенту Steam."
 
-#: obozrenie/presenter.py:87
+#: obozrenie/presenter.py:107
 msgid "Nickname"
 msgstr "Имя"
 
-#: obozrenie/presenter.py:88
+#: obozrenie/presenter.py:108
 msgid "Your nickname."
 msgstr "Ваше имя."
 
-#: obozrenie/presenter.py:228
+#: obozrenie/presenter.py:247
 #, python-format
 msgid "%(player_count)s / %(player_limit)s"
 msgstr "%(player_count)s из %(player_limit)s"
 
-#: obozrenie/presenter.py:379
+#: obozrenie/presenter.py:398
 #, python-format
 msgid "%(game)s preferences"
 msgstr "Настройки %(game)s"
 
-#: obozrenie/presenter.py:507
+#: obozrenie/presenter.py:526
 #, python-format
 msgid "Unable to launch the game: %(error)s"
 msgstr "Не удалось запустить игру: %(error)s"

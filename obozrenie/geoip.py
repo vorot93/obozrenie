@@ -159,7 +159,13 @@ class Geolocation:
         return self._reader is not None
 
     def load(self, path: str) -> None:
-        """Open a MaxMind DB country database; a failure disables lookup."""
+        """Open a MaxMind DB country database; a failure disables lookup.
+
+        A reader this replaces is deliberately not closed: a query worker may
+        still be resolving its batch on it, which is the whole-batch
+        guarantee above. The application never replaces a loaded database
+        anyway — the download offer refuses while lookup is enabled.
+        """
         try:
             self._reader = maxminddb.open_database(path)
             helpers.debug_msg([

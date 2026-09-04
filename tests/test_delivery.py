@@ -205,6 +205,9 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(uses.count("actions/download-artifact@v4"), 3)
 
     def test_job_environments_exclude_artifacts_and_step_only_runner_context(self):
+        # An enumeration, not a rule: it is airtight only because
+        # `test_triggers_permissions_and_job_set_are_exact` pins the job
+        # names to these five.
         expected_environments = {
             "build": {"GSK_RENDERER": "cairo", "GDK_BACKEND": "x11"},
             "test": {
@@ -218,7 +221,7 @@ class WorkflowStructureTests(unittest.TestCase):
                 "GSK_RENDERER": "cairo",
                 "GDK_BACKEND": "x11",
             },
-            "live-contracts": {},
+            "live-contracts": {"GSK_RENDERER": "cairo", "GDK_BACKEND": "x11"},
         }
         for name, expected in expected_environments.items():
             with self.subTest(job=name):

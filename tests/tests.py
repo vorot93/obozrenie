@@ -1318,30 +1318,38 @@ class ToolkitFloorTests(unittest.TestCase):
     """The launcher refuses a toolkit below GTK 4.14 / libadwaita 1.5."""
 
     def run_check(self, gtk_version, adw_version, missing=()):
+        """Run the check over a fake `gi`; record what it required and read."""
         from obozrenie import launch_gtk
 
-        required = []
+        self.required = []
+        self.versions_read = []
         gi = ModuleType("gi")
 
         def require_version(namespace, version):
-            required.append((namespace, version))
+            self.required.append((namespace, version))
             if namespace in missing:
                 raise ValueError(f"Namespace {namespace} not available")
+
+        def version_reader(namespace, value):
+            def read():
+                self.versions_read.append(namespace)
+                return value
+            return read
 
         gi.require_version = require_version
         repository = ModuleType("gi.repository")
         repository.Gtk = SimpleNamespace(
-            get_major_version=lambda: gtk_version[0],
-            get_minor_version=lambda: gtk_version[1],
+            get_major_version=version_reader("Gtk", gtk_version[0]),
+            get_minor_version=version_reader("Gtk", gtk_version[1]),
         )
         repository.Adw = SimpleNamespace(
-            get_major_version=lambda: adw_version[0],
-            get_minor_version=lambda: adw_version[1],
+            get_major_version=version_reader("Adw", adw_version[0]),
+            get_minor_version=version_reader("Adw", adw_version[1]),
         )
         gi.repository = repository
         with mock.patch.dict(sys.modules, {"gi": gi, "gi.repository": repository}):
             launch_gtk._require_toolkit()
-        return required
+        return self.required
 
     def test_floor_versions_pass_and_both_namespaces_are_required_first(self):
         self.assertEqual(
@@ -1363,8 +1371,13 @@ class ToolkitFloorTests(unittest.TestCase):
                 )
 
     def test_a_missing_namespace_fails_before_any_version_is_read(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as raised:
             self.run_check((4, 14), (1, 5), missing=("Adw",))
+
+        # `gi.require_version`'s own error, unchanged, is what `main()` prints.
+        self.assertEqual(str(raised.exception), "Namespace Adw not available")
+        self.assertEqual(self.required, [("Gtk", "4.0"), ("Adw", "1")])
+        self.assertEqual(self.versions_read, [])
 
 
 class PackagingTests(unittest.TestCase):

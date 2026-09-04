@@ -16,12 +16,12 @@ From the repo root:
     uv run python -m unittest discover -s tests -p 'test*.py' -v
 
 The suites in `tests/test_gtk_widgets.py` build real widgets and need a
-display: a desktop session serves, and CI wraps every Linux `unittest` command
-in `xvfb-run -a`, with `GSK_RENDERER=cairo` and `GDK_BACKEND=x11` on the jobs
-that build widgets. On a headless machine, prefix the run with `xvfb-run -a`
-yourself. `tests.test_gtk_widgets` raises at import without a display rather
-than skipping, so a run that cannot build widgets fails visibly instead of
-quietly shrinking.
+display: a desktop session serves, and every Linux CI job sets
+`GSK_RENDERER=cairo` and `GDK_BACKEND=x11` and wraps each `unittest` command
+in `xvfb-run -a`, whether or not it builds widgets. On a headless machine,
+prefix the run with `xvfb-run -a` yourself. `tests.test_gtk_widgets` raises at
+import without a display rather than skipping, so a run that cannot build
+widgets fails visibly instead of quietly shrinking.
 
 `tests.test_packaging` needs a display too, less obviously:
 `test_wheel_installs_and_smokes_in_a_fresh_selected_python_venv` discovers the

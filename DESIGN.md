@@ -227,9 +227,10 @@ artifact that keeps the project name, version, and metadata while regenerating
 a valid `RECORD` over mutated or added payload bytes is still rejected, and
 the failure names the archive type and the exact mismatched path.
 
-Widgets need a display, so every Linux `unittest` command runs under
-`xvfb-run -a`, and the jobs that build widgets set `GSK_RENDERER=cairo` and
-`GDK_BACKEND=x11`; macOS runs in its own session and needs no wrapper. The two
+Widgets need a display, so every Linux job sets `GSK_RENDERER=cairo` and
+`GDK_BACKEND=x11` and runs each `unittest` command under `xvfb-run -a`,
+whether or not that job builds widgets, so the rule has no exceptions to
+track; macOS runs in its own session and needs no wrapper. The two
 template documents are validated by instantiating them, because
 `gtk4-builder-tool validate` cannot resolve a libadwaita template parent.
 
