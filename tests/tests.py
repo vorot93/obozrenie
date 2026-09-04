@@ -586,12 +586,14 @@ class ApplicationServicesTests(unittest.TestCase):
 class EntryPointTests(unittest.TestCase):
     _ATTEMPTED_PATHS = {
         "macOS setup": ["macOS setup"],
-        "GTK import": ["macOS setup", "GTK import"],
-        "game table": ["macOS setup", "game table"],
-        "geolocation": ["macOS setup", "game table", "geolocation"],
-        "Core": ["macOS setup", "game table", "geolocation", "Core"],
+        "toolkit": ["macOS setup", "toolkit"],
+        "GTK import": ["macOS setup", "toolkit", "GTK import"],
+        "game table": ["macOS setup", "toolkit", "game table"],
+        "geolocation": ["macOS setup", "toolkit", "game table", "geolocation"],
+        "Core": ["macOS setup", "toolkit", "game table", "geolocation", "Core"],
         "coordinator": [
             "macOS setup",
+            "toolkit",
             "game table",
             "geolocation",
             "Core",
@@ -599,6 +601,7 @@ class EntryPointTests(unittest.TestCase):
         ],
         "services": [
             "macOS setup",
+            "toolkit",
             "game table",
             "geolocation",
             "Core",
@@ -607,6 +610,7 @@ class EntryPointTests(unittest.TestCase):
         ],
         "Settings": [
             "macOS setup",
+            "toolkit",
             "game table",
             "geolocation",
             "Core",
@@ -616,6 +620,7 @@ class EntryPointTests(unittest.TestCase):
         ],
         "App": [
             "macOS setup",
+            "toolkit",
             "game table",
             "geolocation",
             "Core",
@@ -626,6 +631,7 @@ class EntryPointTests(unittest.TestCase):
         ],
         "app.run": [
             "macOS setup",
+            "toolkit",
             "game table",
             "geolocation",
             "Core",
@@ -811,6 +817,11 @@ class EntryPointTests(unittest.TestCase):
             if failure == "macOS setup":
                 raise error
 
+        def require_toolkit():
+            events.append("toolkit")
+            if failure == "toolkit":
+                raise error
+
         def record_cleanup():
             events.append("cleanup")
             if tracebacks_at_cleanup is not None:
@@ -862,6 +873,11 @@ class EntryPointTests(unittest.TestCase):
                 launch_gtk,
                 "_ensure_macos_library_path",
                 side_effect=ensure_macos_library_path,
+            ))
+            patches.enter_context(mock.patch.object(
+                launch_gtk,
+                "_require_toolkit",
+                side_effect=require_toolkit,
             ))
             patches.enter_context(mock.patch.object(
                 launch_gtk, "ApplicationServices", FakeServices))
@@ -1296,6 +1312,59 @@ class EntryPointTests(unittest.TestCase):
                 mock.patch.object(launch_gtk.os, "execv") as execv:
             launch_gtk._ensure_macos_library_path()
             execv.assert_not_called()
+
+
+class ToolkitFloorTests(unittest.TestCase):
+    """The launcher refuses a toolkit below GTK 4.14 / libadwaita 1.5."""
+
+    def run_check(self, gtk_version, adw_version, missing=()):
+        from obozrenie import launch_gtk
+
+        required = []
+        gi = ModuleType("gi")
+
+        def require_version(namespace, version):
+            required.append((namespace, version))
+            if namespace in missing:
+                raise ValueError(f"Namespace {namespace} not available")
+
+        gi.require_version = require_version
+        repository = ModuleType("gi.repository")
+        repository.Gtk = SimpleNamespace(
+            get_major_version=lambda: gtk_version[0],
+            get_minor_version=lambda: gtk_version[1],
+        )
+        repository.Adw = SimpleNamespace(
+            get_major_version=lambda: adw_version[0],
+            get_minor_version=lambda: adw_version[1],
+        )
+        gi.repository = repository
+        with mock.patch.dict(sys.modules, {"gi": gi, "gi.repository": repository}):
+            launch_gtk._require_toolkit()
+        return required
+
+    def test_floor_versions_pass_and_both_namespaces_are_required_first(self):
+        self.assertEqual(
+            self.run_check((4, 14), (1, 5)),
+            [("Gtk", "4.0"), ("Adw", "1")],
+        )
+        self.run_check((5, 0), (2, 0))
+
+    def test_older_gtk_or_libadwaita_is_refused_with_one_message(self):
+        from obozrenie import launch_gtk
+
+        for versions in (((4, 13), (1, 5)), ((4, 14), (1, 4)), ((3, 24), (1, 5))):
+            with self.subTest(versions=versions):
+                with self.assertRaises(launch_gtk.ToolkitVersionError) as raised:
+                    self.run_check(*versions)
+                self.assertEqual(
+                    str(raised.exception),
+                    "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer.",
+                )
+
+    def test_a_missing_namespace_fails_before_any_version_is_read(self):
+        with self.assertRaises(ValueError):
+            self.run_check((4, 14), (1, 5), missing=("Adw",))
 
 
 class PackagingTests(unittest.TestCase):

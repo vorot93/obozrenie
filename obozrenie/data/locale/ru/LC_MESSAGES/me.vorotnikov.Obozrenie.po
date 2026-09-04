@@ -121,6 +121,18 @@ msgstr "GTK"
 msgid "Launcher"
 msgstr "Запускалка"
 
+#: obozrenie/gtk.py:67
+msgid "Obozrenie is starting"
+msgstr "«Обозрение» запускается"
+
+#: obozrenie/gtk.py:185
+msgid "Shutting down"
+msgstr "Выход"
+
+#: obozrenie/gtk.py:189
+msgid "Initialization failed. Aborting."
+msgstr "Ошибка инициализации."
+
 #: obozrenie/gtk_dialogs.py:51
 msgid "Error"
 msgstr "Ошибка"
@@ -184,6 +196,10 @@ msgstr "Неверные настройки запуска"
 #, python-format
 msgid "Launching '%(launch_cmd)s'"
 msgstr "Запуск «%(launch_cmd)s»"
+
+#: obozrenie/launch_gtk.py:71
+msgid "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."
+msgstr "Обозрению нужны GTK 4.14 и libadwaita 1.5 или новее."
 
 #: obozrenie/presenter.py:60
 msgid "Game path"

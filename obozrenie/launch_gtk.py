@@ -24,6 +24,7 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
+from obozrenie import i18n
 from obozrenie.core import Core
 from obozrenie.game_table import GameTable
 from obozrenie.geoip import Geolocation
@@ -41,6 +42,33 @@ from obozrenie.settings import Settings
 
 if TYPE_CHECKING:
     from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
+
+
+# (GTK major, minor), (libadwaita major, minor): the oldest toolkit that runs.
+TOOLKIT_FLOOR = ((4, 14), (1, 5))
+
+
+class ToolkitVersionError(RuntimeError):
+    """The installed GTK or libadwaita is older than the application needs."""
+
+
+def _require_toolkit():
+    """Select GTK 4 and libadwaita 1 and refuse anything below the floor.
+
+    `gi` is imported here rather than at module level so that importing the
+    launcher never touches the toolkit; a missing namespace raises the
+    `ValueError` `gi.require_version` produces, which `main()` prints.
+    """
+    import gi
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Adw", "1")
+    from gi.repository import Adw, Gtk
+    gtk_version = (Gtk.get_major_version(), Gtk.get_minor_version())
+    adw_version = (Adw.get_major_version(), Adw.get_minor_version())
+    gtk_floor, adw_floor = TOOLKIT_FLOOR
+    if gtk_version < gtk_floor or adw_version < adw_floor:
+        raise ToolkitVersionError(
+            i18n._("Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."))
 
 
 # Every owned service gets this long, in total, to finish closing.
@@ -240,6 +268,7 @@ def main():
     try:
         try:
             _ensure_macos_library_path()
+            _require_toolkit()
             from obozrenie.gtk import App
             from obozrenie.gtk_geoip import GeoIPDownloadCoordinator
             game_table = GameTable.from_shipped_list()

@@ -119,6 +119,18 @@ msgstr ""
 msgid "Launcher"
 msgstr ""
 
+#: obozrenie/gtk.py:67
+msgid "Obozrenie is starting"
+msgstr ""
+
+#: obozrenie/gtk.py:185
+msgid "Shutting down"
+msgstr ""
+
+#: obozrenie/gtk.py:189
+msgid "Initialization failed. Aborting."
+msgstr ""
+
 #: obozrenie/gtk_dialogs.py:51
 msgid "Error"
 msgstr ""
@@ -177,6 +189,10 @@ msgstr ""
 #: obozrenie/launch.py:359
 #, python-format
 msgid "Launching '%(launch_cmd)s'"
+msgstr ""
+
+#: obozrenie/launch_gtk.py:71
+msgid "Obozrenie needs GTK 4.14 and libadwaita 1.5 or newer."
 msgstr ""
 
 #: obozrenie/presenter.py:60
