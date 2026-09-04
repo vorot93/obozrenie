@@ -768,9 +768,13 @@ class ApplicationShutdownTests(unittest.TestCase):
         self.assertEqual(app.status, "starting")
         self.assertIsNone(app.handler_failure)
         self.assertIsNone(app.window)
+        self.assertEqual(app.get_flags(), gtk_module.Gio.ApplicationFlags.DEFAULT_FLAGS)
+        self.assertEqual(app.get_application_id(), gtk_module.APPLICATION_ID)
 
+        # Emitted, not called directly, so the "shutdown" connection made in
+        # `__init__` is what runs `on_shutdown` here.
         with mock.patch.object(gtk_module.helpers, "debug_msg"):
-            app.on_shutdown(app)
+            app.emit("shutdown")
 
         self.assertEqual(app.status, "start failed")
         app.services.begin_close.assert_called_once_with()
