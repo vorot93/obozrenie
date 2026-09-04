@@ -68,6 +68,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                     <property name="enable-search">True</property>
                     <property name="focusable">True</property>
                     <property name="tooltip-text" translatable="yes">Select a game.</property>
+                    <signal name="notify::selected" handler="_on_compact_game_selected"/>
                   </object>
                 </child>
               </object>
@@ -255,7 +256,10 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkEntry" id="filter_mod">
                             <property name="hexpand">True</property>
-                            <signal name="changed" handler="_on_filters_changed"/>
+                            <!-- The filter and host entries report "notify::text": one
+                                 emission per edit or set_text(), where "changed" fires
+                                 once per editing step, so twice on a non-empty replace. -->
+                            <signal name="notify::text" handler="_on_filters_changed"/>
                             <layout>
                               <property name="column">1</property>
                               <property name="row">0</property>
@@ -277,7 +281,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkEntry" id="filter_type">
                             <property name="hexpand">True</property>
-                            <signal name="changed" handler="_on_filters_changed"/>
+                            <signal name="notify::text" handler="_on_filters_changed"/>
                             <layout>
                               <property name="column">1</property>
                               <property name="row">1</property>
@@ -299,7 +303,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                         <child>
                           <object class="GtkEntry" id="filter_terrain">
                             <property name="hexpand">True</property>
-                            <signal name="changed" handler="_on_filters_changed"/>
+                            <signal name="notify::text" handler="_on_filters_changed"/>
                             <layout>
                               <property name="column">1</property>
                               <property name="row">2</property>
@@ -345,6 +349,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                           <object class="GtkDropDown" id="filter_secure">
                             <property name="model">secure_choices</property>
                             <property name="focusable">True</property>
+                            <signal name="notify::selected" handler="_on_filters_changed"/>
                             <layout>
                               <property name="column">3</property>
                               <property name="row">1</property>
@@ -430,6 +435,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="placeholder-text" translatable="yes">Host address</property>
                 <property name="tooltip-text" translatable="yes">Server address to connect to. Automatically filled on changing server list selection.</property>
                 <property name="input-purpose">url</property>
+                <signal name="notify::text" handler="_on_connect_data_changed"/>
               </object>
             </child>
             <child type="end">
@@ -437,6 +443,7 @@ along with Obozrenie.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="enable-search">True</property>
                 <property name="focusable">True</property>
                 <property name="tooltip-text" translatable="yes">Select a game.</property>
+                <signal name="notify::selected" handler="_on_connect_data_changed"/>
               </object>
             </child>
           </object>

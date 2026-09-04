@@ -99,9 +99,11 @@ class FakeView:
         self.sidebar = shown
         self.calls.append(("show_sidebar", shown))
 
-    def show_page(self, name):
-        self.page = name
-        self.calls.append(("show_page", name))
+    def show_page(self, page):
+        # The presenter names pages through the enum, never a bare string.
+        assert isinstance(page, presenter.Page), page
+        self.page = page
+        self.calls.append(("show_page", page))
 
     def set_error_text(self, text):
         self.error_text = text
@@ -433,7 +435,7 @@ class BrowserGameTests(unittest.TestCase):
             instance.browser_game_changed()
 
         self.assertEqual([game for game, _callback in instance.core.refreshes], ["browser"])
-        self.assertEqual(view.page, "loading")
+        self.assertIs(view.page, presenter.Page.LOADING)
         idle_add.assert_not_called()
 
         token = instance.core.game_table.begin_query("connect")
@@ -476,7 +478,7 @@ class QueryStateTests(unittest.TestCase):
         instance.refresh_requested()
 
         self.assertIs(instance.core.game_table.get_query_status("browser"), game_table.QueryStatus.WORKING)
-        self.assertEqual(view.page, "loading")
+        self.assertIs(view.page, presenter.Page.LOADING)
         self.assertEqual(self.status_icon(instance, "browser"), "emblem-synchronizing-symbolic")
         self.assertIs(view.enabled["refresh"], False)
 
@@ -544,7 +546,7 @@ class QueryStateTests(unittest.TestCase):
             self.assertIs(scheduled(game), False)
 
         self.assertEqual(view.error_text, safe_error)
-        self.assertEqual(view.page, "error")
+        self.assertIs(view.page, presenter.Page.ERROR)
         self.assertEqual(self.status_icon(instance, "browser"), "dialog-error-symbolic")
         self.assertIs(view.enabled["refresh"], True)
 
@@ -562,7 +564,7 @@ class QueryStateTests(unittest.TestCase):
 
         self.assertIs(instance.show_game_page("browser"), False)
 
-        self.assertEqual(view.page, "servers")
+        self.assertIs(view.page, presenter.Page.SERVERS)
         self.assertEqual([row.host for row in view.servers], ["[2001:db8::40]:30000", "slow.example:1"])
         self.assertIs(view.servers[0].game_icon, icons["browser"])
         self.assertEqual(view.servers[0].flag, "\U0001F1FA\U0001F1F8")
@@ -674,7 +676,7 @@ class SettingsBindingTests(unittest.TestCase):
         # and asks for nothing else: no query, no page of its own.
         self.assertEqual(instance.core.refreshes, [])
         idle_add.assert_not_called()
-        self.assertEqual(view.page, "welcome")
+        self.assertIs(view.page, presenter.Page.WELCOME)
         self.assertEqual(view.refilters, 1)
         self.assertEqual(instance._filter_values["mod"], "x")
         self.assertEqual(instance.settings.settings_table["common"]["game-listview"], "True")
@@ -734,11 +736,15 @@ class PreferencesTests(unittest.TestCase):
         declared = presenter.game_options()
 
         self.assertIn("nickname", declared)
-        self.assertEqual(declared["nickname"]["name"], i18n._("Nickname"))
-        self.assertEqual(declared["nickname"]["description"], i18n._("Your nickname."))
-        self.assertIs(declared["nickname"]["kind"], presenter.OptionKind.TEXT)
-        self.assertIs(declared["master_uri"]["kind"], presenter.OptionKind.LINES)
-        self.assertIs(declared["steam_launch"]["kind"], presenter.OptionKind.FLAG)
+        self.assertEqual(
+            declared["nickname"],
+            presenter.OptionSchema(
+                presenter.OptionKind.TEXT, i18n._("Nickname"), i18n._("Your nickname.")),
+        )
+        self.assertIs(declared["master_uri"].kind, presenter.OptionKind.LINES)
+        self.assertIs(declared["steam_launch"].kind, presenter.OptionKind.FLAG)
+        self.assertEqual(
+            set(declared), {"path", "workdir", "master_uri", "steam_launch", "steam_path", "nickname"})
 
         game_lists = resources.load_toml("settings", "internal", "game_lists.toml")
         packaged = resources.load_toml("settings", "defaults", "games.toml")

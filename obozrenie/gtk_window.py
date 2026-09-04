@@ -23,25 +23,36 @@ presenter asks for runs under `_syncing`, so the window never reports a
 change it was told to make. The browser game is the window's own state
 (`_browser_game`): the sidebar list and the compact drop-down both show it,
 and a search that hides the selected row does not lose it.
+
+Every signal of a template child is declared in `main_window.ui` — the
+filter and host entries through `notify::text`, the search entry through its
+debounced `search-changed`, the drop-downs through `notify::selected` — and
+Python connects only the selection models it builds itself. Those handlers
+are live from template instantiation, before `__init__` builds the models,
+so building them is a synchronizing write like any other.
 """
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from typing import TypeVar
 
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, GObject, Gtk
 
 from obozrenie import gtk_dialogs, gtk_icons, gtk_lists, gtk_preferences
 from obozrenie.list_rows import GameRow, ServerRow
-from obozrenie.presenter import PreferenceField, ServerDetails
+from obozrenie.presenter import MainPresenter, Page, PreferenceField, ServerDetails
 
 
 # Secure filter drop-down position -> the value the presenter's criteria read.
 SECURE_FILTER_CHOICES = ("None", "True", "False")
 
+_Value = TypeVar("_Value")
 
-def _position_of(model, game_id) -> int:
+
+def _position_of(model: Gio.ListModel, game_id: str | None) -> int:
     """The position of a game row in a list model, or the invalid position."""
     if game_id is not None:
         for position in range(model.get_n_items()):
@@ -112,10 +123,6 @@ class MainWindow(Adw.ApplicationWindow):
         }
         self._build_game_models()
         self._build_server_models()
-        self.filter_secure.connect("notify::selected", self._on_filters_changed)
-        # Wired in Python, not the .ui file: GTK 4.22's set_text() emits
-        # "changed" twice, but "notify::text" once, per call.
-        self.host_entry.connect("notify::text", self._on_connect_data_changed)
 
     def _build_game_models(self) -> None:
         """One store behind the sidebar list and both game drop-downs."""
@@ -131,13 +138,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.game_list.set_model(self.sidebar_selection)
         self.game_list.set_factory(gtk_lists.game_row_factory(show_status=True))
 
-        for dropdown in (self.compact_game_dropdown, self.connect_game_dropdown):
-            dropdown.set_model(self.game_store)
-            dropdown.set_expression(name_expression)
+        # The document already connected both drop-downs' `notify::selected`,
+        # which `set_model` emits: the window's own write, not a report.
+        with self._synchronizing():
+            for dropdown in (self.compact_game_dropdown, self.connect_game_dropdown):
+                dropdown.set_model(self.game_store)
+                dropdown.set_expression(name_expression)
         self.compact_game_dropdown.set_factory(gtk_lists.game_row_factory(show_status=True))
         self.connect_game_dropdown.set_factory(gtk_lists.game_row_factory(show_status=False))
-        self.compact_game_dropdown.connect("notify::selected", self._on_compact_game_selected)
-        self.connect_game_dropdown.connect("notify::selected", self._on_connect_data_changed)
 
     def _build_server_models(self) -> None:
         """Store -> presenter filter -> column sorter -> single selection."""
@@ -176,7 +184,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     # MainView: wiring and reads
 
-    def attach_presenter(self, presenter) -> None:
+    def attach_presenter(self, presenter: MainPresenter) -> None:
         self._presenter = presenter
 
     def browser_game(self) -> str | None:
@@ -213,11 +221,8 @@ class MainWindow(Adw.ApplicationWindow):
     # MainView: writes
 
     def set_games(self, rows: Sequence[GameRow]) -> None:
-        self._syncing = True
-        try:
+        with self._synchronizing():
             self.game_store.splice(0, self.game_store.get_n_items(), list(rows))
-        finally:
-            self._syncing = False
         self._sync_browser_selection()
 
     def set_servers(self, rows: Sequence[ServerRow]) -> None:
@@ -234,6 +239,13 @@ class MainWindow(Adw.ApplicationWindow):
         self._sync_browser_selection()
 
     def select_connect_game(self, game_id: str | None) -> None:
+        """Show `game_id` in the Connect drop-down; `None` changes nothing.
+
+        A drop-down over a non-empty model always shows one item, so an
+        unset persisted selection leaves the current choice in place — the
+        first game, before anything else selected one — and notifies
+        nothing; only the browser game has a "no selection" of its own.
+        """
         self._write(self.connect_game_dropdown.set_selected, _position_of(self.game_store, game_id))
 
     def set_host_text(self, text: str) -> None:
@@ -242,8 +254,8 @@ class MainWindow(Adw.ApplicationWindow):
     def show_sidebar(self, shown: bool) -> None:
         self._write(self.sidebar_toggle.set_active, shown)
 
-    def show_page(self, name: str) -> None:
-        self.pages.set_visible_child_name(name)
+    def show_page(self, page: Page) -> None:
+        self.pages.set_visible_child_name(page)
 
     def set_error_text(self, text: str) -> None:
         # `Adw.StatusPage` parses its description as Pango markup, so an
@@ -279,34 +291,37 @@ class MainWindow(Adw.ApplicationWindow):
 
     # Internals
 
-    def _write(self, setter, value) -> None:
-        """Apply one presenter-requested write without reporting it back."""
-        self._syncing = True
+    @contextmanager
+    def _synchronizing(self) -> Iterator[None]:
+        """Mark a write of the window's own, so the signals it fires report nothing."""
+        previous, self._syncing = self._syncing, True
         try:
-            setter(value)
+            yield
         finally:
-            self._syncing = False
+            self._syncing = previous
+
+    def _write(self, setter: Callable[[_Value], None], value: _Value) -> None:
+        """Apply one presenter-requested write without reporting it back."""
+        with self._synchronizing():
+            setter(value)
 
     def _notify(self, event: str) -> None:
         if self._syncing or self._presenter is None:
             return
         getattr(self._presenter, event)()
 
-    def _server_matches(self, row) -> bool:
+    def _server_matches(self, row: ServerRow) -> bool:
         return self._presenter is None or self._presenter.server_matches(row)
 
     def _sync_browser_selection(self) -> None:
         """Show `_browser_game` in the sidebar and the compact drop-down."""
-        self._syncing = True
-        try:
+        with self._synchronizing():
             self.compact_game_dropdown.set_selected(
                 _position_of(self.game_store, self._browser_game))
             self.sidebar_selection.set_selected(
                 _position_of(self._sidebar_model, self._browser_game))
-        finally:
-            self._syncing = False
 
-    def _browser_game_picked(self, item) -> None:
+    def _browser_game_picked(self, item: GameRow | None) -> None:
         """One selector chose a game: keep the other in step, report once."""
         if self._syncing or item is None or item.game_id == self._browser_game:
             return
@@ -314,54 +329,60 @@ class MainWindow(Adw.ApplicationWindow):
         self._sync_browser_selection()
         self._notify("browser_game_changed")
 
-    def _on_sidebar_selection_changed(self, selection, _pspec) -> None:
+    def _on_sidebar_selection_changed(
+        self, selection: Gtk.SingleSelection, _pspec: GObject.ParamSpec,
+    ) -> None:
         self._browser_game_picked(selection.get_selected_item())
 
-    def _on_compact_game_selected(self, dropdown, _pspec) -> None:
+    @Gtk.Template.Callback()
+    def _on_compact_game_selected(
+        self, dropdown: Gtk.DropDown, _pspec: GObject.ParamSpec,
+    ) -> None:
         self._browser_game_picked(dropdown.get_selected_item())
 
-    def _on_server_selection_changed(self, *_args) -> None:
+    def _on_server_selection_changed(self, *_args: object) -> None:
         self._notify("server_selected")
 
-    def _on_connect_data_changed(self, *_args) -> None:
+    @Gtk.Template.Callback()
+    def _on_connect_data_changed(self, *_args: object) -> None:
         self._notify("connect_data_changed")
 
     @Gtk.Template.Callback()
-    def _on_sidebar_toggled(self, button) -> None:
+    def _on_sidebar_toggled(self, button: Gtk.ToggleButton) -> None:
         shown = button.get_active()
         self.sidebar_revealer.set_reveal_child(shown)
         self.compact_game_revealer.set_reveal_child(not shown)
         self._notify("sidebar_toggled")
 
     @Gtk.Template.Callback()
-    def _on_game_search_changed(self, entry) -> None:
+    def _on_game_search_changed(self, entry: Gtk.SearchEntry) -> None:
         self._game_filter.set_search(entry.get_text())
         self._sync_browser_selection()
 
     @Gtk.Template.Callback()
-    def _on_filters_toggled(self, button) -> None:
+    def _on_filters_toggled(self, button: Gtk.ToggleButton) -> None:
         self.filters_revealer.set_reveal_child(button.get_active())
 
     @Gtk.Template.Callback()
-    def _on_filters_changed(self, *_args) -> None:
+    def _on_filters_changed(self, *_args: object) -> None:
         self._notify("filters_changed")
 
     @Gtk.Template.Callback()
-    def _on_refresh_clicked(self, _button) -> None:
+    def _on_refresh_clicked(self, _button: Gtk.Button) -> None:
         self._notify("refresh_requested")
 
     @Gtk.Template.Callback()
-    def _on_preferences_clicked(self, _button) -> None:
+    def _on_preferences_clicked(self, _button: Gtk.Button) -> None:
         self._notify("preferences_requested")
 
     @Gtk.Template.Callback()
-    def _on_info_clicked(self, _button) -> None:
+    def _on_info_clicked(self, _button: Gtk.Button) -> None:
         self._notify("info_requested")
 
     @Gtk.Template.Callback()
-    def _on_connect_clicked(self, _button) -> None:
+    def _on_connect_clicked(self, _button: Gtk.Button) -> None:
         self._notify("connect_requested")
 
     @Gtk.Template.Callback()
-    def _on_server_activated(self, _view, _position) -> None:
+    def _on_server_activated(self, _view: Gtk.ColumnView, _position: int) -> None:
         self._notify("server_activated")

@@ -29,7 +29,7 @@ from __future__ import annotations
 import ast
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 from types import MappingProxyType
 from typing import Protocol
 
@@ -41,9 +41,19 @@ from obozrenie.list_rows import GameRow, PlayerRow, ServerRow
 from obozrenie.models import Endpoint
 
 
-# In the order `main_window.ui` declares them: the welcome page is first,
-# so it is what a stack with no explicit visible child shows.
-PAGES = ("welcome", "servers", "loading", "error")
+class Page(StrEnum):
+    """The main window's pages, named as `main_window.ui` names the stack's children.
+
+    Declared in the document's order: the welcome page is first, so it is
+    what a stack with no explicit visible child shows.
+    """
+
+    WELCOME = "welcome"
+    SERVERS = "servers"
+    LOADING = "loading"
+    ERROR = "error"
+
+
 ACTIONS = ("preferences", "refresh", "connect", "info")
 
 
@@ -55,39 +65,48 @@ class OptionKind(Enum):
     FLAG = "flag"
 
 
-def game_options() -> dict[str, dict[str, object]]:
-    """The per-game option schema: label, description, and kind per option."""
+@dataclass(frozen=True, slots=True)
+class OptionSchema:
+    """How one per-game option is presented: its editor kind, label, and description."""
+
+    kind: OptionKind
+    label: str
+    description: str
+
+
+def game_options() -> dict[str, OptionSchema]:
+    """The per-game option schema, translated when called."""
     return {
-        "path": {
-            "name": i18n._("Game path"),
-            "description": i18n._("Path to the game."),
-            "kind": OptionKind.TEXT,
-        },
-        "workdir": {
-            "name": i18n._("Working directory"),
-            "description": i18n._("Working directory of the game."),
-            "kind": OptionKind.TEXT,
-        },
-        "master_uri": {
-            "name": i18n._("Master URI list"),
-            "description": i18n._("List of master servers to query."),
-            "kind": OptionKind.LINES,
-        },
-        "steam_launch": {
-            "name": i18n._("Launch via Steam"),
-            "description": i18n._("Enables launching via Steam client. Required for VAC-enabled servers."),
-            "kind": OptionKind.FLAG,
-        },
-        "steam_path": {
-            "name": i18n._("Steam path"),
-            "description": i18n._("Steam client path."),
-            "kind": OptionKind.TEXT,
-        },
-        "nickname": {
-            "name": i18n._("Nickname"),
-            "description": i18n._("Your nickname."),
-            "kind": OptionKind.TEXT,
-        },
+        "path": OptionSchema(
+            kind=OptionKind.TEXT,
+            label=i18n._("Game path"),
+            description=i18n._("Path to the game."),
+        ),
+        "workdir": OptionSchema(
+            kind=OptionKind.TEXT,
+            label=i18n._("Working directory"),
+            description=i18n._("Working directory of the game."),
+        ),
+        "master_uri": OptionSchema(
+            kind=OptionKind.LINES,
+            label=i18n._("Master URI list"),
+            description=i18n._("List of master servers to query."),
+        ),
+        "steam_launch": OptionSchema(
+            kind=OptionKind.FLAG,
+            label=i18n._("Launch via Steam"),
+            description=i18n._("Enables launching via Steam client. Required for VAC-enabled servers."),
+        ),
+        "steam_path": OptionSchema(
+            kind=OptionKind.TEXT,
+            label=i18n._("Steam path"),
+            description=i18n._("Steam client path."),
+        ),
+        "nickname": OptionSchema(
+            kind=OptionKind.TEXT,
+            label=i18n._("Nickname"),
+            description=i18n._("Your nickname."),
+        ),
     }
 
 
@@ -132,7 +151,7 @@ class MainView(Protocol):
     def select_connect_game(self, game_id: str | None) -> None: ...
     def set_host_text(self, text: str) -> None: ...
     def show_sidebar(self, shown: bool) -> None: ...
-    def show_page(self, name: str) -> None: ...
+    def show_page(self, page: Page) -> None: ...
     def set_error_text(self, text: str) -> None: ...
     def set_action_enabled(self, action: str, enabled: bool) -> None: ...
     def refilter(self) -> None: ...
@@ -272,7 +291,7 @@ class MainPresenter:
         self.core = core
         self.settings = settings
         self.game_icons = game_icons
-        self.game_options = game_options()
+        self._option_schemas = game_options()
         self._game_rows: dict[str, GameRow] = {}
         self._filter_values: dict[str, object] = {}
 
@@ -308,7 +327,7 @@ class MainPresenter:
         browser game is deliberately not re-reported here, because no query
         runs until the user picks a game or presses refresh.
         """
-        self.view.show_page("welcome")
+        self.view.show_page(Page.WELCOME)
         self.sidebar_toggled()
         self.filters_changed()
         self.connect_data_changed()
@@ -327,7 +346,7 @@ class MainPresenter:
             self.refresh_requested()
         else:
             if query_status is QueryStatus.WORKING:
-                self.view.show_page("loading")
+                self.view.show_page(Page.LOADING)
             GLib.idle_add(self.show_game_page, game_id)
 
     def connect_data_changed(self) -> None:
@@ -356,7 +375,7 @@ class MainPresenter:
             return
         query_status = self.core.game_table.get_query_status(game)
         if query_status is QueryStatus.WORKING:
-            self.view.show_page("loading")
+            self.view.show_page(Page.LOADING)
             self._set_status_icon(game, query_status)
         self.update_action_sensitivity()
 
@@ -367,15 +386,15 @@ class MainPresenter:
         game_settings = self.core.game_table.get_game_settings(game)
         fields = []
         for option, value in game_settings.items():
-            schema = self.game_options[option]
-            kind = schema["kind"]
-            if kind is OptionKind.LINES:
+            schema = self._option_schemas[option]
+            if schema.kind is OptionKind.LINES:
                 value = "\n".join(value)
-            elif kind is OptionKind.FLAG:
+            elif schema.kind is OptionKind.FLAG:
                 value = _as_flag(value)
             else:
                 value = _as_text(value)
-            fields.append(PreferenceField(option, kind, schema["name"], schema["description"], value))
+            fields.append(
+                PreferenceField(option, schema.kind, schema.label, schema.description, value))
         title = i18n._("%(game)s preferences") % {
             "game": self.core.game_table.get_game_info(game)["name"],
         }
@@ -384,7 +403,7 @@ class MainPresenter:
 
     def _save_preferences(self, game: str, values: Mapping[str, object]) -> None:
         for option, value in values.items():
-            if self.game_options[option]["kind"] is OptionKind.LINES:
+            if self._option_schemas[option].kind is OptionKind.LINES:
                 value = value.split("\n")
             self.core.game_table.set_game_setting(game, option, value)
 
@@ -471,12 +490,12 @@ class MainPresenter:
         if selected_game == game:
             if query_status is QueryStatus.READY:
                 self.view.set_servers(self._server_rows(server_table))
-                self.view.show_page("servers")
+                self.view.show_page(Page.SERVERS)
             elif query_status is QueryStatus.WORKING:
-                self.view.show_page("loading")
+                self.view.show_page(Page.LOADING)
             elif query_status is QueryStatus.ERROR:
                 self.view.set_error_text(self.core.game_table.get_query_error(game))
-                self.view.show_page("error")
+                self.view.show_page(Page.ERROR)
 
         # In case selected server's existence is altered
         self.update_action_sensitivity()

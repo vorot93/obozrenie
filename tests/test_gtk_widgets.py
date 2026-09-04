@@ -31,6 +31,9 @@ import sys
 import tempfile
 import tomllib
 import unittest
+from unittest import mock
+import warnings
+import xml.etree.ElementTree as ET
 
 import gi
 gi.require_version("Gtk", "4.0")
@@ -68,6 +71,7 @@ from obozrenie import (
     gtk_preferences,
     gtk_window,
     presenter,
+    resources,
 )
 from obozrenie import settings as settings_module
 from obozrenie.list_rows import GameRow, PlayerRow, ServerRow
@@ -461,6 +465,28 @@ class MainWindowTemplateTests(_MainWindowTestCase):
         self.assertEqual(window.get_title(), "Obozrenie")
         self.assertIsNotNone(window.logo)
 
+    def test_construction_fires_its_handlers_only_as_synchronizing_writes(self):
+        # The document's handlers are live from template instantiation, so
+        # `set_model` in `__init__` fires `notify::selected` on both game
+        # drop-downs; the window must treat that as its own write, so a
+        # presenter could never be reported to and no game gets picked.
+        fired = []
+        original = gtk_window.MainWindow._notify
+
+        def recording_notify(window, event):
+            fired.append((event, window._syncing))
+            original(window, event)
+
+        with mock.patch.object(gtk_window.MainWindow, "_notify", recording_notify):
+            window = gtk_window.MainWindow()
+        self.addCleanup(window.destroy)
+
+        # Exactly the connect drop-down's report reaches `_notify`, as a
+        # synchronizing write; the compact one stops in `_browser_game_picked`.
+        self.assertEqual(fired, [("connect_data_changed", True)])
+        self.assertIsNone(window.browser_game())
+        self.assertIsNone(window.connect_game())
+
     def test_selectors_are_focusable_and_filter_labels_target_their_controls(self):
         window = self.window
         for widget in (window.game_list, window.compact_game_dropdown,
@@ -481,9 +507,9 @@ class MainWindowTemplateTests(_MainWindowTestCase):
 
     def test_pages_actions_error_text_and_sidebar_are_view_writes(self):
         window = self.window
-        for name in presenter.PAGES:
-            window.show_page(name)
-            self.assertEqual(window.pages.get_visible_child_name(), name)
+        for page in presenter.Page:
+            window.show_page(page)
+            self.assertEqual(window.pages.get_visible_child_name(), page)
         window.set_error_text("exact error")
         self.assertEqual(window.error_page.get_description(), "exact error")
         # The description is parsed as Pango markup, so a query error
@@ -578,10 +604,12 @@ class MainWindowGameTests(_MainWindowTestCase):
         self.assertEqual(recorder.events, [])
         self.assertEqual(window.browser_game(), "q3a")
 
-    def test_search_filters_the_sidebar_without_losing_the_browser_game(self):
+    def test_search_filters_the_sidebar_without_losing_or_reporting_the_browser_game(self):
         window = self.window
+        recorder = RecordingPresenter()
         window.set_games(self.game_rows())
         window.select_browser_game("q3a")
+        window.attach_presenter(recorder)
 
         window.game_search.set_text("xon")
         window.game_search.emit("search-changed")
@@ -594,6 +622,9 @@ class MainWindowGameTests(_MainWindowTestCase):
         pump()
         self.assertEqual(window.sidebar_selection.get_n_items(), 2)
         self.assertEqual(window.sidebar_selection.get_selected_item().game_id, "q3a")
+        # Hiding and re-showing the selected row is the window's own
+        # bookkeeping, never a browser-game change.
+        self.assertEqual(recorder.events, [])
 
     def test_user_selection_reports_one_browser_change_and_syncs_the_other_selector(self):
         window = self.window
@@ -646,6 +677,35 @@ class MainWindowGameTests(_MainWindowTestCase):
             "info_requested",
             "connect_requested",
         ])
+
+        # Replacing non-empty text is one edit, not the delete-then-insert
+        # pair GtkEditable performs it as, so each entry reports it once.
+        recorder.events.clear()
+        window.filter_mod.set_text("xy")
+        window.host_entry.set_text("other.example:3")
+        pump()
+        self.assertEqual(recorder.events, ["filters_changed", "connect_data_changed"])
+
+    def test_every_filter_control_reports_one_filters_changed(self):
+        window = self.window
+        recorder = RecordingPresenter()
+        window.attach_presenter(recorder)
+        edits = (
+            ("mod", lambda: window.filter_mod.set_text("insta")),
+            ("type", lambda: window.filter_type.set_text("ctf")),
+            ("terrain", lambda: window.filter_terrain.set_text("q3")),
+            ("ping", lambda: window.filter_ping.set_value(120)),
+            ("secure", lambda: window.filter_secure.set_selected(2)),
+            ("notfull", lambda: window.filter_notfull.set_active(True)),
+            ("notempty", lambda: window.filter_notempty.set_active(True)),
+            ("nopassword", lambda: window.filter_nopassword.set_active(True)),
+        )
+        for name, edit in edits:
+            with self.subTest(filter=name):
+                recorder.events.clear()
+                edit()
+                pump()
+                self.assertEqual(recorder.events, ["filters_changed"])
 
 
 class MainWindowServerTests(_MainWindowTestCase):
@@ -701,20 +761,40 @@ class MainWindowDialogTests(_MainWindowTestCase):
     def test_view_dialogs_present_on_the_window(self):
         window = self.window
         closes = []
-        error = gtk_dialogs.present_error(window, "x", lambda: closes.append(True))
-        pump()
-        error.force_close()
 
         window.present_error("boom", lambda: closes.append("boom"))
         pump()
+        error = window.get_visible_dialog()
+        self.assertIsInstance(error, Adw.AlertDialog)
+        self.assertEqual(error.get_body(), "boom")
+        error.emit("response", "close")
+        self.assertEqual(closes, ["boom"])
+        error.force_close()
+        pump()
+        self.assertIsNone(window.get_visible_dialog())
+
         details = presenter.ServerDetails("n", "h.example:1", "g", "t", "1 / 2", "3", ())
         window.present_server_info(details, lambda: None)
         pump()
+        info = window.get_visible_dialog()
+        self.assertIsInstance(info, gtk_dialogs.ServerInfoDialog)
+        self.assertEqual(info.host_value.get_text(), "h.example:1")
+        info.force_close()
+        pump()
+
         window.present_preferences("t", (), lambda values: None)
         pump()
+        preferences = window.get_visible_dialog()
+        self.assertIsInstance(preferences, gtk_preferences.PreferencesDialog)
+        self.assertEqual(preferences.get_title(), "t")
+        preferences.force_close()
+        pump()
+        self.assertIsNone(window.get_visible_dialog())
+
         about = window.present_about()
         pump()
         self.assertIs(about.get_logo(), window.logo)
+        self.assertIs(about.get_transient_for(), window)
         about.close()
         pump()
 
@@ -814,6 +894,26 @@ path = "connect-client"
             with self.subTest(game=game):
                 self.assertIs(
                     table.get_query_status(game), game_table.QueryStatus.EMPTY)
+
+
+class TemplateHandlerTests(unittest.TestCase):
+    """The handlers a document names are exactly its class's template callbacks.
+
+    GtkBuilder connects nothing, and warns nothing, for a handler name the
+    class lacks, so a misspelt handler would be a signal that silently
+    never fires; a callback no document names would be dead code.
+    """
+
+    def test_declared_handlers_and_template_callbacks_are_the_same_set(self):
+        for filename, cls in (
+            ("main_window.ui", gtk_window.MainWindow),
+            ("server_info_dialog.ui", gtk_dialogs.ServerInfoDialog),
+        ):
+            with self.subTest(document=filename):
+                document = ET.fromstring(resources.read_text("ui", filename))
+                handlers = {signal.get("handler") for signal in document.iter("signal")}
+                self.assertTrue(handlers)
+                self.assertEqual(handlers, set(cls.__gtktemplate_methods__))
 
 
 class LocalizedTemplateTests(unittest.TestCase):
