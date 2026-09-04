@@ -875,7 +875,7 @@ print("REAL_IMPORT_RETRY_OK")
 
 
 class ServerModelTests(unittest.TestCase):
-    def test_complete_mapping_has_stable_defaults(self):
+    def test_a_partly_specified_record_has_stable_defaults(self):
         server = Server(
             endpoint=Endpoint("example.org", 30000),
             game_id="minetest",
@@ -884,25 +884,19 @@ class ServerModelTests(unittest.TestCase):
             player_limit=20,
         )
 
+        self.assertEqual(str(server.endpoint), "example.org:30000")
         self.assertEqual(
-            server.to_mapping(),
-            {
-                "host": "example.org:30000",
-                "game_id": "minetest",
-                "name": "Test",
-                "password": False,
-                "player_count": 1,
-                "player_limit": 20,
-                "ping": 9999,
-                "secure": False,
-                "country": "unknown",
-                "game_mod": "",
-                "game_type": "",
-                "terrain": "",
-                "players": [],
-                "rules": {},
-            },
+            (server.game_id, server.name, server.player_count, server.player_limit),
+            ("minetest", "Test", 1, 20),
         )
+        self.assertEqual((server.password, server.secure), (False, False))
+        self.assertEqual((server.ping, server.country), (9999, "unknown"))
+        self.assertEqual(
+            (server.game_mod, server.game_type, server.terrain),
+            ("", "", ""),
+        )
+        self.assertEqual(server.players, ())
+        self.assertEqual(dict(server.rules), {})
 
     def test_network_enrichment_returns_a_new_record(self):
         server = Server(endpoint=Endpoint("example.org", 1), game_id="g")
@@ -969,21 +963,6 @@ class ServerModelTests(unittest.TestCase):
         )
 
         self.assertIs(copy.deepcopy(server), server)
-
-    def test_mapping_is_a_mutable_boundary_copy(self):
-        server = Server(
-            endpoint=Endpoint("example.org", 1),
-            game_id="g",
-            players=(Player("Ada"),),
-            rules={"mode": "survival"},
-        )
-
-        mapping = server.to_mapping()
-        mapping["players"][0]["name"] = "Grace"
-        mapping["rules"]["mode"] = "creative"
-
-        self.assertEqual(server.players, (Player("Ada"),))
-        self.assertEqual(dict(server.rules), {"mode": "survival"})
 
 
 class AdapterRttBoundaryTests(unittest.TestCase):

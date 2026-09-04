@@ -28,7 +28,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Pango
 
-from obozrenie import i18n
+from obozrenie import presenter
 
 
 LOCK_ICON = "network-wireless-encrypted-symbolic"
@@ -59,10 +59,8 @@ def label_factory(text_of: Callable[[object], str], xalign: float = 0.0) -> Gtk.
 
 
 def players_text(row) -> str:
-    return i18n._("%(player_count)s / %(player_limit)s") % {
-        "player_count": str(row.player_count),
-        "player_limit": str(row.player_limit),
-    }
+    """One server row's player count, as the column view's text function."""
+    return presenter.players_text(row.player_count, row.player_limit)
 
 
 def setup_server_name_cell(item) -> None:

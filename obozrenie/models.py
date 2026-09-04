@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, replace
 from ipaddress import ip_address
 from types import MappingProxyType
 
@@ -209,21 +209,3 @@ class Server(_Record):
 
     def with_network(self, ping: int, country: str) -> "Server":
         return replace(self, ping=ping, country=country)
-
-    def to_mapping(self) -> dict[str, object]:
-        return {
-            "host": str(self.endpoint),
-            "game_id": self.game_id,
-            "name": self.name,
-            "password": self.password,
-            "player_count": self.player_count,
-            "player_limit": self.player_limit,
-            "ping": self.ping,
-            "secure": self.secure,
-            "country": self.country,
-            "game_mod": self.game_mod,
-            "game_type": self.game_type,
-            "terrain": self.terrain,
-            "players": [asdict(player) for player in self.players],
-            "rules": dict(self.rules),
-        }

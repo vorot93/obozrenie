@@ -421,29 +421,33 @@ class ServerTests(unittest.TestCase):
             },
         )
 
+        self.assertEqual(server.endpoint, Endpoint("example.org", 1))
         self.assertEqual(
-            server.to_mapping(),
+            (
+                server.game_id,
+                server.name,
+                server.country,
+                server.game_mod,
+                server.game_type,
+                server.terrain,
+            ),
+            ("", "", "", "", "", ""),
+        )
+        self.assertEqual((server.password, server.secure), (True, False))
+        # The count may exceed the limit, and ping and score stay signed.
+        self.assertEqual(
+            (server.player_count, server.player_limit, server.ping),
+            (3, 1, -25),
+        )
+        self.assertEqual(server.players, (Player("", score=-4, ping=-8),))
+        self.assertEqual(
+            dict(server.rules),
             {
-                "host": "example.org:1",
-                "game_id": "",
-                "name": "",
-                "password": True,
-                "player_count": 3,
-                "player_limit": 1,
-                "ping": -25,
-                "secure": False,
-                "country": "",
-                "game_mod": "",
-                "game_type": "",
-                "terrain": "",
-                "players": [{"name": "", "score": -4, "ping": -8}],
-                "rules": {
-                    "text": "",
-                    "integer": -3,
-                    "float": -2.5,
-                    "boolean": False,
-                    "missing": None,
-                },
+                "text": "",
+                "integer": -3,
+                "float": -2.5,
+                "boolean": False,
+                "missing": None,
             },
         )
 

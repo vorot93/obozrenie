@@ -670,11 +670,11 @@ class SettingsBindingTests(unittest.TestCase):
         with mock.patch.object(presenter.GLib, "idle_add") as idle_add:
             instance.render_loaded_state()
 
-        # Startup renders the bound controls and nothing more, so the
-        # welcome page stays.
+        # Startup shows the welcome page and renders the bound controls,
+        # and asks for nothing else: no query, no page of its own.
         self.assertEqual(instance.core.refreshes, [])
         idle_add.assert_not_called()
-        self.assertIsNone(view.page)
+        self.assertEqual(view.page, "welcome")
         self.assertEqual(view.refilters, 1)
         self.assertEqual(instance._filter_values["mod"], "x")
         self.assertEqual(instance.settings.settings_table["common"]["game-listview"], "True")

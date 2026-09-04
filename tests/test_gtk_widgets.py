@@ -23,10 +23,13 @@ run that cannot build widgets fails visibly.
 """
 
 import base64
+import io
 import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import tomllib
 import unittest
 
 import gi
@@ -55,7 +58,18 @@ Gtk.Settings.get_default().set_property("gtk-enable-animations", False)
 from gi.events import GLibEventLoopPolicy
 GLibEventLoopPolicy().get_event_loop_for_context(GLib.MainContext.default())
 
-from obozrenie import gtk_dialogs, gtk_geoip, gtk_lists, gtk_preferences, gtk_window, presenter
+from obozrenie import (
+    core,
+    game_table,
+    geoip,
+    gtk_dialogs,
+    gtk_geoip,
+    gtk_lists,
+    gtk_preferences,
+    gtk_window,
+    presenter,
+)
+from obozrenie import settings as settings_module
 from obozrenie.list_rows import GameRow, PlayerRow, ServerRow
 from obozrenie.models import Endpoint, Player, Server
 
@@ -392,6 +406,9 @@ class RecordingPresenter:
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
+        # Every notification the window sends must name a real presenter
+        # method, or this fake would record a typo as a passing test.
+        assert hasattr(presenter.MainPresenter, name), name
 
         def record():
             self.events.append(name)
@@ -439,7 +456,7 @@ class MainWindowTemplateTests(_MainWindowTestCase):
         self.assertIsInstance(window.connect_game_dropdown, Gtk.DropDown)
         self.assertIsInstance(window.password_entry, Gtk.PasswordEntry)
         self.assertIsInstance(window.welcome_page, Adw.StatusPage)
-        self.assertEqual(window.pages.get_visible_child_name(), "servers")
+        self.assertEqual(window.pages.get_visible_child_name(), "welcome")
         self.assertEqual(window.menu_button.get_menu_model().get_n_items(), 1)
         self.assertEqual(window.get_title(), "Obozrenie")
         self.assertIsNotNone(window.logo)
@@ -692,6 +709,103 @@ class MainWindowDialogTests(_MainWindowTestCase):
         self.assertIs(about.get_logo(), window.logo)
         about.close()
         pump()
+
+
+class ApplicationStartupTests(unittest.TestCase):
+    """The App's startup order over a real window, presenter, core, settings.
+
+    `tests.test_gtk_behavior` proves that order against mocks; this proves
+    what the user actually sees once it has run for real.
+    """
+
+    GAMES = {
+        "browser": {
+            "name": "Browser Game",
+            "adapter": "qstat",
+            "launch_pattern": "quake",
+            "settings": ["path"],
+        },
+        "connect": {
+            "name": "Connect Game",
+            "adapter": "qstat",
+            "launch_pattern": "quake",
+            "settings": ["path"],
+        },
+    }
+    BUNDLED_DEFAULTS = {
+        ("settings", "defaults", "settings.toml"): b"""[common]
+selected-game-connect = "browser"
+selected-game-browser = "browser"
+server-host = ""
+game-listview = true
+""",
+        ("settings", "defaults", "games.toml"): b"""[browser]
+path = "browser-client"
+
+[connect]
+path = "connect-client"
+""",
+    }
+    # Deliberately crossed, so a selection that reached the wrong selector
+    # cannot pass: the browser shows the Connect game and the other way round.
+    SAVED_COMMON = (
+        '[common]\n'
+        'selected-game-browser = "connect"\n'
+        'selected-game-connect = "browser"\n'
+        'server-host = "saved.example:30000"\n'
+        'game-listview = false\n'
+    )
+
+    def make_settings(self, table, root):
+        """A real `Settings` over a temporary profile with valid user files."""
+        def load_resource(*parts):
+            with io.BytesIO(self.BUNDLED_DEFAULTS[tuple(parts)]) as defaults:
+                return tomllib.load(defaults)
+
+        profile = Path(root) / "profile"
+        profile.mkdir()
+        settings = settings_module.Settings(
+            table, str(profile), resource_loader=load_resource)
+        Path(settings.user_common_settings_path).write_text(
+            self.SAVED_COMMON, encoding="utf-8")
+        Path(settings.user_game_settings_path).write_text(
+            '[browser]\npath = "saved-browser-client"\n', encoding="utf-8")
+        return settings
+
+    def test_startup_shows_the_welcome_page_and_the_saved_selections(self):
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        table = game_table.GameTable(self.GAMES)
+        settings = self.make_settings(table, directory)
+        instance = core.Core(table, geoip.Geolocation())
+        self.addCleanup(instance.begin_close)
+        window = gtk_window.MainWindow()
+        self.addCleanup(window.destroy)
+        main_presenter = presenter.MainPresenter(window, instance, settings, {})
+
+        # Exactly what `App.on_startup` runs, in its order.
+        main_presenter.load_games()
+        warnings = settings.load()
+        main_presenter.bind_settings()
+        window.attach_presenter(main_presenter)
+        main_presenter.render_loaded_state()
+        window.present()
+        pump()
+
+        self.assertEqual(warnings, [])
+        self.assertEqual(window.pages.get_visible_child_name(), "welcome")
+        self.assertEqual(window.browser_game(), "connect")
+        self.assertEqual(
+            window.sidebar_selection.get_selected_item().game_id, "connect")
+        self.assertEqual(
+            window.compact_game_dropdown.get_selected_item().game_id, "connect")
+        self.assertEqual(window.connect_game(), "browser")
+        self.assertEqual(window.host_text(), "saved.example:30000")
+        self.assertFalse(window.sidebar_shown())
+        # Startup queries nothing: no game has left EMPTY.
+        for game in self.GAMES:
+            with self.subTest(game=game):
+                self.assertIs(
+                    table.get_query_status(game), game_table.QueryStatus.EMPTY)
 
 
 class LocalizedTemplateTests(unittest.TestCase):

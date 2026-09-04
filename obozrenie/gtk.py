@@ -125,7 +125,14 @@ class App(Adw.Application):
         warning has closed and the GeoIP coordinator reports the offer it
         accepted is finished, so an activation arriving meanwhile only
         presents the window again.
+
+        GIO emits `activate` even after `on_startup` quit the application,
+        so a run whose startup never built a window returns here instead of
+        dereferencing it.
         """
+        if self.window is None:
+            # Startup failed and its quit is pending; nothing to present.
+            return
         self.window.present()
         if self._startup_dialogs_pending:
             return

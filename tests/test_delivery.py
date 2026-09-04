@@ -549,6 +549,90 @@ class RepositoryHygieneTests(unittest.TestCase):
                     f"{relative_path} must not import the unused `signal` module",
                 )
 
+    # Which tier a module belongs to is decided by its name: `gtk*.py` is the
+    # GTK tier, `launch_gtk.py` selects the toolkit inside its own functions,
+    # `list_rows.py` and `presenter.py` are the display-free presentation
+    # tier, and everything else is the domain, which never sees `gi` at all.
+    PRESENTATION_MODULES = ("list_rows.py", "presenter.py")
+    PRESENTATION_GI_IMPORTS = {"gi.repository.GObject", "gi.repository.GLib"}
+    TOOLKIT_LAUNCHER = "launch_gtk.py"
+
+    @staticmethod
+    def gi_imports(tree):
+        """Every `gi` import of one parsed module, as (name, in a function)."""
+        found = []
+
+        def visit(node, in_function):
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, ast.Import):
+                    found.extend(
+                        (alias.name, in_function)
+                        for alias in child.names
+                        if alias.name == "gi" or alias.name.startswith("gi.")
+                    )
+                elif isinstance(child, ast.ImportFrom):
+                    module = child.module or ""
+                    if module == "gi" or module.startswith("gi."):
+                        found.extend(
+                            (f"{module}.{alias.name}", in_function)
+                            for alias in child.names
+                        )
+                visit(child, in_function or isinstance(
+                    child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)))
+
+        visit(tree, False)
+        return found
+
+    @staticmethod
+    def attribute_calls(tree):
+        """The `<name>.<attribute>(...)` calls one parsed module makes."""
+        return {
+            f"{node.func.value.id}.{node.func.attr}"
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+        }
+
+    def test_each_tier_imports_only_the_part_of_gi_it_may(self):
+        # A source-only invariant: importing the modules to inspect them
+        # would need the toolkit this very test exists to keep out of them.
+        package_root = PROJECT_ROOT / "obozrenie"
+        module_paths = sorted(package_root.rglob("*.py"))
+        self.assertTrue(module_paths, "no obozrenie/**/*.py modules found")
+        seen_tiers = set()
+
+        for path in module_paths:
+            name = path.name
+            tree = ast.parse(path.read_bytes().decode("utf-8"), filename=str(path))
+            imports = self.gi_imports(tree)
+            with self.subTest(path=path.relative_to(PROJECT_ROOT)):
+                if name.startswith("gtk"):
+                    seen_tiers.add("gtk")
+                    continue
+                if name == self.TOOLKIT_LAUNCHER:
+                    seen_tiers.add("launcher")
+                    # Importing the launcher must not start the toolkit, so
+                    # every `gi` import of it belongs to a function body.
+                    self.assertTrue(imports, f"{name} imports no toolkit at all")
+                    self.assertEqual(
+                        [name for name, in_function in imports if not in_function],
+                        [],
+                    )
+                    continue
+                if name in self.PRESENTATION_MODULES:
+                    seen_tiers.add("presentation")
+                    self.assertLessEqual(
+                        {name for name, _in_function in imports},
+                        self.PRESENTATION_GI_IMPORTS,
+                    )
+                    self.assertNotIn("gi.require_version", self.attribute_calls(tree))
+                    continue
+                seen_tiers.add("domain")
+                self.assertEqual(imports, [])
+
+        self.assertEqual(seen_tiers, {"gtk", "launcher", "presentation", "domain"})
+
 
 class LiveContractTests(unittest.TestCase):
     # What the script prints to stderr for two retried attempts: only an

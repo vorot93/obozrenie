@@ -157,14 +157,17 @@ class GeoIPDownloadCoordinator:
     downloaded database has been loaded, which is what keeps startup
     admission held until then.
 
-    The state lock only publishes the dialogs, transfer, worker, and
-    completion flags that close and the worker both read: dialog work, the
-    caller's callback, and thread joins never run under it. `begin_close`
-    marks this coordinator closing and cancels the transfer, which closes the
-    response its worker may be reading. The worker re-checks that flag before
-    it queues anything, and every queued callback re-checks it again, so a
-    transfer that outlives close can neither load a database nor touch a
-    dialog.
+    The presented question is never coordinator state: it answers itself
+    through `_accept` or `_decline`, so only the call that presented it —
+    which alone may have to dismiss it, when close wins that race — ever
+    holds it. The state lock publishes the transfer dialog, transfer,
+    worker, and completion flags that close and the worker both read:
+    dialog work, the caller's callback, and thread joins never run under
+    it. `begin_close` marks this coordinator closing and cancels the
+    transfer, which closes the response its worker may be reading. The
+    worker re-checks that flag before it queues anything, and every queued
+    callback re-checks it again, so a transfer that outlives close can
+    neither load a database nor touch a dialog.
     """
 
     def __init__(self, geolocation: geoip.Geolocation, dialogs=None) -> None:
@@ -172,7 +175,6 @@ class GeoIPDownloadCoordinator:
         self._dialogs = GeoIPOfferDialogs() if dialogs is None else dialogs
         self._state_lock = threading.Lock()
         self._parent = None
-        self._question = None
         self._transfer_dialog = None
         self._transfer = None
         self._worker = None
@@ -209,8 +211,6 @@ class GeoIPDownloadCoordinator:
                 parent, self._accept, self._decline)
             with self._state_lock:
                 closing = self._closing
-                if not closing:
-                    self._question = question
             if closing:
                 # Close arrived while the question was being presented. It is
                 # this call's to dismiss, and it promised no callback.
@@ -261,7 +261,6 @@ class GeoIPDownloadCoordinator:
         with self._state_lock:
             self._active = False
             self._parent = None
-            self._question = None
             self._transfer_dialog = None
             self._transfer = None
             self._finished_callback = None
@@ -277,7 +276,6 @@ class GeoIPDownloadCoordinator:
             if self._closing or not self._active or self._transfer is not None:
                 # Neither close nor a repeated response starts a transfer.
                 return
-            self._question = None
             parent = self._parent
 
         dialog = self._dialogs.present_transfer(parent, self._decline)
@@ -322,7 +320,6 @@ class GeoIPDownloadCoordinator:
     def _decline(self) -> None:
         """Finish a declined offer, stopping a transfer it already started."""
         with self._state_lock:
-            self._question = None
             transfer = self._transfer
             dialog = self._transfer_dialog
         if transfer is None:
@@ -387,18 +384,14 @@ class GeoIPDownloadCoordinator:
                 return
             self._completed = True
             self._active = False
-            question = self._question
             dialog = self._transfer_dialog
             callback = self._finished_callback
             self._parent = None
-            self._question = None
             self._transfer_dialog = None
             self._transfer = None
             self._finished_callback = None
 
         try:
-            if question is not None:
-                question.dismiss()
             if dialog is not None:
                 dialog.close()
             if path is not None:

@@ -760,6 +760,20 @@ master_uri = ["master://example.test:27950"]
         self.assertTrue(app._startup_dialogs_pending)
         self.assertEqual(app._pending_settings_warnings, ["unseen warning"])
 
+    def test_activation_after_a_startup_that_built_no_window_does_nothing(self):
+        # GIO emits `activate` even once `on_startup` has quit, and a startup
+        # that failed before `MainWindow` left `window` as `None`.
+        coordinator = mock.Mock()
+        app = self.make_active_app(None, coordinator, ["unseen warning"])
+
+        with mock.patch.object(gtk_module.GLib, "idle_add") as idle_add:
+            gtk_module.App.on_activate(app, app)
+
+        idle_add.assert_not_called()
+        coordinator.offer.assert_not_called()
+        self.assertFalse(app._startup_dialogs_pending)
+        self.assertEqual(app._pending_settings_warnings, ["unseen warning"])
+
 
 class ApplicationShutdownTests(unittest.TestCase):
     def test_app_carries_a_status_before_startup_can_fail(self):

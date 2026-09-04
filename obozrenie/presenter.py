@@ -41,7 +41,9 @@ from obozrenie.list_rows import GameRow, PlayerRow, ServerRow
 from obozrenie.models import Endpoint
 
 
-PAGES = ("servers", "welcome", "loading", "error")
+# In the order `main_window.ui` declares them: the welcome page is first,
+# so it is what a stack with no explicit visible child shows.
+PAGES = ("welcome", "servers", "loading", "error")
 ACTIONS = ("preferences", "refresh", "connect", "info")
 
 
@@ -221,6 +223,14 @@ _STATUS_ICONS = MappingProxyType({
 })
 
 
+def players_text(player_count: int, player_limit: int) -> str:
+    """The one place the server list and the information dialog share."""
+    return i18n._("%(player_count)s / %(player_limit)s") % {
+        "player_count": str(player_count),
+        "player_limit": str(player_limit),
+    }
+
+
 def derive_action_sensitivity(
     browser_game_valid: bool,
     connect_game_valid: bool,
@@ -294,10 +304,11 @@ class MainPresenter:
     def render_loaded_state(self) -> None:
         """Render the bound state once the view reports to this presenter.
 
-        The browser game is not re-reported here: GTK 3 never refreshed at
-        startup either, so the welcome page stays until the user picks a
-        game or presses refresh.
+        The welcome page is the start state, so it is shown explicitly: the
+        browser game is deliberately not re-reported here, because no query
+        runs until the user picks a game or presses refresh.
         """
+        self.view.show_page("welcome")
         self.sidebar_toggled()
         self.filters_changed()
         self.connect_data_changed()
@@ -391,10 +402,7 @@ class MainPresenter:
             host=str(server.endpoint),
             game_name=self.core.game_table.get_game_info(server.game_id)["name"],
             terrain=server.terrain,
-            players_text=i18n._("%(player_count)s / %(player_limit)s") % {
-                "player_count": str(server.player_count),
-                "player_limit": str(server.player_limit),
-            },
+            players_text=players_text(server.player_count, server.player_limit),
             ping_text=str(server.ping),
             players=tuple(PlayerRow(player) for player in server.players),
         )
